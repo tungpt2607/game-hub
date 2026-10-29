@@ -2,6 +2,15 @@
 
 Cơ sở dữ liệu PostgreSQL. Khóa chính dạng UUID. Mọi thời điểm lưu `timestamptz`; hiển thị theo giờ Việt Nam (`Asia/Ho_Chi_Minh`). "Ngày" trong luật (lượt/ngày, giới hạn/ngày, kỳ theo ngày) tính theo giờ Việt Nam.
 
+## Bảng theo giai đoạn
+
+| Giai đoạn | Bảng |
+|---|---|
+| **1** | `users`, `admin_sessions`, `audit_logs`, `media`, `templates`, `preview_links`, `rate_limits` |
+| **[GĐ2]** | `brands`, `staff_assignments`, `prizes`, `campaign_prizes`, `pacing_slots`, `campaigns`, `campaign_versions`, `player_sessions`, `players`, `plays`, `turn_ledger`, `spins`, `rewards`, `leaderboard_periods`, `leaderboard_results`, `analytics_events` |
+
+Ở giai đoạn 1: `users.role` chỉ có giá trị `admin`; `preview_links.brand_id` luôn để trống. Các cột này vẫn được tạo sẵn để giai đoạn 2 không phải đổi cấu trúc.
+
 ## Sơ đồ quan hệ
 
 ```mermaid

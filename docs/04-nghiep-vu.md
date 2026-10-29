@@ -1,6 +1,8 @@
 # 04. Nghiệp vụ
 
-## 1. Tạo chiến dịch trong CMS
+**Giai đoạn 1 gồm mục 2a (link chơi thử) và phần tạo, sửa template trong mục 2.** Các mục còn lại là **[GĐ2]**, giữ làm định hướng.
+
+## 1. Tạo chiến dịch trong CMS [GĐ2]
 
 ```mermaid
 flowchart LR
@@ -26,6 +28,10 @@ Bản nháp tự lưu. Thanh trạng thái luôn cho biết "Bản nháp có tha
 
 ## 2. Template và "Đồng bộ từ template"
 
+**Giai đoạn 1:** thư viện template trong CMS cho phép tạo template mới từ module Hứng quà (bắt đầu từ cấu hình mẫu), sửa bằng form tự sinh với khung xem trước bên cạnh, nhân bản, lưu trữ (ẩn khỏi danh sách). Mỗi lần lưu tăng `revision`.
+
+**[GĐ2]:**
+
 - Khi thêm một bước từ template, cấu hình được **sao chép** vào chiến dịch kèm `templateId` và `templateRevision`.
 - Sửa template sau đó **không** ảnh hưởng chiến dịch.
 - Nếu template có bản mới hơn, CMS hiện thông báo "Template đã cập nhật" ở bước đó. Nút **Đồng bộ từ template** hiện danh sách trường thay đổi để chọn áp dụng toàn bộ hoặc từng trường. Đồng bộ chỉ đổi bản nháp; phải xuất bản mới có hiệu lực.
@@ -40,7 +46,7 @@ Link chơi thử **tách biệt hoàn toàn với chiến dịch**: để nhân 
 2. Chọn kiểu link:
    - **Luôn mới nhất**: mỗi lần mở đọc cấu hình hiện tại của template. Hợp khi đang duyệt qua lại với nhãn hàng.
    - **Bản chụp**: lưu cố định cấu hình lúc tạo. Hợp khi gửi một phương án để so sánh với phương án khác.
-3. Tùy chọn: tên gợi nhớ, hồ sơ nhãn hàng để áp giao diện, mật khẩu, ngày hết hạn.
+3. Tùy chọn: tên gợi nhớ, mật khẩu, ngày hết hạn; [GĐ2] hồ sơ nhãn hàng để áp giao diện.
 4. Nhận link + mã QR, có nút sao chép.
 
 **Quản lý:** danh sách link của template, gồm kiểu, đã mở bao nhiêu lần, lần mở gần nhất; có thể đổi mật khẩu, gia hạn, tắt link.
@@ -50,13 +56,13 @@ Link chơi thử **tách biệt hoàn toàn với chiến dịch**: để nhân 
 - Nếu có mật khẩu: ô nhập mật khẩu trước.
 - Màn chơi đầy đủ như người chơi thật, với dải nhỏ cố định **"Bản chơi thử – không có quà thật"**.
 - Game: chơi, xem điểm, chơi lại không giới hạn.
-- Vòng quay: quay không giới hạn, kết quả ngẫu nhiên theo các ô đã cấu hình.
-- Bảng xếp hạng: danh sách người chơi mẫu, có "Bạn" chèn vào theo điểm vừa chơi (nếu mở sau khi chơi game cùng phiên).
+- [GĐ2] Vòng quay: quay không giới hạn, kết quả ngẫu nhiên theo các ô đã cấu hình.
+- [GĐ2] Bảng xếp hạng: danh sách người chơi mẫu, có "Bạn" chèn vào theo điểm vừa chơi (nếu mở sau khi chơi game cùng phiên).
 - Link bị tắt, hết hạn, hoặc template bị lưu trữ: màn "Link chơi thử không còn hiệu lực".
 
 Trang chơi thử gắn thẻ `noindex` để không xuất hiện trên công cụ tìm kiếm.
 
-## 3. Xuất bản
+## 3. Xuất bản [GĐ2]
 
 Khi bấm Xuất bản, API kiểm tra rồi mới tạo phiên bản mới:
 
@@ -87,7 +93,7 @@ Trang người chơi theo trạng thái:
 | `ended` | Màn "Chương trình đã kết thúc", vẫn xem được bảng xếp hạng cuối và "Quà của tôi" |
 | không tồn tại / bản nháp | Trang 404 |
 
-## 4. Luồng người chơi
+## 4. Luồng người chơi [GĐ2]
 
 ```mermaid
 sequenceDiagram
@@ -121,7 +127,7 @@ sequenceDiagram
 - Nếu số điện thoại đã tồn tại trong chiến dịch, phiên hiện tại được gắn vào người chơi cũ (lượt dùng chung).
 - Trang **"Quà của tôi"** luôn có ở góc màn hình: danh sách phiếu quà, mã + QR, trạng thái, form địa chỉ cho quà giao tận nơi.
 
-## 5. Khung luật
+## 5. Khung luật [GĐ2]
 
 Mỗi luật là một đối tượng `{ type, ...tham số }` trong `rules` của chiến dịch. API có một **bộ xử lý** cho mỗi loại luật; thêm loại mới là thêm một bộ xử lý và một form cấu hình, không sửa phần khác.
 
@@ -143,7 +149,7 @@ Luật giai đoạn 1:
 | `game_play_limit` | `stepId`, `amount` hoặc không giới hạn, `per`: `campaign` hoặc `day` | Giới hạn số lần bắt đầu chơi game |
 | `max_rewards_per_player` | `amount` | Tổng số quà tối đa mỗi người. Giới hạn riêng từng món nằm ở `campaign_prizes.per_player_limit` |
 
-## 6. Phát quà ngẫu nhiên (vòng quay)
+## 6. Phát quà ngẫu nhiên (vòng quay) [GĐ2]
 
 Toàn bộ một lượt quay chạy trong **một giao dịch** PostgreSQL:
 
@@ -175,7 +181,7 @@ Nếu giao dịch lỗi ở bất kỳ bước nào, mọi thay đổi bị hủ
 
 Máy chủ trả về phần quà trúng (hoặc trượt). Trang người chơi chọn một ô gắn với phần quà đó (nếu nhiều ô cùng quà thì chọn ngẫu nhiên một ô; trượt thì chọn một ô "Chúc may mắn") và diễn hoạt cảnh dừng đúng ô.
 
-## 7. Xếp hạng
+## 7. Xếp hạng [GĐ2]
 
 - **Nguồn điểm**: các lượt chơi `valid` của bước game được chọn, nằm trong khoảng thời gian của kỳ.
 - **Cách tính**: `best` (điểm cao nhất một lượt) hoặc `sum` (tổng điểm). Bằng điểm thì ai đạt điểm đó **sớm hơn** xếp trên.
@@ -184,7 +190,7 @@ Máy chủ trả về phần quà trúng (hoặc trượt). Trang người chơi
 - **Duyệt** (quản trị viên hoặc vận hành): xem danh sách top kèm cảnh báo (nhiều lượt nghi ngờ, nhiều người chung thiết bị). Đánh dấu loại người gian lận; hệ thống **đôn hạng** người phía sau và cập nhật quà đề xuất. Bấm **Duyệt và phát quà** → kỳ chuyển `approved`, tạo phiếu quà cho từng người.
 - **Hiển thị cho người chơi**: bục top 3, danh sách, thứ hạng của tôi (kể cả ngoài top), quà theo hạng, đếm ngược kết thúc kỳ. Kỳ đã chốt hiện nhãn "Đang chờ công bố" cho đến khi duyệt.
 
-## 8. Trao quà
+## 8. Trao quà [GĐ2]
 
 ### Tại quầy
 
@@ -198,7 +204,7 @@ Máy chủ trả về phần quà trúng (hoặc trượt). Trang người chơi
 - Người chơi điền họ tên, SĐT nhận hàng, tỉnh/thành, địa chỉ trong "Quà của tôi" → `awaiting_shipment`.
 - Vận hành viên xem danh sách cần giao, xuất Excel cho đơn vị vận chuyển, cập nhật `shipped` (kèm mã vận đơn) và `delivered`. Nhập hàng loạt trạng thái bằng file Excel ở giai đoạn sau.
 
-## 9. Kho quà
+## 9. Kho quà [GĐ2]
 
 - Nhập món quà mới: tên, ảnh, giá trị, cách nhận, số lượng.
 - **Điều chỉnh tồn kho**: tăng/giảm `total_qty` kèm lý do, ghi nhật ký. Không cho giảm dưới tổng đã phân bổ.
@@ -206,7 +212,7 @@ Máy chủ trả về phần quà trúng (hoặc trượt). Trang người chơi
 - **Trả quà dư** khi chiến dịch kết thúc.
 - Màn tổng quan mỗi món: tổng, đã phân bổ (theo chiến dịch), đã phát, đã trao, còn trong kho.
 
-## 10. Báo cáo
+## 10. Báo cáo [GĐ2]
 
 Theo từng chiến dịch, lọc theo khoảng ngày:
 

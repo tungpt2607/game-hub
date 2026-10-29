@@ -2,6 +2,8 @@
 
 ## Phân quyền CMS
 
+Giai đoạn 1 chỉ có vai trò Quản trị viên. Bảng dưới là thiết kế cho giai đoạn 2; API vẫn kiểm tra vai trò ngay từ giai đoạn 1 để thêm vai trò sau không phải sửa các endpoint.
+
 | Quyền | Quản trị viên | Vận hành chiến dịch | Nhân viên đổi quà | Người xem báo cáo |
 |---|:-:|:-:|:-:|:-:|
 | Quản lý người dùng, xem nhật ký | ✓ | | | |
@@ -24,13 +26,15 @@ Quyền được kiểm tra **ở API** cho mọi lời gọi; CMS chỉ ẩn n�
 - Khóa tạm 15 phút sau 5 lần sai mật khẩu liên tiếp.
 - Sẵn chỗ cho đăng nhập Google Workspace của OPES ở giai đoạn sau.
 
-## Phiên người chơi (không đăng nhập)
+## Phiên người chơi (không đăng nhập) [GĐ2]
 
 - Cookie phiên ký bằng `SESSION_SECRET`, chỉ chứa `sessionId` và `campaignId`.
 - `device_hash` tạo từ một mã ngẫu nhiên lưu trong trình duyệt kết hợp vài đặc điểm thiết bị; dùng để phát hiện một máy tạo nhiều số điện thoại, không dùng để định danh cá nhân.
 - IP chỉ lưu dạng băm có muối, dùng cho giới hạn truy cập và cảnh báo.
 
 ## Chống gian lận
+
+Giai đoạn 1 áp dụng: giới hạn truy cập, chống đoán link chơi thử. Các dòng còn lại là **[GĐ2]**.
 
 | Mối đe dọa | Biện pháp |
 |---|---|
@@ -47,7 +51,7 @@ Quyền được kiểm tra **ở API** cho mọi lời gọi; CMS chỉ ẩn n�
 
 Giai đoạn sau có thể thêm: OTP số điện thoại, CAPTCHA vô hình khi phát hiện bất thường.
 
-## Dữ liệu cá nhân
+## Dữ liệu cá nhân [GĐ2]
 
 - Thu thập tối thiểu theo cấu hình chiến dịch; luôn có ô đồng ý với nội dung điều khoản do OPES nhập.
 - Lưu `consent_at` cho từng người chơi.

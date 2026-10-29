@@ -2,27 +2,36 @@
 
 Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bước trước đã được duyệt và gộp vào `main`. Trước mỗi bước, Claude sẽ hỏi lại để chốt chi tiết.
 
+## Giai đoạn 1: Game chơi được
+
 | Bước | Pull request | Nội dung | Kết quả xem được |
 |---|---|---|---|
 | 1 | Tài liệu thiết kế | Thư mục `docs/` này | Đọc và góp ý |
-| 2 | Khung dự án | Monorepo pnpm + Turborepo, 3 ứng dụng rỗng, `packages/*`, ESLint, Prettier, TypeScript, GitHub Actions, Dockerfile, `docker-compose.yml`, `.env.example`, trang `/api/health` | 3 link Vercel chạy được (sau khi bạn tạo dự án Vercel theo hướng dẫn) |
-| 3 | Cơ sở dữ liệu | Lược đồ Drizzle, migration, dữ liệu mẫu, hướng dẫn tạo Neon | Bảng dữ liệu trên Neon |
-| 4 | Đăng nhập và nền CMS | Đăng nhập, người dùng, vai trò, bố cục CMS, tải media lên R2 | Đăng nhập CMS, quản lý người dùng |
-| 5 | Chuẩn module + form tự sinh | `module-sdk`, `schema-form`, khung xem trước với host giả lập | Form cấu hình mẫu trong CMS |
-| 6 | Hứng quà + link chơi thử | Module `game.catch` đầy đủ tùy chỉnh và kiểm tra điểm; hồ sơ nhãn hàng; thư viện template; link chơi thử `/try/<token>` (mật khẩu, hạn, luôn mới nhất/bản chụp, QR) | **Link game đầu tiên gửi được cho nhãn hàng** |
-| 7 | Vòng quay, giao diện xếp hạng, kho quà | Module `reward.wheel` và `leaderboard.podium` (chạy được ở chế độ chơi thử); màn kho quà | Chơi thử vòng quay và xem bảng xếp hạng mẫu; nhập quà |
-| 8 | Chiến dịch và xuất bản | Trình tạo chiến dịch, luồng bước, luật, phân bổ quà, phiên bản, đồng bộ template | Xuất bản chiến dịch |
-| 9 | Trang người chơi + phát quà | Trang `/c/<slug>`, phiên, hồ sơ, lượt chơi, giao dịch phát quà (cả 2 cách) | **Link chiến dịch thật đầu tiên** |
-| 10 | Xếp hạng thật | Tính bảng từ lượt chơi, kỳ, chốt bảng, màn duyệt và phát quà | Bảng xếp hạng chạy thật |
-| 11 | Trao quà | Quà của tôi, trang đổi quà (QR/mã), giao hàng | Đổi quà tại quầy bằng điện thoại |
-| 12 | Báo cáo | Tổng quan, danh sách, xuất Excel | Báo cáo chiến dịch |
-| 13 | Hoàn thiện | Kiểm thử tải nhẹ, rà soát bảo mật, hướng dẫn vận hành và chuyển sang máy chủ riêng | Sẵn sàng chạy thử với khách |
+| 2 | Khung dự án | Monorepo pnpm + Turborepo; `apps/cms`, `apps/api`, `apps/play` rỗng; `packages/*`; ESLint, Prettier, TypeScript; GitHub Actions; Dockerfile, `docker-compose.yml`, `.env.example`; `/api/health` | 3 link Vercel mở được (sau khi bạn tạo dự án Vercel theo hướng dẫn) |
+| 3 | Cơ sở dữ liệu | Lược đồ Drizzle và migration cho các bảng giai đoạn 1 (tài khoản, media, template, link chơi thử); tài khoản quản trị đầu tiên; hướng dẫn tạo Neon | Bảng dữ liệu trên Neon |
+| 4 | Đăng nhập và nền CMS | Đăng nhập, đổi mật khẩu, quản lý tài khoản, bố cục CMS, tải ảnh và nhạc lên R2 | Đăng nhập CMS, tạo tài khoản đồng nghiệp, tải file lên |
+| 5 | Chuẩn module + form tự sinh | `module-sdk`, `schema-form`, `SandboxHost`, khung xem trước trong CMS | Form cấu hình mẫu và khung xem trước |
+| 6 | Hứng quà + thư viện template + link chơi thử | Module `game.catch` đầy đủ tùy chỉnh; màn thư viện template; link chơi thử `/try/<token>` (luôn mới nhất/bản chụp, mật khẩu, hạn, QR, đếm lượt mở) | **Tạo game và gửi link cho người khác chơi** |
+
+## Giai đoạn 2 trở đi (định hướng)
+
+Thứ tự dự kiến của giai đoạn 2, sẽ hỏi lại và chốt trước khi bắt đầu:
+
+1. Hồ sơ nhãn hàng, 4 vai trò
+2. Vòng quay và bảng xếp hạng (chạy được ở chế độ chơi thử), kho quà
+3. Chiến dịch và xuất bản: luồng bước, luật, phân bổ quà, phiên bản, đồng bộ template
+4. Trang người chơi `/c/<slug>` và phát quà (cả hai cách)
+5. Xếp hạng thật: kỳ, chốt bảng, duyệt và phát quà
+6. Trao quà: quà của tôi, trang đổi quà, giao hàng
+7. Báo cáo và xuất Excel
+8. Hoàn thiện: kiểm thử tải, rà soát bảo mật, hướng dẫn vận hành
+
+Giai đoạn 3 và 4: xem bảng các giai đoạn trong [00-tong-quan.md](00-tong-quan.md).
 
 ## Kiểm thử
 
-- **Đơn vị**: luật, thuật toán phát quà, kiểm tra điểm, chuyển đổi cấu hình module.
-- **Tích hợp**: API chạy với PostgreSQL thật (trong GitHub Actions), đặc biệt kịch bản **nhiều người quay cùng lúc** để chứng minh không phát quá số lượng.
-- **Giao diện**: kiểm tra luồng chính của CMS và trang người chơi trên khung điện thoại.
+- **Giai đoạn 1**: kiểm thử đơn vị cho chuyển đổi cấu hình module, kiểm tra lược đồ cấu hình, logic game Hứng quà (va chạm, điểm, mạng, tăng độ khó); kiểm thử tích hợp API với PostgreSQL thật trong GitHub Actions; kiểm tra luồng tạo template và mở link chơi thử trên khung điện thoại.
+- **[GĐ2]**: thêm kiểm thử luật, thuật toán phát quà, và kịch bản **nhiều người quay cùng lúc** để chứng minh không phát quá số lượng.
 
 ## Việc bạn cần chuẩn bị (sẽ có hướng dẫn từng bước khi tới bước đó)
 
@@ -32,10 +41,17 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 
 ## Câu hỏi còn mở
 
+Giai đoạn 1:
+
 | # | Câu hỏi | Mặc định nếu chưa trả lời |
 |---|---|---|
-| 1 | Hạn để người chơi nhập thông tin khi trúng (chế độ "nhập khi trúng") | 30 phút, cấu hình được |
-| 2 | Hạn nhận quà tại quầy sau khi trúng | Đến hết ngày kết thúc chiến dịch + 7 ngày, cấu hình được |
-| 3 | Số người chơi tối đa trên một thiết bị | 3, cấu hình được |
-| 4 | Font cho giao diện game | Chọn từ danh sách Google Fonts có hỗ trợ tiếng Việt, hoặc tải font riêng của nhãn hàng |
+| 1 | Font cho giao diện game | Chọn từ danh sách Google Fonts có hỗ trợ tiếng Việt, hoặc tải font riêng của nhãn hàng |
+
+[GĐ2] (sẽ hỏi lại khi tới giai đoạn 2):
+
+| # | Câu hỏi | Mặc định nếu chưa trả lời |
+|---|---|---|
+| 2 | Hạn để người chơi nhập thông tin khi trúng (chế độ "nhập khi trúng") | 30 phút, cấu hình được |
+| 3 | Hạn nhận quà tại quầy sau khi trúng | Đến hết ngày kết thúc chiến dịch + 7 ngày, cấu hình được |
+| 4 | Số người chơi tối đa trên một thiết bị | 3, cấu hình được |
 | 5 | Có cần màn "Chương trình đã kết thúc" hiển thị danh sách người trúng công khai không | Không |

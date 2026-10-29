@@ -10,6 +10,8 @@ Mọi endpoint nằm dưới `/api`. Dữ liệu vào/ra là JSON, mô tả bằ
 
 ## Công khai: trang người chơi (`/api/public`)
 
+Giai đoạn 1 chỉ có hai endpoint `/try/...`; các endpoint `/campaigns/...` là **[GĐ2]**.
+
 Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu tiên).
 
 | Phương thức | Đường dẫn | Mô tả |
@@ -31,7 +33,7 @@ Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu ti
 
 ## CMS (`/api/admin`)
 
-Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiểu.
+Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiểu (giai đoạn 1 mọi tài khoản là `admin`). Giai đoạn 1 gồm các nhóm: Đăng nhập, Người dùng, Media, Module, Template, Link chơi thử, Nhật ký; các nhóm còn lại là **[GĐ2]**.
 
 | Nhóm | Phương thức và đường dẫn | Vai trò |
 |---|---|---|

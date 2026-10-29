@@ -11,21 +11,27 @@ Nguyên tắc thiết kế xuyên suốt:
 3. **Máy chủ quyết định.** Điểm, lượt, quà đều do API kiểm tra và quyết định; trình duyệt chỉ hiển thị.
 4. **Chuyển nhà dễ.** Chỉ dùng chuẩn mở: Docker, PostgreSQL, giao thức S3.
 
+## Các giai đoạn
+
+| Giai đoạn | Mục tiêu | Nội dung |
+|---|---|---|
+| **1. Game chơi được** | Tạo game trong CMS, có link gửi người khác chơi ngay | Khung dự án, cơ sở dữ liệu, CMS (đăng nhập, tải ảnh và nhạc), chuẩn module, game Hứng quà, thư viện template, link chơi thử |
+| **2. Chiến dịch và quà** | Chạy chiến dịch thật có quà | Vòng quay, xếp hạng thật, hồ sơ nhãn hàng, kho quà, chiến dịch, xuất bản, người chơi, phát quà, trao quà, báo cáo, 4 vai trò |
+| **3. Vận hành** | Chạy nhiều chiến dịch, ít thao tác tay | Thêm loại quà (mã voucher, mã duy nhất, thẻ cào), luật nhận lượt (theo điểm game, mã dự thưởng, chia sẻ), OTP, tên miền riêng của nhãn hàng |
+| **4. Mở rộng** | Nhiều template, nhiều khách hàng | Template mới (lật thẻ, trắc nghiệm, cào thẻ, mở hộp quà), nhãn hàng tự đăng nhập, tiếng Anh |
+
+**Chỉ giai đoạn 1 được làm ngay.** Thiết kế cho giai đoạn 2 trở đi được giữ trong tài liệu làm **định hướng**, để những gì xây ở giai đoạn 1 (chuẩn module, dữ liệu, API) không phải đập đi làm lại. Các phần chỉ thuộc giai đoạn 2 trở đi được đánh dấu **[GĐ2]** trong các tài liệu tiếp theo.
+
 ## Phạm vi giai đoạn 1
 
 | Hạng mục | Có trong giai đoạn 1 |
 |---|---|
-| Template game | Hứng quà rơi |
-| Template xếp hạng | Bảng xếp hạng có bục top 3 |
-| Template phần thưởng | Vòng quay cổ điển |
-| Loại quà | Quà hiện vật (nhận tại quầy hoặc giao tận nơi) |
-| Luật nhận lượt quay | Lượt miễn phí (theo chiến dịch hoặc theo ngày) |
-| CMS | Hồ sơ nhãn hàng, thư viện template, kho quà, chiến dịch, xuất bản, trao quà, báo cáo, người dùng |
-| Trang người chơi | Đăng ký thông tin, chạy luồng chiến dịch, xem quà của tôi |
-| Trang trao quà | Cho nhân viên đổi quà: nhập mã hoặc quét QR |
-| Link chơi thử | Mỗi template có link chơi ngay, chạy độc lập trong trình duyệt, không đăng ký, không quà, không lưu điểm |
+| CMS | Đăng nhập email; mọi tài khoản là Quản trị viên; quản lý tài khoản |
+| Media | Tải ảnh và nhạc lên kho media |
+| Template | Thư viện template; chỉ có game **Hứng quà** với đầy đủ tùy chỉnh (ảnh, vật phẩm, độ khó tăng dần, mạng sống, nhạc và âm thanh, màn hướng dẫn). Logo và màu nhập thẳng trong từng game. |
+| Link chơi thử | Luôn mới nhất hoặc bản chụp; mật khẩu; hạn dùng; mã QR. Chạy hoàn toàn trong trình duyệt; chỉ đếm số lần mở link. |
 
-Để sau (khung đã chừa sẵn chỗ): template lật thẻ, trắc nghiệm, cào thẻ, mở hộp quà; quà mã voucher, thẻ cào; luật nhận lượt theo điểm game, mã dự thưởng, chia sẻ; OTP; tên miền riêng của nhãn hàng; tiếng Anh.
+**Không có trong giai đoạn 1:** vòng quay, xếp hạng, hồ sơ nhãn hàng, kho quà, chiến dịch, người chơi, phát quà, trao quà, báo cáo, phân quyền nhiều vai trò.
 
 ## Các quyết định đã chốt
 
@@ -69,6 +75,13 @@ Nguyên tắc thiết kế xuyên suốt:
 | 40 | Ai mở được link chơi thử | Ai có link đều chơi được; mỗi link có thể bật thêm mật khẩu |
 | 41 | Link khi template thay đổi | Chọn khi tạo link: "luôn mới nhất" hoặc "bản chụp" |
 | 42 | Phạm vi link chơi thử | Mọi loại template; vòng quay và bảng xếp hạng dùng dữ liệu giả lập |
+| 43 | Phạm vi giai đoạn 1 | Chỉ cần có game chơi được |
+| 44 | Template giai đoạn 1 | Chỉ game Hứng quà |
+| 45 | Đăng nhập CMS giai đoạn 1 | Email + mật khẩu; chỉ vai trò Quản trị viên; 4 vai trò làm ở giai đoạn 2 |
+| 46 | Số liệu giai đoạn 1 | Không ghi gì ngoài số lần mở link chơi thử |
+| 47 | Hồ sơ nhãn hàng | Chưa cần ở giai đoạn 1; logo và màu nhập trong từng game |
+
+Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 
 ## Thuật ngữ
 

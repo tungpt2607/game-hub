@@ -132,7 +132,11 @@ API so thời gian thực tế giữa `startPlay` và `finishPlay` với `durati
 - Module tăng **phiên bản chính** (1.x → 2.0) khi đổi cấu trúc: phải có `migrate()` để nâng cấu hình cũ.
 - Mỗi bước trong chiến dịch lưu `moduleVersion`. Khi xuất bản, API chạy `migrate()` nếu cần, nên chiến dịch cũ không bị hỏng khi module được nâng cấp.
 
-## Ba module giai đoạn 1
+## Các module
+
+Giai đoạn 1 chỉ có `game.catch`. Hai module còn lại là **[GĐ2]**, mô tả ở đây để chuẩn module được thiết kế đủ cho cả ba loại ngay từ đầu.
+
+Ở giai đoạn 1 chưa có hồ sơ nhãn hàng, nên loại trường `themeRef` chưa dùng; logo, màu và font nằm thẳng trong cấu hình của game. Khi có hồ sơ nhãn hàng ở giai đoạn 2, các trường này chuyển sang `themeRef` và cấu hình cũ được nâng lên bằng `migrate()`. Tương tự, `prizeSlot` và các hàm quay, xếp hạng, phiếu quà của `host` chỉ được dùng từ giai đoạn 2.
 
 ### `game.catch`: Hứng quà rơi
 
@@ -145,18 +149,19 @@ Các nhóm cấu hình:
 - **Độ khó**: tốc độ rơi ban đầu, mức tăng tốc theo thời gian, tần suất xuất hiện, tỉ lệ vật cản tăng dần.
 - **Âm thanh**: nhạc nền, tiếng hứng trúng, tiếng trúng vật cản, tiếng kết thúc.
 - **Màn hướng dẫn**: bật/tắt, các trang hướng dẫn (ảnh + chữ).
-- **Giao diện**: ảnh nền, màu HUD; mặc định lấy từ hồ sơ nhãn hàng.
+- **Thương hiệu và giao diện**: logo, tên nhãn hàng hiển thị, màu chính/nền/chữ, font, ảnh nền, màu thanh điểm. Giai đoạn 1 nhập thẳng ở đây; giai đoạn 2 mặc định lấy từ hồ sơ nhãn hàng.
+- **Màn kết thúc**: tiêu đề, lời nhắn, nút chơi lại.
 
 Kiểm tra điểm: `maxScore` = số vật phẩm tối đa có thể xuất hiện trong khoảng thời gian (tính từ tần suất và độ khó) × điểm cao nhất.
 
-### `leaderboard.podium`: Bảng xếp hạng
+### `leaderboard.podium`: Bảng xếp hạng [GĐ2]
 
 - **Hiển thị**: bục top 3 (bật/tắt), số dòng danh sách, thứ hạng của tôi (bật/tắt), quà theo hạng (bật/tắt), đếm ngược kết thúc kỳ (bật/tắt).
 - **Giao diện**: ảnh nền, ảnh bục, màu hạng 1/2/3, khung avatar, font; mặc định từ hồ sơ nhãn hàng.
 - **Nguồn điểm**: chọn bước game nào trong luồng làm nguồn.
 - Cách tính điểm, kỳ xếp hạng và quà theo hạng **không nằm trong module** mà nằm trong luật của chiến dịch (xem [04](04-nghiep-vu.md)), vì máy chủ cần chúng để chốt bảng.
 
-### `reward.wheel`: Vòng quay cổ điển
+### `reward.wheel`: Vòng quay cổ điển [GĐ2]
 
 - **Ô quay** (danh sách): mỗi ô gắn với một phần quà đã phân bổ (`prizeSlot`) hoặc là ô "Chúc may mắn"; nhãn, màu nền ô, ảnh hiển thị, hiện ảnh quà hay không; `previewWeight` chỉ dùng khi chơi thử. Ở template (chưa gắn chiến dịch), ô chỉ có nhãn và ảnh; việc gắn với quà thật làm khi đưa template vào chiến dịch.
 - **Khung**: kiểu vẽ sẵn (màu viền, chấm đèn, kim, tâm) **hoặc** ảnh khung, ảnh kim, ảnh tâm do nhãn hàng thiết kế.

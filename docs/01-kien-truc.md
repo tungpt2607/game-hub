@@ -29,6 +29,8 @@ flowchart LR
 | **Cơ sở dữ liệu** | Toàn bộ dữ liệu nghiệp vụ | PostgreSQL. Chạy tạm: Neon |
 | **Kho media** | Ảnh, nhạc, âm thanh tải lên từ CMS | Giao thức S3. Chạy tạm: Cloudflare R2. Chạy máy chủ riêng: MinIO |
 
+**Giai đoạn 1** dùng đủ cả 5 thành phần, nhưng trang người chơi chỉ có đường dẫn `/try/<token>` (link chơi thử); đường dẫn `/c/<slug>` cho chiến dịch là **[GĐ2]**.
+
 **Nguyên tắc ranh giới:** CMS và trang người chơi **không bao giờ** kết nối trực tiếp tới cơ sở dữ liệu. Mọi thao tác đều qua API. Nhờ vậy có thể thay giao diện, thêm ứng dụng di động, hoặc mở API cho đối tác sau này mà không đụng tới dữ liệu.
 
 ## Vì sao chọn những công nghệ này
@@ -50,8 +52,8 @@ game-hub/
 │  ├─ module-sdk/     Chuẩn module: kiểu dữ liệu, các loại trường cấu hình, sự kiện
 │  ├─ modules/
 │  │  ├─ game-catch/          Template game Hứng quà rơi
-│  │  ├─ leaderboard-podium/  Template bảng xếp hạng
-│  │  └─ reward-wheel/        Template vòng quay cổ điển
+│  │  ├─ leaderboard-podium/  Template bảng xếp hạng [GĐ2]
+│  │  └─ reward-wheel/        Template vòng quay cổ điển [GĐ2]
 │  ├─ schema-form/    Tự sinh form CMS từ lược đồ cấu hình module
 │  ├─ db/             Lược đồ Drizzle, migration SQL, dữ liệu mẫu
 │  ├─ contracts/      Zod schema cho request/response của API
