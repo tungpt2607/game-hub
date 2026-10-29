@@ -19,6 +19,8 @@
     "@mui/material-nextjs": "^7.0.0",
     "@opes/contracts": "workspace:*",
     "@opes/i18n": "workspace:*",
+    "@opes/module-sdk": "workspace:*",
+    "@opes/modules": "workspace:*",
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

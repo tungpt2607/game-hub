@@ -10,7 +10,7 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 | 2 | Khung dự án | Monorepo pnpm + Turborepo; `apps/cms`, `apps/api`, `apps/play` rỗng; `packages/*`; ESLint, Prettier, TypeScript; GitHub Actions; Dockerfile, `docker-compose.yml`, `.env.example`; `/api/health` | 3 link Vercel mở được (sau khi bạn tạo dự án Vercel theo hướng dẫn) |
 | 3 | Cơ sở dữ liệu | Lược đồ Drizzle và migration cho các bảng giai đoạn 1 (tài khoản, media, template, link chơi thử); tài khoản quản trị đầu tiên; hướng dẫn tạo Neon | Bảng dữ liệu trên Neon |
 | 4 | Đăng nhập và nền CMS | Đăng nhập, đổi mật khẩu, quản lý tài khoản, bố cục CMS, tải ảnh và nhạc lên R2 | Đăng nhập CMS, tạo tài khoản đồng nghiệp, tải file lên |
-| 5 | Chuẩn module + form tự sinh | `module-sdk`, `schema-form`, `SandboxHost`, khung xem trước trong CMS | Form cấu hình mẫu và khung xem trước |
+| 5 | Chuẩn module + form tự sinh | `packages/module-sdk` (loại trường, kiểm tra cấu hình, `SandboxHost`, font), `packages/modules` (module mẫu `game.sample`), form tự sinh và khung xem trước trong CMS (`apps/cms/src/module-ui`), trang **Phòng thử module** | Mở Phòng thử module: sửa form, game mẫu đổi ngay trong khung điện thoại |
 | 6 | Hứng quà + thư viện template + link chơi thử | Module `game.catch` đầy đủ tùy chỉnh; màn thư viện template; link chơi thử `/try/<token>` (luôn mới nhất/bản chụp, mật khẩu, hạn, QR, đếm lượt mở) | **Tạo game và gửi link cho người khác chơi** |
 
 ## Giai đoạn 2 trở đi (định hướng)
@@ -45,7 +45,7 @@ Giai đoạn 1:
 
 | # | Câu hỏi | Mặc định nếu chưa trả lời |
 |---|---|---|
-| 1 | Font cho giao diện game | Chọn từ danh sách Google Fonts có hỗ trợ tiếng Việt, hoặc tải font riêng của nhãn hàng |
+| 1 | ~~Font cho giao diện game~~ | Đã chốt (quyết định 79): Google Fonts có tiếng Việt + font riêng |
 
 [GĐ2] (sẽ hỏi lại khi tới giai đoạn 2):
 

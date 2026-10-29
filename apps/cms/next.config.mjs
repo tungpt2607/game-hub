@@ -11,7 +11,7 @@ const nextConfig = {
   // Docker dùng bản "standalone"; Vercel dùng bản mặc định.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ['@opes/i18n', '@opes/contracts'],
+  transpilePackages: ['@opes/i18n', '@opes/contracts', '@opes/module-sdk', '@opes/modules'],
   // Lint chạy riêng ở bước kiểm tra chung của repo.
   eslint: { ignoreDuringBuilds: true },
   async rewrites() {

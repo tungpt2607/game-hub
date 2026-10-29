@@ -1,0 +1,116 @@
+import { describe, expect, it } from 'vitest';
+import { field, type Fields } from './fields';
+import { collectMediaIds, normalizeConfig, validateConfig } from './validation';
+
+const img = { id: 'm1', url: 'https://x/a.png' };
+
+const fields: Fields = {
+  title: field.text({ label: 'Tiêu đề', required: true, maxLength: 10 }),
+  duration: field.number({ label: 'Thời gian', min: 5, max: 60, integer: true }),
+  showTimer: field.boolean({ label: 'Hiện đồng hồ' }),
+  level: field.select({
+    label: 'Độ khó',
+    options: [
+      { value: 'easy', label: 'Dễ' },
+      { value: 'hard', label: 'Khó' },
+    ],
+  }),
+  look: field.group({
+    label: 'Giao diện',
+    fields: {
+      primary: field.color({ label: 'Màu chính' }),
+      bg: field.image({ label: 'Ảnh nền' }),
+      font: field.font({ label: 'Font' }),
+    },
+  }),
+  timerColor: field.color({
+    label: 'Màu đồng hồ',
+    visibleWhen: field.when<{ showTimer: boolean }>((c) => c.showTimer),
+  }),
+  items: field.list({
+    label: 'Vật phẩm',
+    min: 1,
+    max: 3,
+    newItem: { symbol: { emoji: '🍎', image: null }, points: 1 },
+    item: {
+      symbol: field.emojiOrImage({ label: 'Hình' }),
+      points: field.number({ label: 'Điểm', min: 1 }),
+    },
+  }),
+};
+
+const valid = {
+  title: 'Hứng quà',
+  duration: 30,
+  showTimer: false,
+  level: 'easy',
+  look: { primary: '#ff0000', bg: img, font: { family: 'Nunito', media: null } },
+  timerColor: '#000',
+  items: [{ symbol: { emoji: '🍎', image: null }, points: 1 }],
+};
+
+describe('validateConfig', () => {
+  it('cấu hình đúng thì không có lỗi', () => {
+    expect(validateConfig(fields, valid)).toEqual({});
+  });
+
+  it('báo lỗi theo đường dẫn', () => {
+    const errors = validateConfig(fields, {
+      ...valid,
+      title: '',
+      duration: 4.5,
+      level: 'x',
+      look: { ...valid.look, primary: 'red' },
+      items: [{ symbol: { emoji: '', image: null }, points: 0 }],
+    });
+    expect(Object.keys(errors).sort()).toEqual([
+      'duration',
+      'items.0.points',
+      'items.0.symbol',
+      'level',
+      'look.primary',
+      'title',
+    ]);
+    expect(errors.title).toBe('Không được để trống');
+  });
+
+  it('kiểm tra số lượng phần tử danh sách', () => {
+    expect(validateConfig(fields, { ...valid, items: [] }).items).toBe('Cần ít nhất 1 mục');
+  });
+
+  it('bỏ qua trường đang ẩn', () => {
+    expect(validateConfig(fields, { ...valid, timerColor: 'sai' })).toEqual({});
+    expect(validateConfig(fields, { ...valid, showTimer: true, timerColor: 'sai' })).toHaveProperty('timerColor');
+  });
+});
+
+describe('normalizeConfig', () => {
+  it('điền giá trị thiếu từ mặc định và bỏ khóa thừa', () => {
+    const out = normalizeConfig(fields, { title: 'Mới', extra: 1, look: { primary: 42 } }, valid);
+    expect(out.title).toBe('Mới');
+    expect(out.duration).toBe(30);
+    expect(out.look.primary).toBe('#ff0000');
+    expect(out).not.toHaveProperty('extra');
+  });
+
+  it('chuẩn hóa từng phần tử danh sách theo newItem', () => {
+    const out = normalizeConfig(fields, { items: [{ points: 5 }] }, valid);
+    expect(out.items).toEqual([{ symbol: { emoji: '🍎', image: null }, points: 5 }]);
+  });
+
+  it('không sửa đổi object mặc định', () => {
+    const out = normalizeConfig(fields, {}, valid);
+    out.look.primary = '#000000';
+    expect(valid.look.primary).toBe('#ff0000');
+  });
+});
+
+describe('collectMediaIds', () => {
+  it('lấy mọi media được tham chiếu', () => {
+    const cfg = {
+      ...valid,
+      items: [{ symbol: { emoji: '', image: { id: 'm2', url: 'u' } }, points: 1 }],
+    };
+    expect(collectMediaIds(fields, cfg).sort()).toEqual(['m1', 'm2']);
+  });
+});
