@@ -88,6 +88,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Chạy riêng kiểm thử cơ sở dữ liệu (không qua turbo) để chắc chắn có PostgreSQL thật;
+      # bài kiểm tra "CI có cấu hình TEST_DATABASE_URL" sẽ báo lỗi nếu thiếu.
+      - name: Test cơ sở dữ liệu
+        run: pnpm --filter @opes/db exec vitest run --reporter=verbose
+
       - name: Build
         run: pnpm build
 
