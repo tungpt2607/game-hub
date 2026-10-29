@@ -42,6 +42,7 @@ Quyền được kiểm tra **ở API** cho mọi lời gọi; CMS chỉ ẩn n�
 | Một người dùng nhiều số điện thoại | Giới hạn số người chơi trên mỗi `device_hash` và mỗi IP (cấu hình được); cảnh báo trong màn duyệt xếp hạng. |
 | Gửi yêu cầu dồn dập | Giới hạn theo IP và theo phiên cho từng nhóm endpoint (lưu trong bảng `rate_limits`). |
 | Đoán mã nhận quà | Mã 8 ký tự ngẫu nhiên từ 31 ký tự (khoảng 850 tỉ tổ hợp); trang đổi quà yêu cầu đăng nhập và giới hạn số lần tra cứu. |
+| Đoán link chơi thử | Mã link 128 bit ngẫu nhiên; mật khẩu (nếu bật) băm Argon2id, giới hạn 5 lần thử sai mỗi 15 phút theo IP; link chơi thử không chứa dữ liệu người chơi hay quà thật. |
 | Biệt danh xấu trên bảng xếp hạng | Lọc danh sách từ cấm (tiếng Việt có dấu và không dấu); quản trị viên đổi biệt danh hoặc ẩn người chơi. |
 
 Giai đoạn sau có thể thêm: OTP số điện thoại, CAPTCHA vô hình khi phát hiện bất thường.

@@ -9,11 +9,11 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 | 3 | Cơ sở dữ liệu | Lược đồ Drizzle, migration, dữ liệu mẫu, hướng dẫn tạo Neon | Bảng dữ liệu trên Neon |
 | 4 | Đăng nhập và nền CMS | Đăng nhập, người dùng, vai trò, bố cục CMS, tải media lên R2 | Đăng nhập CMS, quản lý người dùng |
 | 5 | Chuẩn module + form tự sinh | `module-sdk`, `schema-form`, khung xem trước với host giả lập | Form cấu hình mẫu trong CMS |
-| 6 | Module Hứng quà | `game.catch` đầy đủ tùy chỉnh, kiểm tra điểm | Chơi thử trong khung xem trước |
-| 7 | Nhãn hàng, template, kho quà | Các màn CMS tương ứng | Tạo template, nhập quà |
-| 8 | Chiến dịch và xuất bản | Trình tạo chiến dịch, luồng bước, luật, phiên bản, đồng bộ template | Xuất bản chiến dịch |
-| 9 | Trang người chơi + phát quà | `apps/play`, phiên, hồ sơ, lượt chơi, module Vòng quay, giao dịch phát quà (cả 2 cách) | **Link chơi công khai đầu tiên** |
-| 10 | Xếp hạng | Module bảng xếp hạng, kỳ, chốt bảng, màn duyệt | Bảng xếp hạng chạy thật |
+| 6 | Hứng quà + link chơi thử | Module `game.catch` đầy đủ tùy chỉnh và kiểm tra điểm; hồ sơ nhãn hàng; thư viện template; link chơi thử `/try/<token>` (mật khẩu, hạn, luôn mới nhất/bản chụp, QR) | **Link game đầu tiên gửi được cho nhãn hàng** |
+| 7 | Vòng quay, giao diện xếp hạng, kho quà | Module `reward.wheel` và `leaderboard.podium` (chạy được ở chế độ chơi thử); màn kho quà | Chơi thử vòng quay và xem bảng xếp hạng mẫu; nhập quà |
+| 8 | Chiến dịch và xuất bản | Trình tạo chiến dịch, luồng bước, luật, phân bổ quà, phiên bản, đồng bộ template | Xuất bản chiến dịch |
+| 9 | Trang người chơi + phát quà | Trang `/c/<slug>`, phiên, hồ sơ, lượt chơi, giao dịch phát quà (cả 2 cách) | **Link chiến dịch thật đầu tiên** |
+| 10 | Xếp hạng thật | Tính bảng từ lượt chơi, kỳ, chốt bảng, màn duyệt và phát quà | Bảng xếp hạng chạy thật |
 | 11 | Trao quà | Quà của tôi, trang đổi quà (QR/mã), giao hàng | Đổi quà tại quầy bằng điện thoại |
 | 12 | Báo cáo | Tổng quan, danh sách, xuất Excel | Báo cáo chiến dịch |
 | 13 | Hoàn thiện | Kiểm thử tải nhẹ, rà soát bảo mật, hướng dẫn vận hành và chuyển sang máy chủ riêng | Sẵn sàng chạy thử với khách |

@@ -24,6 +24,10 @@ Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu ti
 | GET | `/campaigns/:slug/rewards` | Quà của tôi |
 | POST | `/campaigns/:slug/rewards/:id/shipping` | Điền địa chỉ giao hàng |
 | POST | `/campaigns/:slug/events` | Ghi sự kiện cho báo cáo (gom nhiều sự kiện một lần) |
+| GET | `/try/:token` | Cấu hình để chơi thử (module, phiên bản, cấu hình, giao diện, URL media). Link có mật khẩu mà chưa mở khóa thì chỉ trả `{ locked: true }` |
+| POST | `/try/:token/unlock` | Gửi mật khẩu; đúng thì đặt cookie mở khóa cho link này trong 7 ngày |
+
+Đây là hai lời gọi duy nhất của trang chơi thử. Sau khi tải cấu hình, game chạy hoàn toàn trong trình duyệt.
 
 ## CMS (`/api/admin`)
 
@@ -37,6 +41,7 @@ Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiể
 | Nhãn hàng | `GET/POST /brands`, `GET/PATCH /brands/:id` | operator |
 | Module | `GET /modules` (danh mục module, lược đồ, mặc định) | operator |
 | Template | `GET/POST /templates`, `GET/PATCH /templates/:id`, `POST /templates/:id/duplicate` | operator |
+| Link chơi thử | `GET/POST /templates/:id/preview-links`, `PATCH /preview-links/:id` (tên, mật khẩu, hạn, tắt/bật) | operator |
 | Kho quà | `GET/POST /prizes`, `PATCH /prizes/:id`, `POST /prizes/:id/adjust` | admin |
 | Chiến dịch | `GET/POST /campaigns`, `GET/PATCH /campaigns/:id` (sửa bản nháp), `POST /campaigns/:id/duplicate` | operator |
 | Xuất bản | `POST /campaigns/:id/validate`, `POST /campaigns/:id/publish`, `GET /campaigns/:id/versions`, `POST /campaigns/:id/versions/:v/restore`, `POST /campaigns/:id/pause`, `POST /campaigns/:id/resume` | operator |

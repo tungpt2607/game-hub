@@ -23,6 +23,7 @@ Nguyên tắc thiết kế xuyên suốt:
 | CMS | Hồ sơ nhãn hàng, thư viện template, kho quà, chiến dịch, xuất bản, trao quà, báo cáo, người dùng |
 | Trang người chơi | Đăng ký thông tin, chạy luồng chiến dịch, xem quà của tôi |
 | Trang trao quà | Cho nhân viên đổi quà: nhập mã hoặc quét QR |
+| Link chơi thử | Mỗi template có link chơi ngay, chạy độc lập trong trình duyệt, không đăng ký, không quà, không lưu điểm |
 
 Để sau (khung đã chừa sẵn chỗ): template lật thẻ, trắc nghiệm, cào thẻ, mở hộp quà; quà mã voucher, thẻ cào; luật nhận lượt theo điểm game, mã dự thưởng, chia sẻ; OTP; tên miền riêng của nhãn hàng; tiếng Anh.
 
@@ -64,6 +65,10 @@ Nguyên tắc thiết kế xuyên suốt:
 | 32 | Lưu code | GitHub `tungpt2607/game-hub` |
 | 33–36 | Hạ tầng | CMS, API, trang người chơi riêng biệt; cơ sở dữ liệu riêng; kho media riêng; đóng gói Docker; chạy tạm miễn phí |
 | 37 | Nơi chạy tạm | Cả API, CMS, trang người chơi trên Vercel; tự động triển khai từ GitHub |
+| 39 | Chơi ngay khi tạo | Mỗi template có **link chơi thử**, tách biệt hẳn với chiến dịch: chơi game bình thường, không kết nối luật, quà, người chơi |
+| 40 | Ai mở được link chơi thử | Ai có link đều chơi được; mỗi link có thể bật thêm mật khẩu |
+| 41 | Link khi template thay đổi | Chọn khi tạo link: "luôn mới nhất" hoặc "bản chụp" |
+| 42 | Phạm vi link chơi thử | Mọi loại template; vòng quay và bảng xếp hạng dùng dữ liệu giả lập |
 
 ## Thuật ngữ
 
@@ -75,3 +80,5 @@ Nguyên tắc thiết kế xuyên suốt:
 | Hồ sơ nhãn hàng | Logo, màu, font, ảnh nền của một nhãn hàng. |
 | Phân bổ quà | Số lượng của một món quà trong kho tổng được giao cho một chiến dịch. |
 | Phiếu quà (reward) | Một món quà đã phát cho một người chơi, có mã nhận quà riêng. |
+| Link chơi thử | Link công khai để chơi một template ngay, không qua chiến dịch, không dữ liệu thật. |
+| Chế độ chơi thử | Cách phần chạy của module hoạt động hoàn toàn trong trình duyệt với dữ liệu giả lập. Dùng cho link chơi thử và khung xem trước của CMS. |

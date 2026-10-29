@@ -30,6 +30,32 @@ Bản nháp tự lưu. Thanh trạng thái luôn cho biết "Bản nháp có tha
 - Sửa template sau đó **không** ảnh hưởng chiến dịch.
 - Nếu template có bản mới hơn, CMS hiện thông báo "Template đã cập nhật" ở bước đó. Nút **Đồng bộ từ template** hiện danh sách trường thay đổi để chọn áp dụng toàn bộ hoặc từng trường. Đồng bộ chỉ đổi bản nháp; phải xuất bản mới có hiệu lực.
 
+## 2a. Link chơi thử
+
+Link chơi thử **tách biệt hoàn toàn với chiến dịch**: để nhân viên OPES và nhãn hàng chơi một game ngay khi vừa cấu hình xong, trước khi có quà, luật hay chiến dịch.
+
+**Tạo link (trong màn chỉnh template):**
+
+1. Bấm **Tạo link chơi thử**.
+2. Chọn kiểu link:
+   - **Luôn mới nhất**: mỗi lần mở đọc cấu hình hiện tại của template. Hợp khi đang duyệt qua lại với nhãn hàng.
+   - **Bản chụp**: lưu cố định cấu hình lúc tạo. Hợp khi gửi một phương án để so sánh với phương án khác.
+3. Tùy chọn: tên gợi nhớ, hồ sơ nhãn hàng để áp giao diện, mật khẩu, ngày hết hạn.
+4. Nhận link + mã QR, có nút sao chép.
+
+**Quản lý:** danh sách link của template, gồm kiểu, đã mở bao nhiêu lần, lần mở gần nhất; có thể đổi mật khẩu, gia hạn, tắt link.
+
+**Người mở link thấy:**
+
+- Nếu có mật khẩu: ô nhập mật khẩu trước.
+- Màn chơi đầy đủ như người chơi thật, với dải nhỏ cố định **"Bản chơi thử – không có quà thật"**.
+- Game: chơi, xem điểm, chơi lại không giới hạn.
+- Vòng quay: quay không giới hạn, kết quả ngẫu nhiên theo các ô đã cấu hình.
+- Bảng xếp hạng: danh sách người chơi mẫu, có "Bạn" chèn vào theo điểm vừa chơi (nếu mở sau khi chơi game cùng phiên).
+- Link bị tắt, hết hạn, hoặc template bị lưu trữ: màn "Link chơi thử không còn hiệu lực".
+
+Trang chơi thử gắn thẻ `noindex` để không xuất hiện trên công cụ tìm kiếm.
+
 ## 3. Xuất bản
 
 Khi bấm Xuất bản, API kiểm tra rồi mới tạo phiên bản mới:

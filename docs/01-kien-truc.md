@@ -24,7 +24,7 @@ flowchart LR
 | Thành phần | Vai trò | Công nghệ |
 |---|---|---|
 | **CMS** (`apps/cms`) | Trang quản trị cho nhân viên OPES, gồm cả trang đổi quà | Next.js, React, TypeScript |
-| **Trang người chơi** (`apps/play`) | Chạy chiến dịch đã xuất bản tại `/c/<slug>` | Next.js, React, TypeScript; game vẽ bằng Canvas |
+| **Trang người chơi** (`apps/play`) | Chạy chiến dịch đã xuất bản tại `/c/<slug>`, và link chơi thử template tại `/try/<token>` | Next.js, React, TypeScript; game vẽ bằng Canvas |
 | **API** (`apps/api`) | Nơi duy nhất đọc/ghi dữ liệu. Luật chơi, phát quà, chống gian lận, đăng nhập CMS | Hono (TypeScript), chạy được trên Vercel và trong Docker |
 | **Cơ sở dữ liệu** | Toàn bộ dữ liệu nghiệp vụ | PostgreSQL. Chạy tạm: Neon |
 | **Kho media** | Ảnh, nhạc, âm thanh tải lên từ CMS | Giao thức S3. Chạy tạm: Cloudflare R2. Chạy máy chủ riêng: MinIO |

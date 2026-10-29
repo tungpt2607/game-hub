@@ -12,6 +12,7 @@ erDiagram
   prizes ||--o{ campaign_prizes : "phân bổ"
   campaigns ||--o{ campaign_prizes : "nhận"
   campaign_prizes ||--o{ pacing_slots : "lịch rải quà"
+  templates ||--o{ preview_links : "link chơi thử"
   campaigns ||--o{ player_sessions : ""
   campaigns ||--o{ players : ""
   players ||--o{ player_sessions : "gắn khi đăng ký"
@@ -78,6 +79,25 @@ Cấu hình module lưu `media.id`; API chuyển thành URL công khai khi trả
 | config | jsonb | Đã kiểm tra theo lược đồ module |
 | revision | int | Tăng mỗi lần lưu; dùng cho "Đồng bộ từ template" |
 | archived_at | timestamptz | |
+
+**`preview_links`**: link chơi thử của template
+
+| Cột | Kiểu | Ghi chú |
+|---|---|---|
+| id | uuid | |
+| token | text, duy nhất | 22 ký tự ngẫu nhiên (128 bit) trong địa chỉ `/try/<token>` |
+| template_id | uuid → templates | |
+| label | text | Tên gợi nhớ, ví dụ "Gửi chị Lan – Trà Sen Mây" |
+| mode | enum | `live` (luôn đọc cấu hình mới nhất của template) hoặc `snapshot` |
+| snapshot | jsonb, null | Với `snapshot`: module, phiên bản, cấu hình, giao diện tại lúc tạo |
+| brand_id | uuid, null | Hồ sơ nhãn hàng dùng làm giao diện khi chơi thử |
+| password_hash | text, null | Có giá trị thì phải nhập mật khẩu |
+| expires_at | timestamptz, null | |
+| disabled_at | timestamptz, null | |
+| view_count, last_viewed_at | | Biết link đã được mở chưa |
+| created_by, created_at | | |
+
+Link chơi thử **không** tạo phiên người chơi, lượt chơi hay phiếu quà nào.
 
 ## Kho quà
 

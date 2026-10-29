@@ -93,6 +93,24 @@ Quy tắc bắt buộc với phần chạy:
 - **Hỗ trợ màn hình dọc điện thoại** (từ 360px), cảm ứng và bàn phím.
 - **Tôn trọng `prefers-reduced-motion`** và nút tắt tiếng.
 
+## Hai chế độ chạy: thật và chơi thử
+
+Cùng một phần chạy hoạt động ở hai chế độ, chỉ khác nhau ở `host` được truyền vào:
+
+| | Chế độ thật (chiến dịch) | Chế độ chơi thử |
+|---|---|---|
+| Dùng ở | Trang người chơi `/c/<slug>` | Link chơi thử `/try/<token>` và khung xem trước của CMS |
+| `host` | Gọi API, máy chủ quyết định | `SandboxHost`, chạy hoàn toàn trong trình duyệt |
+| `startPlay` / `finishPlay` | Máy chủ cấp `playId`, kiểm tra và ghi điểm | Sinh `playId` cục bộ, chỉ hiện điểm, không lưu |
+| `spin` | Giao dịch phát quà thật | Chọn ngẫu nhiên một ô đã cấu hình (theo `previewWeight` của ô, mặc định chia đều), không trừ quà |
+| `getLeaderboard` | Bảng thật | Danh sách người chơi mẫu sinh từ `sampleLeaderboard` của module, có "bạn" chèn vào theo điểm vừa chơi |
+| `requireProfile` | Mở form thông tin | Bỏ qua |
+| `myRewards` | Phiếu quà thật | Phiếu quà mẫu ghi rõ "Bản chơi thử" |
+
+Mỗi module **bắt buộc** chạy được ở chế độ chơi thử. Module có thể khai báo thêm `sampleData` (ví dụ danh sách tên mẫu cho bảng xếp hạng) để bản chơi thử trông như thật. Nhờ chuẩn này, mọi template mới viết sau đều tự động có link chơi thử và khung xem trước, không cần làm thêm.
+
+`SandboxHost` nằm trong `packages/module-sdk` và **không gọi mạng**. Ảnh và nhạc vẫn tải từ CDN media như bình thường.
+
 ## Kiểm tra điểm phía máy chủ (module game)
 
 ```ts
@@ -140,7 +158,7 @@ Kiểm tra điểm: `maxScore` = số vật phẩm tối đa có thể xuất hi
 
 ### `reward.wheel`: Vòng quay cổ điển
 
-- **Ô quay** (danh sách): mỗi ô gắn với một phần quà đã phân bổ (`prizeSlot`) hoặc là ô "Chúc may mắn"; nhãn, màu nền ô, hiện ảnh quà hay không.
+- **Ô quay** (danh sách): mỗi ô gắn với một phần quà đã phân bổ (`prizeSlot`) hoặc là ô "Chúc may mắn"; nhãn, màu nền ô, ảnh hiển thị, hiện ảnh quà hay không; `previewWeight` chỉ dùng khi chơi thử. Ở template (chưa gắn chiến dịch), ô chỉ có nhãn và ảnh; việc gắn với quà thật làm khi đưa template vào chiến dịch.
 - **Khung**: kiểu vẽ sẵn (màu viền, chấm đèn, kim, tâm) **hoặc** ảnh khung, ảnh kim, ảnh tâm do nhãn hàng thiết kế.
 - **Chuyển động**: thời gian quay, số vòng tối thiểu, kiểu giảm tốc.
 - **Âm thanh và hiệu ứng**: tiếng quay, tiếng trúng, tiếng trượt, pháo giấy khi trúng.
