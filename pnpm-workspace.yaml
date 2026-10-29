@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10 chặn script cài đặt của thư viện theo mặc định; chỉ cho phép những gói cần.
+onlyBuiltDependencies:
+  - esbuild

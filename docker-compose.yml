@@ -1,0 +1,81 @@
+# Chạy toàn bộ Game Hub OPES trên một máy:
+#   docker compose up -d --build
+# CMS: http://localhost:3000  ·  Trang chơi: http://localhost:3001  ·  API: http://localhost:4000/api/health
+# MinIO (kho media): http://localhost:9001
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opes
+      POSTGRES_PASSWORD: opes
+      POSTGRES_DB: gamehub
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U opes -d gamehub']
+      interval: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: opes-minio
+      MINIO_ROOT_PASSWORD: opes-minio-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://opes:opes@postgres:5432/gamehub
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: auto
+      S3_BUCKET: gamehub-media
+      S3_ACCESS_KEY_ID: opes-minio
+      S3_SECRET_ACCESS_KEY: opes-minio-secret
+      MEDIA_PUBLIC_URL: http://localhost:9000/gamehub-media
+      SESSION_SECRET: doi-chuoi-nay-khi-chay-that
+      PLAY_PUBLIC_URL: http://localhost:3001
+    ports:
+      - '4000:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cms:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.next
+      args:
+        APP: cms
+        API_INTERNAL_URL: http://api:4000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+
+  play:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.next
+      args:
+        APP: play
+        API_INTERNAL_URL: http://api:4000
+    ports:
+      - '3001:3000'
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:
+  minio-data:
