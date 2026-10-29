@@ -126,6 +126,26 @@ interface ScoringRules<Config> {
 
 API so thời gian thực tế giữa `startPlay` và `finishPlay` với `durationBounds`, so điểm với `maxScore`, rồi đánh dấu lượt chơi **hợp lệ** hoặc **nghi ngờ**. Lượt nghi ngờ không được tính vào xếp hạng và không cộng lượt.
 
+## Đã làm ở Bước 5 (giai đoạn 1)
+
+Phần phác thảo ở trên là hướng tổng thể. Giai đoạn 1 làm phần cần cho game chơi thử, tên chi tiết như sau:
+
+| Phần | Nơi đặt | Ghi chú |
+|---|---|---|
+| Loại trường | `packages/module-sdk/src/fields.ts` | `text` (có `multiline` thay cho `longText`), `number`, `boolean`, `select`, `color`, `image`, `audio`, `emojiOrImage`, `font`, `list`, `group`. `prizeSlot` và `themeRef` để giai đoạn 2. Khai báo bằng `field.text({...})`… |
+| Giá trị media | | Cấu hình lưu `{ id, url, name }` của file trong thư viện Media; `collectMediaIds()` liệt kê để chặn xóa file đang dùng |
+| Kiểm tra cấu hình | `validation.ts` | `validateConfig(fields, config)` trả lỗi theo đường dẫn (`items.0.points`), câu tiếng Việt; trường đang ẩn không bị kiểm tra. Viết tay thay cho Zod để dùng chung ở CMS và API mà không cần chuyển đổi |
+| Chuẩn hóa | `validation.ts` | `normalizeConfig(fields, raw, defaults)`: điền trường mới thêm từ mặc định, bỏ khóa thừa (thay cho `migrate` khi chỉ tăng phiên bản phụ) |
+| Định nghĩa module | `runtime.ts` | `defineModule({ key, kind, version, name, description, fields, defaults, screens, Runtime, scoring })`. `screens` là các màn hình để khung xem trước nhảy tới |
+| Phần chạy | | `RuntimeProps = { config, host, initialScreen, muted }`. `HostApi` giai đoạn 1 có `mode`, `startPlay`, `finishPlay`, `track` |
+| Chế độ chơi thử | `sandbox.ts` | `createSandboxHost()`: không gọi mạng, mọi lượt chơi được chấp nhận |
+| Font | `fonts.ts`, `react.ts` | 18 font Google có tiếng Việt; `useFont()` tải font và trả `font-family`. Font riêng tải lên làm ở Bước 6 |
+| Âm thanh | `react.ts` | `useSound(ref, { muted, loop })` tôn trọng nút tắt tiếng |
+| Danh sách module | `packages/modules` | Bước 5 có module mẫu `game.sample` ("Chạm quà") dùng đủ mọi loại trường; `game.catch` thêm ở Bước 6 |
+| Form tự sinh, khung xem trước | `apps/cms/src/module-ui` | Đặt trong CMS (không tách package) vì chỉ CMS dùng. Khung xem trước có 3 cỡ máy 360×640, 390×844, 430×932 |
+
+Module mới chỉ cần khai báo `fields`, `defaults`, `screens` và viết `Runtime`; form, kiểm tra lỗi và khung xem trước có sẵn.
+
 ## Phiên bản module
 
 - Module tăng **phiên bản phụ** (1.0 → 1.1) khi thêm trường mới có mặc định: cấu hình cũ vẫn chạy.

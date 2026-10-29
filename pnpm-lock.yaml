@@ -93,6 +93,12 @@ importers:
       '@opes/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@opes/module-sdk':
+        specifier: workspace:*
+        version: link:../../packages/module-sdk
+      '@opes/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       next:
         specifier: ^15.3.0
         version: 15.5.28(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -156,7 +162,27 @@ importers:
 
   packages/i18n: {}
 
-  packages/module-sdk: {}
+  packages/module-sdk:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.0
+        version: 19.3.0
+      react:
+        specifier: ^19.1.0
+        version: 19.3.1
+
+  packages/modules:
+    dependencies:
+      '@opes/module-sdk':
+        specifier: workspace:*
+        version: link:../module-sdk
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.0
+        version: 19.3.0
+      react:
+        specifier: ^19.1.0
+        version: 19.3.1
 
 packages:
 

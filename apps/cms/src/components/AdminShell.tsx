@@ -25,6 +25,7 @@ import KeyOutlined from '@mui/icons-material/KeyOutlined';
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleOutlined from '@mui/icons-material/PeopleOutlined';
+import ScienceOutlined from '@mui/icons-material/ScienceOutlined';
 import type { MeResponse, User } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { api, handleAuthError } from '../lib/api';
@@ -48,6 +49,7 @@ const NAV: NavItem[] = [
     icon: <ExtensionOutlined />,
     availableInStep: 6,
   },
+  { label: t('cms.nav.playground'), href: '/playground', icon: <ScienceOutlined /> },
   { label: t('cms.nav.media'), href: '/media', icon: <ImageOutlined /> },
   { label: t('cms.nav.users'), href: '/users', icon: <PeopleOutlined /> },
 ];

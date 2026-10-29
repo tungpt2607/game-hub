@@ -80,6 +80,13 @@ Nguyên tắc thiết kế xuyên suốt:
 | 45 | Đăng nhập CMS giai đoạn 1 | Email + mật khẩu; chỉ vai trò Quản trị viên; 4 vai trò làm ở giai đoạn 2 |
 | 46 | Số liệu giai đoạn 1 | Không ghi gì ngoài số lần mở link chơi thử |
 | 47 | Hồ sơ nhãn hàng | Chưa cần ở giai đoạn 1; logo và màu nhập trong từng game |
+| 75 | Màn chỉnh template | Form cấu hình bên trái, khung xem trước điện thoại bên phải (trên điện thoại: hai thẻ) |
+| 76 | Lưu và công bố template | Bấm **Lưu nháp** để lưu (không tự lưu); chỉ khi bấm **Công bố** thì link chơi thử "luôn mới nhất" mới đổi |
+| 77 | Link "bản chụp" | Khi tạo link, chọn chụp từ bản đã công bố hoặc bản nháp hiện tại |
+| 78 | Lịch sử công bố | Giữ lịch sử các lần công bố; xem lại và khôi phục được |
+| 79 | Font | Danh sách Google Fonts có tiếng Việt, và tải font riêng (WOFF2/TTF) |
+| 80 | Khung xem trước | Chọn kích thước máy, chơi thử ngay trong khung, nhảy tới từng màn hình, bật/tắt tiếng |
+| 81 | Cấu hình có lỗi | Vẫn lưu nháp được; **Công bố** bị chặn cho tới khi sửa hết lỗi |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 
