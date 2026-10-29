@@ -45,7 +45,9 @@ services:
       S3_ACCESS_KEY_ID: opes-minio
       S3_SECRET_ACCESS_KEY: opes-minio-secret
       MEDIA_PUBLIC_URL: http://localhost:9000/gamehub-media
-      SESSION_SECRET: doi-chuoi-nay-khi-chay-that
+      SESSION_SECRET: doi-chuoi-nay-khi-chay-that-toi-thieu-32-ky-tu
+      # Chạy trên máy bằng http nên tắt cờ Secure; bật lại khi có HTTPS.
+      COOKIE_SECURE: 'false'
       PLAY_PUBLIC_URL: http://localhost:3001
     ports:
       - '4000:4000'
