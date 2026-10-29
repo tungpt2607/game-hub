@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Trên pull request: cho phép cập nhật pnpm-lock.yaml và đẩy ngược vào nhánh.
+      # Trên main: bắt buộc khớp file khóa.
+      - name: Install
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pnpm install --no-frozen-lockfile
+          else
+            pnpm install --frozen-lockfile
+          fi
+
+      - name: Commit pnpm-lock.yaml nếu có thay đổi
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if [ -n "$(git status --porcelain -- pnpm-lock.yaml)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml
+            git commit -m "Cập nhật pnpm-lock.yaml từ CI"
+            git push
+          fi
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  docker:
+    name: Docker ${{ matrix.app }}
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api, cms, play]
+    steps:
+      # Lấy đầu nhánh mới nhất, gồm cả pnpm-lock.yaml vừa được job check đẩy lên.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Build image
+        run: |
+          if [ "${{ matrix.app }}" = "api" ]; then
+            docker build -f docker/Dockerfile.api -t opes-gamehub-api .
+          else
+            docker build -f docker/Dockerfile.next --build-arg APP=${{ matrix.app }} -t opes-gamehub-${{ matrix.app }} .
+          fi
+
+      - name: Chạy thử API trong container
+        if: matrix.app == 'api'
+        run: |
+          docker run -d --name api -p 4000:4000 opes-gamehub-api
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:4000/api/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs api
+          exit 1
