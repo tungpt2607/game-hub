@@ -1,68 +1,91 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import type { FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import type { MeResponse, SetupStatus } from '@opes/contracts';
 import { t } from '@opes/i18n';
+import { AuthCard } from '../../components/AuthCard';
+import { api, ApiRequestError } from '../../lib/api';
 
-export default function LoginPage() {
+/** Chỉ cho chuyển tiếp tới đường dẫn nội bộ của CMS. */
+function safeNext(next: string | null): string {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+}
+
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    api<SetupStatus>('/auth/setup-status')
+      .then((s) => {
+        if (s.needsSetup) router.replace('/setup');
+      })
+      .catch(() => {});
+  }, [router]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // Bản khung: chưa kiểm tra tài khoản. Đăng nhập thật làm ở Bước 4.
-    router.push('/dashboard');
+    setBusy(true);
+    setError(null);
+    try {
+      const { user } = await api<MeResponse>('/auth/login', { method: 'POST', body: { email, password } });
+      router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next')));
+    } catch (e) {
+      setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      setBusy(false);
+    }
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100dvh',
-        display: 'grid',
-        placeItems: 'center',
-        px: 2,
-        bgcolor: 'background.default',
-      }}
-    >
-      <Card sx={{ width: '100%', maxWidth: 400 }} variant="outlined">
-        <CardContent sx={{ p: 4 }}>
-          <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
-            <Box>
-              <Typography variant="overline" color="primary">
-                {t('app.name')}
-              </Typography>
-              <Typography variant="h5" component="h1" fontWeight={700}>
-                {t('cms.login.heading')}
-              </Typography>
-            </Box>
-            <TextField
-              id="email"
-              label={t('cms.login.email')}
-              type="email"
-              autoComplete="email"
-              fullWidth
-            />
-            <TextField
-              id="password"
-              label={t('cms.login.password')}
-              type="password"
-              autoComplete="current-password"
-              fullWidth
-            />
-            <Button type="submit" variant="contained" size="large">
-              {t('cms.login.submit')}
-            </Button>
-            <Alert severity="info">{t('cms.login.skeletonNote')}</Alert>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Box>
+    <AuthCard title={t('cms.login.heading')}>
+      <Stack component="form" spacing={2.5} onSubmit={handleSubmit} noValidate>
+        {error && <Alert severity="error">{error}</Alert>}
+        <TextField
+          id="email"
+          label={t('cms.login.email')}
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoFocus
+          fullWidth
+        />
+        <TextField
+          id="password"
+          label={t('cms.login.password')}
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          fullWidth
+        />
+        <Button type="submit" variant="contained" size="large" disabled={busy || !email || !password}>
+          {t('cms.login.submit')}
+        </Button>
+        <Typography variant="body2" color="text.secondary">
+          {t('cms.login.forgot')}
+        </Typography>
+      </Stack>
+    </AuthCard>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

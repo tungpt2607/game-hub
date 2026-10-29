@@ -17,6 +17,7 @@
     "@mui/icons-material": "^7.0.0",
     "@mui/material": "^7.0.0",
     "@mui/material-nextjs": "^7.0.0",
+    "@opes/contracts": "workspace:*",
     "@opes/i18n": "workspace:*",
     "next": "^15.3.0",
     "react": "^19.1.0",
