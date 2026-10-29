@@ -2,7 +2,7 @@
 #   docker build -f docker/Dockerfile.next --build-arg APP=cms  -t opes-gamehub-cms .
 #   docker build -f docker/Dockerfile.next --build-arg APP=play -t opes-gamehub-play .
 
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 RUN corepack enable
 WORKDIR /repo
 ARG APP
@@ -13,7 +13,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=@opes/${APP}
 
-FROM node:22-alpine AS run
+FROM node:24-alpine AS run
 ARG APP
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1 APP_DIR=apps/${APP}

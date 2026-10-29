@@ -1,14 +1,14 @@
 # API Game Hub OPES. Build từ thư mục gốc repo:
 #   docker build -f docker/Dockerfile.api -t opes-gamehub-api .
 
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 RUN corepack enable
 WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=@opes/api
 
-FROM node:22-alpine AS run
+FROM node:24-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production PORT=4000
 # Bản build đã đóng gói đủ thư viện, không cần node_modules.
