@@ -10,6 +10,11 @@ import * as schema from './schema';
  */
 const url = process.env.TEST_DATABASE_URL;
 
+// Trên GitHub Actions bắt buộc có TEST_DATABASE_URL, để kiểm thử dưới đây không bị bỏ qua âm thầm.
+it.runIf(process.env.CI)('CI có cấu hình TEST_DATABASE_URL', () => {
+  expect(url).toBeTruthy();
+});
+
 describe.skipIf(!url)('cơ sở dữ liệu (PostgreSQL thật)', () => {
   let db: Database;
   let close: () => Promise<void>;
