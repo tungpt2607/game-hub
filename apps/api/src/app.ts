@@ -1,20 +1,42 @@
 import { Hono } from 'hono';
-import { type ApiError, type HealthResponse, HealthResponseSchema } from '@opes/contracts';
+import {
+  type ApiError,
+  type DatabaseStatus,
+  type HealthResponse,
+  HealthResponseSchema,
+} from '@opes/contracts';
+import { pingDb, type Database } from '@opes/db';
+import { getDb } from './db';
 
-export const API_VERSION = '0.1.0';
+export const API_VERSION = '0.2.0';
+
+export interface AppDeps {
+  /** Lấy kết nối cơ sở dữ liệu; null khi chưa cấu hình. Kiểm thử truyền hàm giả vào đây. */
+  getDb: () => Database | null;
+  /** Kiểm tra kết nối; mặc định chạy `select 1`. */
+  ping: (db: Database) => Promise<boolean>;
+}
+
+const defaultDeps: AppDeps = { getDb, ping: pingDb };
 
 /** Tạo ứng dụng API. Mọi đường dẫn nằm dưới /api. */
-export function createApp() {
+export function createApp(deps: Partial<AppDeps> = {}) {
+  const { getDb: resolveDb, ping } = { ...defaultDeps, ...deps };
   const app = new Hono().basePath('/api');
 
-  app.get('/health', (c) => {
+  app.get('/health', async (c) => {
+    const db = resolveDb();
+    let database: DatabaseStatus = 'not_configured';
+    if (db) database = (await ping(db)) ? 'ok' : 'down';
+
     const body: HealthResponse = HealthResponseSchema.parse({
-      status: 'ok',
+      status: database === 'down' ? 'degraded' : 'ok',
       service: 'api',
       version: API_VERSION,
       time: new Date().toISOString(),
+      database,
     });
-    return c.json(body);
+    return c.json(body, database === 'down' ? 503 : 200);
   });
 
   app.notFound((c) => {
