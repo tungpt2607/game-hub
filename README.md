@@ -22,7 +22,7 @@ docker/              Dockerfile
 
 ## Chạy trên máy
 
-Cần Node.js 22 và pnpm 10 (`corepack enable`).
+Cần Node.js 24 và pnpm 10 (`corepack enable`).
 
 ```bash
 pnpm install

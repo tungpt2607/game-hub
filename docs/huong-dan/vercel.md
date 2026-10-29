@@ -48,9 +48,9 @@ Làm giống bước 3, với:
 
 Kiểm tra: mở `https://opes-gamehub-play.vercel.app/try/demo`, thấy màn "Đang chuẩn bị game…" là thành công.
 
-## 5. Đặt phiên bản Node.js
+## 5. Phiên bản Node.js
 
-Với **cả 3 dự án**: vào **Settings → Build and Deployment → Node.js Version**, chọn **22.x**, bấm **Save**.
+Dự án dùng **Node.js 24**, ghi trong `package.json` (`"engines": { "node": "24.x" }`). Vercel tự đọc giá trị này, nên không cần chỉnh **Settings → Build and Deployment → Node.js Version**.
 
 ## Sau khi xong
 
