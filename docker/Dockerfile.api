@@ -10,9 +10,11 @@ RUN pnpm turbo run build --filter=@opes/api
 
 FROM node:24-alpine AS run
 WORKDIR /app
-ENV NODE_ENV=production PORT=4000
+ENV NODE_ENV=production PORT=4000 MIGRATIONS_DIR=/app/migrations
 # Bản build đã đóng gói đủ thư viện, không cần node_modules.
 COPY --from=build /repo/apps/api/dist ./dist
+# Migration đi kèm; đặt RUN_MIGRATIONS=true để chạy khi khởi động.
+COPY --from=build /repo/packages/db/migrations ./migrations
 USER node
 EXPOSE 4000
 CMD ["node", "dist/server.mjs"]

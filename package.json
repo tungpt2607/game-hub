@@ -12,7 +12,9 @@
     "test": "turbo run test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @opes/db db:generate",
+    "db:migrate": "pnpm --filter @opes/db migrate"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

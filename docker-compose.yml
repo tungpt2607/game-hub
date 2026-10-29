@@ -37,6 +37,7 @@ services:
       dockerfile: docker/Dockerfile.api
     environment:
       PORT: 4000
+      RUN_MIGRATIONS: 'true'
       DATABASE_URL: postgres://opes:opes@postgres:5432/gamehub
       S3_ENDPOINT: http://minio:9000
       S3_REGION: auto

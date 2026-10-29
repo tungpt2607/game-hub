@@ -1,0 +1,53 @@
+name: Migrate database
+
+# Cập nhật cấu trúc cơ sở dữ liệu thật (Neon) khi migration mới được gộp vào main.
+# Có thể chạy tay: tab Actions → "Migrate database" → Run workflow.
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/db/migrations/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Không bao giờ chạy hai lần migration cùng lúc.
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Chạy migration
+    runs-on: ubuntu-latest
+    env:
+      # Chuỗi kết nối nằm trong GitHub Secrets; GitHub tự che giá trị này trong nhật ký.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Kiểm tra đã cấu hình DATABASE_URL
+        id: guard
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::Chưa đặt secret DATABASE_URL nên bỏ qua migration. Xem hướng dẫn Neon trong docs/huong-dan/neon.md."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.guard.outputs.skip != 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.skip != 'true'
+        with:
+          node-version: 24
+
+      - name: Install
+        if: steps.guard.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Chạy migration
+        if: steps.guard.outputs.skip != 'true'
+        run: pnpm db:migrate

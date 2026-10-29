@@ -16,6 +16,23 @@ jobs:
   check:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
+    # PostgreSQL thật cho kiểm thử tích hợp (dữ liệu bị xoá sau mỗi lần chạy).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: gamehub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d gamehub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://test:test@localhost:5432/gamehub_test
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,15 +54,29 @@ jobs:
             pnpm install --frozen-lockfile
           fi
 
-      - name: Commit pnpm-lock.yaml nếu có thay đổi
+      # Sinh file migration từ packages/db/src/schema.ts (không cần kết nối DB).
+      - name: Sinh migration
+        run: pnpm db:generate
+
+      # Trên pull request: đẩy file khóa phiên bản và migration mới sinh ngược vào nhánh.
+      - name: Commit file sinh tự động nếu có thay đổi
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
-          if [ -n "$(git status --porcelain -- pnpm-lock.yaml)" ]; then
+          if [ -n "$(git status --porcelain -- pnpm-lock.yaml packages/db/migrations)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml
-            git commit -m "Cập nhật pnpm-lock.yaml từ CI"
+            git add pnpm-lock.yaml packages/db/migrations
+            git commit -m "Cập nhật file sinh tự động từ CI (pnpm-lock.yaml, migration)"
             git push
+          fi
+
+      # Trên main: migration trong repo phải khớp với lược đồ.
+      - name: Kiểm tra migration khớp lược đồ
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain -- packages/db/migrations)" ]; then
+            echo "::error::Lược đồ đã đổi nhưng thiếu file migration. Chạy pnpm db:generate."
+            exit 1
           fi
 
       - name: Lint

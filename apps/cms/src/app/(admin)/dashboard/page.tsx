@@ -14,8 +14,8 @@ type StepState = 'done' | 'inProgress' | 'upcoming';
 
 const STEPS: { step: number; title: string; state: StepState }[] = [
   { step: 1, title: 'Tài liệu thiết kế', state: 'done' },
-  { step: 2, title: 'Khung dự án', state: 'inProgress' },
-  { step: 3, title: 'Cơ sở dữ liệu', state: 'upcoming' },
+  { step: 2, title: 'Khung dự án', state: 'done' },
+  { step: 3, title: 'Cơ sở dữ liệu', state: 'inProgress' },
   { step: 4, title: 'Đăng nhập CMS, tài khoản, tải media', state: 'upcoming' },
   { step: 5, title: 'Chuẩn module, form tự sinh, chế độ chơi thử', state: 'upcoming' },
   { step: 6, title: 'Game Hứng quà, thư viện template, link chơi thử', state: 'upcoming' },
