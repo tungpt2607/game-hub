@@ -12,5 +12,6 @@
   ],
   "regions": [
     "sin1"
-  ]
+  ],
+  "ignoreCommand": "bash ../../scripts/vercel-ignore.sh apps/api"
 }

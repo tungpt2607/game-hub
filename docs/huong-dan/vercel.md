@@ -52,6 +52,12 @@ Kiểm tra: mở `https://opes-gamehub-play.vercel.app/try/demo`, thấy màn "�
 
 Dự án dùng **Node.js 24**, ghi trong `package.json` (`"engines": { "node": "24.x" }`). Vercel tự đọc giá trị này, nên không cần chỉnh **Settings → Build and Deployment → Node.js Version**.
 
+## Chỉ build khi cần
+
+Gói Hobby giới hạn số lần build mỗi ngày. Mỗi ứng dụng có `ignoreCommand` trong `vercel.json` gọi `scripts/vercel-ignore.sh`: Vercel chỉ build khi thư mục của ứng dụng đó, `packages/`, hoặc file cấu hình chung ở thư mục gốc thay đổi. Sửa tài liệu không làm build lại; commit file khóa do GitHub Actions tự tạo trên pull request cũng được bỏ qua.
+
+Bị chặn vì vượt giới hạn ("Deployment rate limited — retry in 24 hours"): chờ hết thời gian rồi **Redeploy** bản mới nhất của dự án bị chặn.
+
 ## Sau khi xong
 
 - Mỗi lần code mới được gộp vào `main`, cả 3 dự án tự triển khai lại.
