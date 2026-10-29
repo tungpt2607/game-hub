@@ -87,6 +87,9 @@ importers:
       '@mui/material-nextjs':
         specifier: ^7.0.0
         version: 7.3.10(@emotion/cache@11.14.0)(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.1))(@types/react@19.3.0)(next@15.5.28(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+      '@opes/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@opes/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
