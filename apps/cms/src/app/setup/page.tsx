@@ -27,12 +27,16 @@ export default function SetupPage() {
 
   useEffect(() => {
     api<SetupStatus>('/auth/setup-status')
-      .then((s) => setStatus(s.needsSetup ? 'open' : 'done'))
+      .then((s) => {
+        // Hệ thống đã có tài khoản: chuyển sang đăng nhập (trang đó tự vào CMS nếu đã đăng nhập).
+        if (s.needsSetup) setStatus('open');
+        else router.replace('/login');
+      })
       .catch((e: unknown) => {
         setError(e instanceof ApiRequestError ? e : null);
         setStatus('open');
       });
-  }, []);
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -34,24 +34,71 @@ function writeBest(key: string, value: number) {
   }
 }
 
-/** Ảnh của vật phẩm/giỏ đã tải xong, để vẽ lên canvas. */
-function useImages(urls: string[]) {
-  const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
+/** Tải trước ảnh của vật phẩm/giỏ để khi xuất hiện không bị nháy. */
+function usePreload(urls: string[]) {
   const key = urls.join('|');
   useEffect(() => {
-    let alive = true;
     for (const url of new Set(urls)) {
-      if (images[url]) continue;
       const img = new Image();
-      img.onload = () => alive && setImages((prev) => ({ ...prev, [url]: img }));
       img.src = url;
     }
-    return () => {
-      alive = false;
-    };
-    // `images` cố ý không nằm trong danh sách phụ thuộc: chỉ tải khi danh sách link đổi.
+    // Chỉ chạy lại khi danh sách link đổi.
   }, [key]);
-  return images;
+}
+
+/**
+ * Lớp ảnh nằm dưới canvas. Ảnh (kể cả GIF/WebP động) được hiển thị bằng thẻ <img> thay vì vẽ lên canvas,
+ * vì canvas chỉ vẽ được khung hình đầu của ảnh động.
+ */
+class SpriteLayer {
+  private sprites = new Map<string, HTMLImageElement>();
+  private seen = new Set<string>();
+  constructor(private root: HTMLDivElement) {}
+
+  begin() {
+    this.seen.clear();
+  }
+
+  /** Đặt ảnh `url` vừa trong khung w×h, tâm tại (x, y). */
+  place(id: string, url: string, x: number, y: number, w: number, h: number) {
+    this.seen.add(id);
+    let img = this.sprites.get(id);
+    if (!img) {
+      img = document.createElement('img');
+      img.alt = '';
+      img.draggable = false;
+      img.decoding = 'async';
+      Object.assign(img.style, {
+        position: 'absolute',
+        left: '0',
+        top: '0',
+        objectFit: 'contain',
+        pointerEvents: 'none',
+        willChange: 'transform',
+      });
+      this.root.appendChild(img);
+      this.sprites.set(id, img);
+    }
+    if (img.getAttribute('src') !== url) img.src = url;
+    img.style.width = `${w}px`;
+    img.style.height = `${h}px`;
+    img.style.transform = `translate(${x - w / 2}px, ${y - h / 2}px)`;
+  }
+
+  /** Bỏ các ảnh không còn trên màn hình. */
+  end() {
+    for (const [id, img] of this.sprites) {
+      if (!this.seen.has(id)) {
+        img.remove();
+        this.sprites.delete(id);
+      }
+    }
+  }
+
+  clear() {
+    for (const img of this.sprites.values()) img.remove();
+    this.sprites.clear();
+  }
 }
 
 function ItemSymbol({ value, size }: { value: EmojiOrImage; size: number }) {
@@ -294,9 +341,8 @@ function PlayScene({
       ),
     [config.basket.symbol.image?.url, config.items],
   );
-  const images = useImages(imageUrls);
-  const imagesRef = useRef(images);
-  imagesRef.current = images;
+  usePreload(imageUrls);
+  const spriteRoot = useRef<HTMLDivElement>(null);
 
   // Đếm ngược 3-2-1.
   useEffect(() => {
@@ -354,6 +400,7 @@ function PlayScene({
     const pops: Pop[] = [];
     const keys = { left: false, right: false };
     const startedAt = Date.now();
+    const sprites = spriteRoot.current ? new SpriteLayer(spriteRoot.current) : null;
     void host.startPlay().then((r) => {
       playId = r.playId;
     });
@@ -429,17 +476,13 @@ function PlayScene({
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
       ctx.clearRect(0, 0, engine.width, engine.height);
       const c = configRef.current;
-      const imgs = imagesRef.current;
+      sprites?.begin();
 
-      const drawSymbol = (symbol: EmojiOrImage | undefined, x: number, y: number, w: number, h: number) => {
+      const drawSymbol = (id: string, symbol: EmojiOrImage | undefined, x: number, y: number, w: number, h: number) => {
         if (!symbol) return;
-        const img = symbol.image ? imgs[symbol.image.url] : undefined;
-        if (img && img.naturalWidth > 0) {
-          const ratio = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-          const dw = img.naturalWidth * ratio;
-          const dh = img.naturalHeight * ratio;
-          ctx.drawImage(img, x - dw / 2, y - dh / 2, dw, dh);
-        } else if (!symbol.image) {
+        if (symbol.image) {
+          sprites?.place(id, symbol.image.url, x, y, w, h);
+        } else {
           ctx.font = `${Math.min(w, h) * 0.86}px ${EMOJI_FONT}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -448,11 +491,12 @@ function PlayScene({
       };
 
       const size = engine.itemSize;
-      for (const f of engine.falling) drawSymbol(c.items[f.itemIndex]?.symbol, f.x, f.y, size, size);
+      for (const f of engine.falling) drawSymbol(`item-${f.id}`, c.items[f.itemIndex]?.symbol, f.x, f.y, size, size);
 
       const bw = engine.basketWidth;
       const bh = engine.basketHeight;
-      drawSymbol(c.basket.symbol, engine.basketX, engine.basketTop + bh / 2, bw, c.basket.symbol.image ? bh : bw);
+      drawSymbol('basket', c.basket.symbol, engine.basketX, engine.basketTop + bh / 2, bw, c.basket.symbol.image ? bh : bw);
+      sprites?.end();
 
       // Điểm bay lên.
       ctx.textAlign = 'center';
@@ -498,6 +542,7 @@ function PlayScene({
 
     return () => {
       cancelAnimationFrame(raf);
+      sprites?.clear();
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKey);
     };
@@ -533,6 +578,7 @@ function PlayScene({
         cursor: 'grab',
       }}
     >
+      <div ref={spriteRoot} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }} />
       <canvas ref={canvas} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
       <div
         style={{

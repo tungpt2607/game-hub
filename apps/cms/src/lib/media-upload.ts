@@ -65,6 +65,33 @@ function audioDuration(blob: Blob): Promise<number | null> {
   });
 }
 
+/**
+ * Ảnh động (WebP động, APNG) không được nén lại: vẽ qua canvas sẽ chỉ còn khung hình đầu.
+ * GIF đã luôn được giữ nguyên.
+ */
+async function isAnimated(file: File): Promise<boolean> {
+  try {
+    const head = new Uint8Array(await file.slice(0, 256 * 1024).arrayBuffer());
+    const has = (text: string) => {
+      const codes = Array.from(text, (ch) => ch.charCodeAt(0));
+      outer: for (let i = 0; i <= head.length - codes.length; i++) {
+        for (let j = 0; j < codes.length; j++) if (head[i + j] !== codes[j]) continue outer;
+        return true;
+      }
+      return false;
+    };
+    if (file.type === 'image/webp') {
+      // Khối VP8X: bit 1 của byte cờ (byte 20) bật khi ảnh có chuyển động.
+      const isVp8x = head[12] === 0x56 && head[13] === 0x50 && head[14] === 0x38 && head[15] === 0x58;
+      return (isVp8x && ((head[20] ?? 0) & 0x02) !== 0) || has('ANIM');
+    }
+    if (file.type === 'image/png') return has('acTL');
+  } catch {
+    // Không đọc được: coi như ảnh tĩnh.
+  }
+  return false;
+}
+
 const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
 
@@ -96,7 +123,7 @@ async function prepare(file: File): Promise<Prepared> {
   const width = img?.naturalWidth ?? null;
   const height = img?.naturalHeight ?? null;
   const base: Prepared = { blob: file, mime: file.type, fileName: file.name, width, height, durationMs: null, optimized: false };
-  if (!img || !width || !height || !OPTIMIZABLE.has(file.type)) return base;
+  if (!img || !width || !height || !OPTIMIZABLE.has(file.type) || (await isAnimated(file))) return base;
 
   const scale = Math.min(1, IMAGE_MAX_DIMENSION / Math.max(width, height));
   if (scale === 1 && file.size <= OPTIMIZE_ABOVE_BYTES) return base;
