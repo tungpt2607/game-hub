@@ -222,7 +222,7 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
       onNotice(t('cms.editor.noReferences'));
       return;
     }
-    const word = text.slice(pos).match(/^[\w$]*/)![0] || text.slice(0, pos).match(/[\w$]*$/)![0];
+    const word = (text.slice(0, pos).match(/[\w$]*$/)?.[0] ?? '') + (text.slice(pos).match(/^[\w$]*/)?.[0] ?? '');
     setReferences({ title: t('cms.editor.referencesTitle', { name: word, count: refs.length }), items: refs });
     setPanel({ open: true, tab: 'references' });
   };
@@ -258,7 +258,7 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
     try {
       editor.current?.replaceAll(await formatText(codePath, files[codePath] ?? ''));
     } catch (e) {
-      onNotice(t('cms.editor.formatFailed', { message: e instanceof Error ? e.message.split('\n')[0] : String(e) }), 'error');
+      onNotice(t('cms.editor.formatFailed', { message: e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e) }), 'error');
     }
   };
 
@@ -278,8 +278,8 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
 
   useImperativeHandle(ref, () => ({
     jump(file, line, column) {
-      if (!file || files[file] === undefined) return;
-      const text = files[file];
+      const text = file ? files[file] : undefined;
+      if (!file || text === undefined) return;
       let pos = 0;
       for (let l = 1; l < line; l++) {
         const nl = text.indexOf('\n', pos);
@@ -642,8 +642,8 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
             references={references}
             height={narrow ? 200 : 180}
             onOpenProblem={(p) => {
-              if (!p.path || files[p.path] === undefined) return;
-              const text = files[p.path];
+              const text = p.path ? files[p.path] : undefined;
+              if (!p.path || text === undefined) return;
               let pos = 0;
               for (let l = 1; l < p.line; l++) pos = text.indexOf('\n', pos) + 1;
               void navigate(p.path, pos + p.column);
