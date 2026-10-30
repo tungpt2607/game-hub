@@ -26,8 +26,8 @@ Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu ti
 | GET | `/campaigns/:slug/rewards` | Quà của tôi |
 | POST | `/campaigns/:slug/rewards/:id/shipping` | Điền địa chỉ giao hàng |
 | POST | `/campaigns/:slug/events` | Ghi sự kiện cho báo cáo (gom nhiều sự kiện một lần) |
-| GET | `/try/:token` | Cấu hình để chơi thử (module, phiên bản, cấu hình, giao diện, URL media). Link có mật khẩu mà chưa mở khóa thì chỉ trả `{ locked: true }` |
-| POST | `/try/:token/unlock` | Gửi mật khẩu; đúng thì đặt cookie mở khóa cho link này trong 7 ngày |
+| GET | `/try/:token` | `{ status: 'ok', moduleKey, moduleVersion, title, config }`; hoặc `password_required` (chỉ kèm tiêu đề), `not_found`, `disabled` (tắt link hoặc template đã lưu trữ), `expired`, `not_published`. Mỗi lần trả `ok` tăng lượt mở. Bật `PLAY_MEDIA_PROXY` thì URL media trong cấu hình đổi thành `/media/...` trên tên miền trang chơi |
+| POST | `/try/:token/unlock` | Gửi mật khẩu; đúng thì đặt cookie mở khóa cho link này trong 30 ngày (đổi mật khẩu thì cookie cũ hết tác dụng). Sai quá 10 lần/15 phút mỗi IP thì tạm khóa |
 
 Đây là hai lời gọi duy nhất của trang chơi thử. Sau khi tải cấu hình, game chạy hoàn toàn trong trình duyệt.
 
@@ -43,7 +43,7 @@ Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiể
 | Nhãn hàng | `GET/POST /brands`, `GET/PATCH /brands/:id` | operator |
 | Module | `GET /modules` (danh mục module, lược đồ, mặc định) | operator |
 | Template | `GET /templates?status=active\|archived&q=`, `POST /templates` (nguồn: `defaults`, `preset`, `config`, `duplicate`), `GET /templates/:id`, `PUT /templates/:id` (lưu nháp, kèm `baseRevision`; 409 nếu người khác vừa lưu), `POST /templates/:id/publish` (422 nếu còn lỗi), `GET /templates/:id/versions/:n`, `POST /templates/:id/versions/:n/restore`, `POST /templates/:id/archive`, `POST /templates/:id/unarchive`, `DELETE /templates/:id` (chỉ khi đã lưu trữ) | admin (GĐ1) |
-| Link chơi thử | `GET/POST /templates/:id/preview-links`, `PATCH /preview-links/:id` (tên, mật khẩu, hạn, tắt/bật) | operator |
+| Link chơi thử | `GET /preview-links?templateId=`, `POST /preview-links?templateId=` (luôn mới nhất / bản chụp từ bản công bố hoặc bản nháp, mã ngẫu nhiên hoặc tự đặt, mật khẩu, hạn), `PATCH /preview-links/:id` (tên, mật khẩu, hạn, tắt/bật), `DELETE /preview-links/:id` | admin (GĐ1) |
 | Kho quà | `GET/POST /prizes`, `PATCH /prizes/:id`, `POST /prizes/:id/adjust` | admin |
 | Chiến dịch | `GET/POST /campaigns`, `GET/PATCH /campaigns/:id` (sửa bản nháp), `POST /campaigns/:id/duplicate` | operator |
 | Xuất bản | `POST /campaigns/:id/validate`, `POST /campaigns/:id/publish`, `GET /campaigns/:id/versions`, `POST /campaigns/:id/versions/:v/restore`, `POST /campaigns/:id/pause`, `POST /campaigns/:id/resume` | operator |

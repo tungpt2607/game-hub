@@ -106,6 +106,10 @@ Nguyên tắc thiết kế xuyên suốt:
 | 112 | Khôi phục lịch sử (Claude chọn) | Chép lần công bố cũ vào bản nháp; muốn link đổi thì bấm Công bố |
 | 113 | Hai người cùng sửa (Claude chọn) | Người lưu sau được báo "vừa được lưu ở nơi khác" và tải lại, không ghi đè lẫn nhau |
 | 114 | Bấm Công bố khi chưa lưu (Claude chọn) | Tự lưu nháp rồi công bố |
+| 116 | Kho media khi chơi thử | Ảnh, nhạc, font đi qua tên miền trang chơi (`/media/...`), không phụ thuộc `r2.dev` |
+| 117 | Quản lý link (Claude chọn) | Nút "Link chơi thử" trong màn chỉnh template: tạo, sao chép, mở, QR (tải ảnh), sửa tên/mật khẩu/hạn, bật/tắt, xóa |
+| 118 | Mật khẩu link (Claude chọn) | Tối thiểu 4 ký tự; nhập đúng thì máy đó nhớ 30 ngày; đổi mật khẩu thì phải nhập lại |
+| 119 | Bản chụp từ bản nháp (Claude chọn) | Chỉ chụp được khi bản nháp không còn lỗi |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 

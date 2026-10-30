@@ -8,7 +8,9 @@ WORKDIR /repo
 ARG APP
 # Địa chỉ API mà /api/* chuyển tiếp tới; được ghi vào bản build.
 ARG API_INTERNAL_URL=http://api:4000
-ENV NEXT_OUTPUT=standalone NEXT_TELEMETRY_DISABLED=1 API_INTERNAL_URL=${API_INTERNAL_URL}
+# Trang chơi: địa chỉ kho media để chuyển tiếp /media/* (để trống = không chuyển tiếp).
+ARG MEDIA_PROXY_ORIGIN=
+ENV NEXT_OUTPUT=standalone NEXT_TELEMETRY_DISABLED=1 API_INTERNAL_URL=${API_INTERNAL_URL} MEDIA_PROXY_ORIGIN=${MEDIA_PROXY_ORIGIN}
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=@opes/${APP}

@@ -103,3 +103,88 @@ body {
     animation: none;
   }
 }
+
+/* ---------- Link chơi thử ---------- */
+
+.field {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--muted);
+}
+.field input {
+  font: inherit;
+  font-size: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
+  background: var(--bg);
+  color: var(--text);
+}
+.field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.primary {
+  font: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.error {
+  margin: 0;
+  color: #d33;
+  font-size: 14px;
+}
+
+/* Game chiếm cả màn hình điện thoại; trên máy tính hiện trong cột dọc ở giữa. */
+.game-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0b0d10;
+  display: flex;
+  justify-content: center;
+}
+.game-frame {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  overflow: hidden;
+}
+.sound-toggle {
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.try-badge {
+  position: absolute;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 10;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 11px;
+  pointer-events: none;
+}

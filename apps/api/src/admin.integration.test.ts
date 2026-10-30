@@ -449,4 +449,123 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect((await call('GET', `/templates/${t.id}`, undefined, admin)).status).toBe(404);
     });
   });
+
+  describe('link chơi thử', () => {
+    async function publishedTemplate(cookie: string) {
+      const t = (await call('POST', '/templates', { name: 'Tết', moduleKey: 'game.catch', source: { type: 'preset', presetId: 'tet' } }, cookie)).json.template;
+      const p = await call('POST', `/templates/${t.id}/publish`, { baseRevision: t.revision }, cookie);
+      return p.json.template;
+    }
+    /** Gọi API công khai của trang chơi. */
+    async function play(path: string, init: { method?: string; body?: unknown; cookie?: string } = {}) {
+      const headers: Record<string, string> = { 'x-forwarded-for': '198.51.100.9' };
+      if (init.body !== undefined) headers['content-type'] = 'application/json';
+      if (init.cookie) headers.cookie = init.cookie;
+      const res = await app.request(`/api/public${path}`, {
+        method: init.method ?? 'GET',
+        headers,
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      });
+      return { status: res.status, json: (await res.json()) as Record<string, any>, cookie: res.headers.get('set-cookie')?.split(';')[0] };
+    }
+
+    it('link "luôn mới nhất" đọc bản công bố mới nhất và đếm lượt mở', async () => {
+      const admin = await setupAdmin();
+      const tpl = await publishedTemplate(admin);
+      const created = await call('POST', `/preview-links?templateId=${tpl.id}`, { label: 'Gửi chị Lan', mode: 'live' }, admin);
+      expect(created.status).toBe(201);
+      const link = created.json.link;
+      expect(link.token).toHaveLength(22);
+      expect(link.url).toBe(`https://opes-gamehub-play.vercel.app/try/${link.token}`);
+
+      const first = await play(`/try/${link.token}`);
+      expect(first.status).toBe(200);
+      expect(first.json.status).toBe('ok');
+      expect(first.json.moduleKey).toBe('game.catch');
+      expect(first.json.title).toBe('Hứng lộc đầu xuân');
+
+      // Sửa nháp: link chưa đổi; công bố: link đổi.
+      const detail = (await call('GET', `/templates/${tpl.id}`, undefined, admin)).json.template;
+      const draft = structuredClone(detail.config);
+      draft.content.title = 'Tiêu đề mới';
+      const saved = (await call('PUT', `/templates/${tpl.id}`, { name: 'Tết', config: draft, baseRevision: detail.revision }, admin)).json.template;
+      expect((await play(`/try/${link.token}`)).json.title).toBe('Hứng lộc đầu xuân');
+      await call('POST', `/templates/${tpl.id}/publish`, { baseRevision: saved.revision }, admin);
+      expect((await play(`/try/${link.token}`)).json.title).toBe('Tiêu đề mới');
+
+      const list = await call('GET', `/preview-links?templateId=${tpl.id}`, undefined, admin);
+      expect(list.json.items[0].viewCount).toBe(3);
+      expect(list.json.items[0].lastViewedAt).toBeTruthy();
+    });
+
+    it('bản chụp giữ nguyên khi template đổi; chụp từ nháp được khi nháp không lỗi', async () => {
+      const admin = await setupAdmin();
+      const tpl = await publishedTemplate(admin);
+      const snap = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'published' }, admin)).json.link;
+      expect(snap.snapshotVersion).toBe(1);
+
+      const draft = structuredClone(tpl.config);
+      draft.content.title = 'Bản nháp';
+      const saved = (await call('PUT', `/templates/${tpl.id}`, { name: 'Tết', config: draft, baseRevision: tpl.revision }, admin)).json.template;
+      await call('POST', `/templates/${tpl.id}/publish`, { baseRevision: saved.revision }, admin);
+      expect((await play(`/try/${snap.token}`)).json.title).toBe('Hứng lộc đầu xuân');
+
+      const fromDraft = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'draft' }, admin)).json.link;
+      expect(fromDraft.snapshotVersion).toBeNull();
+      expect((await play(`/try/${fromDraft.token}`)).json.title).toBe('Bản nháp');
+    });
+
+    it('chưa công bố thì link "luôn mới nhất" báo chưa sẵn sàng', async () => {
+      const admin = await setupAdmin();
+      const tpl = (await call('POST', '/templates', { name: 'Mới', moduleKey: 'game.catch', source: { type: 'defaults' } }, admin)).json.template;
+      const link = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live' }, admin)).json.link;
+      expect((await play(`/try/${link.token}`)).json.status).toBe('not_published');
+      const bad = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'published' }, admin);
+      expect(bad.status).toBe(400);
+    });
+
+    it('mật khẩu: phải nhập đúng mới chơi được; đổi mật khẩu thì phải nhập lại', async () => {
+      const admin = await setupAdmin();
+      const tpl = await publishedTemplate(admin);
+      const link = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', password: 'sen2027' }, admin)).json.link;
+      expect(link.hasPassword).toBe(true);
+
+      const locked = await play(`/try/${link.token}`);
+      expect(locked.status).toBe(401);
+      expect(locked.json).toEqual({ status: 'password_required', title: 'Hứng lộc đầu xuân' });
+
+      const wrong = await play(`/try/${link.token}/unlock`, { method: 'POST', body: { password: 'sai' } });
+      expect(wrong.json.error.code).toBe('WRONG_PASSWORD');
+      const right = await play(`/try/${link.token}/unlock`, { method: 'POST', body: { password: 'sen2027' } });
+      expect(right.status).toBe(200);
+      expect((await play(`/try/${link.token}`, { cookie: right.cookie })).json.status).toBe('ok');
+
+      await call('PATCH', `/preview-links/${link.id}`, { password: 'mat-khau-moi' }, admin);
+      expect((await play(`/try/${link.token}`, { cookie: right.cookie })).json.status).toBe('password_required');
+    });
+
+    it('tắt, hết hạn, lưu trữ template, mã tự đặt và mã không tồn tại', async () => {
+      const admin = await setupAdmin();
+      const tpl = await publishedTemplate(admin);
+      const custom = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'Tet-2027-Sen' }, admin);
+      expect(custom.json.link.token).toBe('tet-2027-sen');
+      const dup = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'tet-2027-sen' }, admin);
+      expect(dup.json.error.code).toBe('SLUG_TAKEN');
+      const reserved = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'media' }, admin);
+      expect(reserved.json.error.code).toBe('SLUG_TAKEN'); // trùng đường dẫn có sẵn của trang chơi
+
+      const link = custom.json.link;
+      await call('PATCH', `/preview-links/${link.id}`, { disabled: true }, admin);
+      expect((await play(`/try/${link.token}`)).json.status).toBe('disabled');
+      await call('PATCH', `/preview-links/${link.id}`, { disabled: false, expiresAt: '2026-10-31T00:00:00Z' }, admin);
+      expect((await play(`/try/${link.token}`)).json.status).toBe('expired');
+      await call('PATCH', `/preview-links/${link.id}`, { expiresAt: null }, admin);
+      expect((await play(`/try/${link.token}`)).json.status).toBe('ok');
+
+      await call('POST', `/templates/${tpl.id}/archive`, undefined, admin);
+      expect((await play(`/try/${link.token}`)).json.status).toBe('disabled');
+
+      expect((await play('/try/khong-co-ma-nay')).json.status).toBe('not_found');
+    });
+  });
 });

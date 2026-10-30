@@ -21,6 +21,13 @@ export interface AppDeps {
   /** Đặt cờ Secure cho cookie (bắt buộc khi chạy HTTPS). */
   secureCookies: () => boolean;
   now: () => Date;
+  /** Địa chỉ trang chơi, để tạo link chơi thử đầy đủ. */
+  playPublicUrl: () => string;
+  /**
+   * Trang chơi có chuyển tiếp /media/* tới kho media không. Bật thì API trả đường dẫn media dạng
+   * "/media/..." (cùng tên miền trang chơi), tránh mạng chặn tên miền của kho (ví dụ r2.dev).
+   */
+  playMediaProxy: () => boolean;
 }
 
 export type AppEnv = {
