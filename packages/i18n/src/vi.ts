@@ -460,6 +460,7 @@ export const vi = {
         problems: 'Hiện/ẩn bảng Vấn đề',
         closeTab: 'Đóng tab đang mở',
         closeAllTabs: 'Đóng mọi tab',
+        help: 'Hướng dẫn dùng trình sửa code',
       },
       kind: {
         function: 'hàm',

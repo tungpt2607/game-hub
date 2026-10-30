@@ -32,6 +32,9 @@ export interface CommandActions {
   palette: () => void;
 }
 
+/** Hướng dẫn dùng trình sửa code (repo công khai). */
+export const EDITOR_GUIDE_URL = 'https://github.com/tungpt2607/game-hub/blob/main/docs/huong-dan/dung-trinh-sua-code.md';
+
 /** Danh sách lệnh của khu sửa code. Giữ một chỗ để bảng lệnh, phím tắt và tài liệu khớp nhau. */
 export function buildCommands(a: CommandActions): Command[] {
   return [
@@ -58,5 +61,6 @@ export function buildCommands(a: CommandActions): Command[] {
     { id: 'newFile', label: t('cms.workspace.newFile'), run: a.newFile },
     { id: 'newFolder', label: t('cms.workspace.newFolder'), run: a.newFolder },
     { id: 'collapseAll', label: t('cms.workspace.collapseAll'), run: a.collapseAll },
+    { id: 'help', label: t('cms.editor.cmd.help'), run: () => window.open(EDITOR_GUIDE_URL, '_blank', 'noopener') },
   ];
 }
