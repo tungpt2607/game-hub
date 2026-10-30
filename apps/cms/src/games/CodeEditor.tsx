@@ -2,10 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { basicSetup } from 'codemirror';
-import { indentWithTab } from '@codemirror/commands';
+import { indentWithTab, redo, undo } from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
+import { closeSearchPanel, openSearchPanel, searchPanelOpen } from '@codemirror/search';
 import { EditorState, type Extension } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, keymap } from '@codemirror/view';
@@ -21,6 +22,10 @@ export interface EditorApi {
   /** Nhảy tới dòng (bắt đầu từ 1) và cột (bắt đầu từ 0), cuộn cho dòng nằm giữa. */
   goTo(line: number, column: number): void;
   focus(): void;
+  undo(): void;
+  redo(): void;
+  /** Mở hộp tìm/thay, đang mở thì đóng (dùng cho nút trên điện thoại, nơi không có Ctrl+F). */
+  toggleSearch(): void;
 }
 
 function languageFor(path: string): Extension {
@@ -42,10 +47,16 @@ function languageFor(path: string): Extension {
   }
 }
 
-const baseTheme = EditorView.theme({
-  '&': { height: '100%', fontSize: '13px' },
-  '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
-});
+/** Màn hình cảm ứng: chữ 16px để iPhone không tự phóng to khi chạm vào ô code. */
+const isTouch = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
+const baseTheme = () =>
+  EditorView.theme({
+    '&': { height: '100%', fontSize: isTouch() ? '16px' : '13px' },
+    '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+    // Ô nhập trong hộp tìm/thay cũng 16px trên điện thoại.
+    '.cm-panel.cm-search input': { fontSize: isTouch() ? '16px' : 'inherit' },
+  });
 
 export function CodeEditor({
   path,
@@ -76,7 +87,7 @@ export function CodeEditor({
         keymap.of([indentWithTab]),
         languageFor(forPath),
         oneDark,
-        baseTheme,
+        baseTheme(),
         EditorView.lineWrapping,
         EditorState.tabSize.of(2),
         EditorView.updateListener.of((update) => {
@@ -100,6 +111,18 @@ export function CodeEditor({
         v.focus();
       },
       focus: () => v.focus(),
+      undo: () => {
+        undo(v);
+        v.focus();
+      },
+      redo: () => {
+        redo(v);
+        v.focus();
+      },
+      toggleSearch: () => {
+        if (searchPanelOpen(v.state)) closeSearchPanel(v);
+        else openSearchPanel(v);
+      },
     });
     const saved = states.current;
     return () => {
