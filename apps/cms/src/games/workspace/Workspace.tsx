@@ -77,7 +77,8 @@ export interface WorkspaceProps {
 }
 
 type PathDialogState =
-  | { mode: 'newFile' | 'newFolder'; folder: string }
+  | { mode: 'newFile'; folder: string }
+  | { mode: 'newFolder'; folder: string }
   | { mode: 'rename'; path: string; isFolder: boolean }
   | null;
 
