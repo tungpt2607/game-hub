@@ -5,3 +5,5 @@ import { catchQuizSchema } from './schema';
 
 /** Game Hứng quà + câu hỏi (dựa trên game OME Catch). */
 export const catchQuizModule = defineModule<CatchQuizConfig>({ ...catchQuizSchema, Runtime: CatchQuizRuntime });
+
+export default catchQuizModule;

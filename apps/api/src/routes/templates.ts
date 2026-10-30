@@ -12,37 +12,34 @@ import {
   type TemplateVersionResponse,
 } from '@opes/contracts';
 import { schema, type Database } from '@opes/db';
-import { normalizeConfig, validateConfig, type ModuleSchema } from '@opes/module-sdk/core';
-import { getModuleSchema } from '@opes/modules/schemas';
 import { requireAuth, requireRole } from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { audit } from '../lib/audit';
 import { AppError, parseInput, readJson } from '../lib/errors';
+import { sandbox } from '../lib/module-sandbox';
+import { getModuleVersion, moduleNames, type ModuleVersion } from '../lib/modules';
 
 type TemplateRow = typeof schema.templates.$inferSelect;
-type Config = Record<string, unknown>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyModule = ModuleSchema<any>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function moduleOf(key: string): AnyModule {
-  const mod = getModuleSchema(key);
-  if (!mod) throw new AppError(400, ErrorCode.MODULE_NOT_FOUND, `Không có module "${key}".`);
-  return mod;
+/** Phiên bản game mà template đang dùng; không còn thì lấy bản mới nhất. */
+async function moduleFor(db: Database, row: Pick<TemplateRow, 'moduleKey' | 'moduleVersion'>): Promise<ModuleVersion> {
+  try {
+    return await getModuleVersion(db, row.moduleKey, row.moduleVersion);
+  } catch {
+    return getModuleVersion(db, row.moduleKey);
+  }
 }
 
-/** Tên module để hiển thị; module đã bị gỡ khỏi hệ thống vẫn hiện được định danh. */
-const moduleName = (key: string) => getModuleSchema(key)?.name ?? key;
-
-function toSummary(row: TemplateRow): TemplateSummary {
+function toSummary(row: TemplateRow, names: Map<string, string>): TemplateSummary {
   return {
     id: row.id,
     name: row.name,
     brandName: row.brandName,
     note: row.description,
     moduleKey: row.moduleKey,
-    moduleName: moduleName(row.moduleKey),
+    moduleName: names.get(row.moduleKey) ?? row.moduleKey,
     status: row.archivedAt ? 'archived' : 'active',
     publishedVersion: row.publishedVersion,
     publishedAt: row.publishedAt?.toISOString() ?? null,
@@ -90,13 +87,13 @@ async function detail(db: Database, row: TemplateRow): Promise<TemplateDetail> {
     .leftJoin(schema.users, eq(schema.users.id, schema.templateVersions.publishedBy))
     .where(eq(schema.templateVersions.templateId, row.id))
     .orderBy(desc(schema.templateVersions.version));
-  const mod = getModuleSchema(row.moduleKey);
+  const mod = await moduleFor(db, row).catch(() => null);
   return {
-    ...toSummary(row),
+    ...toSummary(row, await moduleNames(db)),
     moduleVersion: row.moduleVersion,
     revision: row.revision,
     publishedConfig: row.publishedConfig,
-    errors: mod ? validateConfig(mod.fields, row.config) : {},
+    errors: mod ? await sandbox.validate(mod.schemaJs, row.config) : {},
     versions: versions.map((v) => ({
       version: v.version,
       moduleVersion: v.moduleVersion,
@@ -131,7 +128,8 @@ export function templateRoutes(deps: AppDeps) {
       .where(and(...filters))
       .orderBy(desc(schema.templates.updatedAt))
       .limit(500);
-    const body: TemplateListResponse = { items: rows.map(toSummary) };
+    const names = await moduleNames(db);
+    const body: TemplateListResponse = { items: rows.map((r) => toSummary(r, names)) };
     return c.json(body);
   });
 
@@ -148,11 +146,11 @@ export function templateRoutes(deps: AppDeps) {
       raw = original.config;
     }
     if (!moduleKey) throw new AppError(400, ErrorCode.VALIDATION, 'Chọn loại game.', { fields: { moduleKey: 'Chọn loại game.' } });
-    const mod = moduleOf(moduleKey);
-    if (source.type === 'defaults') raw = mod.defaults;
+    const mod = await getModuleVersion(db, moduleKey);
+    if (source.type === 'defaults') raw = mod.meta.defaults;
     if (source.type === 'config') raw = source.config;
     if (source.type === 'preset') {
-      const preset = mod.presets?.find((p) => p.id === source.presetId);
+      const preset = mod.meta.presets.find((p) => p.id === source.presetId);
       if (!preset) throw new AppError(400, ErrorCode.VALIDATION, 'Không có mẫu này.');
       raw = preset.config;
     }
@@ -165,7 +163,7 @@ export function templateRoutes(deps: AppDeps) {
         description: input.note,
         moduleKey: mod.key,
         moduleVersion: mod.version,
-        config: normalizeConfig<Config>(mod.fields, raw, mod.defaults),
+        config: await sandbox.normalize(mod.schemaJs, raw),
         createdBy: user.id,
         updatedBy: user.id,
       })
@@ -192,14 +190,14 @@ export function templateRoutes(deps: AppDeps) {
     const input = parseInput(TemplateSaveRequestSchema, await readJson(c.req));
     const row = await findTemplate(db, c.req.param('id'));
     ensureActive(row);
-    const mod = moduleOf(row.moduleKey);
+    const mod = await moduleFor(db, row);
     const [saved] = await db
       .update(schema.templates)
       .set({
         name: input.name,
         brandName: input.brandName,
         description: input.note,
-        config: normalizeConfig<Config>(mod.fields, input.config, mod.defaults),
+        config: await sandbox.normalize(mod.schemaJs, input.config),
         moduleVersion: mod.version,
         revision: sql`${schema.templates.revision} + 1`,
         updatedBy: c.get('user').id,
@@ -224,8 +222,8 @@ export function templateRoutes(deps: AppDeps) {
       if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy template.');
       ensureActive(row);
       ensureRevision(row, input.baseRevision);
-      const mod = moduleOf(row.moduleKey);
-      const errors = validateConfig(mod.fields, row.config);
+      const mod = await moduleFor(db, row);
+      const errors = await sandbox.validate(mod.schemaJs, row.config);
       const count = Object.keys(errors).length;
       if (count > 0) {
         throw new AppError(422, ErrorCode.TEMPLATE_INVALID, `Còn ${count} lỗi cần sửa trước khi công bố.`, {
@@ -307,11 +305,11 @@ export function templateRoutes(deps: AppDeps) {
     const row = await findTemplate(db, c.req.param('id'));
     ensureActive(row);
     const v = await findVersion(db, row.id, c.req.param('version'));
-    const mod = moduleOf(row.moduleKey);
+    const mod = await moduleFor(db, row);
     const [saved] = await db
       .update(schema.templates)
       .set({
-        config: normalizeConfig<Config>(mod.fields, v.config, mod.defaults),
+        config: await sandbox.normalize(mod.schemaJs, v.config),
         moduleVersion: mod.version,
         revision: sql`${schema.templates.revision} + 1`,
         updatedBy: c.get('user').id,

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { createDb, runMigrations, schema, type Database } from '@opes/db';
 import { createApp } from './app';
+import { resetModuleRegistry } from './lib/modules';
 import type { Storage } from './lib/storage';
 
 /**
@@ -55,8 +56,9 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     clock = new Date('2026-11-01T03:00:00Z');
     files.clear();
     await db.execute(
-      sql`truncate table ${schema.rateLimits}, ${schema.previewLinks}, ${schema.templates}, ${schema.media}, ${schema.auditLogs}, ${schema.adminSessions}, ${schema.users} cascade`,
+      sql`truncate table ${schema.rateLimits}, ${schema.previewLinks}, ${schema.templates}, ${schema.gameModuleVersions}, ${schema.gameModules}, ${schema.media}, ${schema.auditLogs}, ${schema.adminSessions}, ${schema.users} cascade`,
     );
+    resetModuleRegistry();
   });
 
   afterAll(async () => {
@@ -566,6 +568,40 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect((await play(`/try/${link.token}`)).json.status).toBe('disabled');
 
       expect((await play('/try/khong-co-ma-nay')).json.status).toBe('not_found');
+    });
+  });
+
+  describe('game trong cơ sở dữ liệu', () => {
+    it('nạp sẵn các game có trong code, kèm mẫu', async () => {
+      const admin = await setupAdmin();
+      const res = await call('GET', '/modules', undefined, admin);
+      expect(res.status).toBe(200);
+      const keys = res.json.items.map((m: any) => m.key);
+      expect(keys).toEqual(expect.arrayContaining(['game.catch', 'game.catch-quiz', 'game.sample']));
+      const quiz = res.json.items.find((m: any) => m.key === 'game.catch-quiz');
+      expect(quiz.builtin).toBe(true);
+      expect(quiz.latestVersion).toBe('1.0.0');
+      expect(quiz.presets.map((p: any) => p.id)).toContain('ome-catch');
+      // Gọi lại không nạp trùng.
+      resetModuleRegistry();
+      const again = await call('GET', '/modules', undefined, admin);
+      expect(again.json.items).toHaveLength(res.json.items.length);
+      expect(again.json.items.find((m: any) => m.key === 'game.catch-quiz').versions).toHaveLength(1);
+    });
+
+    it('kiểm tra cấu hình chạy trong hộp cách ly, kể cả kiểm tra riêng của game', async () => {
+      const admin = await setupAdmin();
+      const t = (
+        await call('POST', '/templates', { name: 'OME', moduleKey: 'game.catch-quiz', source: { type: 'preset', presetId: 'ome-catch' } }, admin)
+      ).json.template;
+      expect(t.errors).toEqual({});
+      expect(t.config.quiz.questions).toHaveLength(6);
+      const broken = structuredClone(t.config);
+      broken.quiz.questions[0].answers.forEach((a: any) => (a.correct = true));
+      broken.rules.lives = 99;
+      const saved = await call('PUT', `/templates/${t.id}`, { name: 'OME', config: broken, baseRevision: t.revision }, admin);
+      expect(saved.json.template.errors['quiz.questions.0.answers']).toBe('Đánh dấu đúng một đáp án đúng');
+      expect(saved.json.template.errors['rules.lives']).toBe('Tối đa là 10');
     });
   });
 });

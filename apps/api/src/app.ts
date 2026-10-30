@@ -16,6 +16,7 @@ import { AppError } from './lib/errors';
 import { createS3Storage, s3ConfigFromEnv, type Storage } from './lib/storage';
 import { authRoutes } from './routes/auth';
 import { mediaRoutes } from './routes/media';
+import { moduleRoutes } from './routes/modules';
 import { previewLinkRoutes } from './routes/preview-links';
 import { rewriteMediaUrls } from './lib/media-urls';
 import { publicRoutes } from './routes/public';
@@ -24,7 +25,7 @@ import { userRoutes } from './routes/users';
 
 export type { AppDeps } from './context';
 
-export const API_VERSION = '0.5.0';
+export const API_VERSION = '0.6.0';
 
 let storageCache: Storage | null | undefined;
 
@@ -106,6 +107,7 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
   app.route('/admin/users', userRoutes(deps));
   app.route('/admin/media', mediaRoutes(deps));
   app.route('/admin/templates', templateRoutes(deps));
+  app.route('/admin/modules', moduleRoutes(deps));
   app.route('/admin/preview-links', previewLinkRoutes(deps));
 
   app.use('/public/*', withDb);

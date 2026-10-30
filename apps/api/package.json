@@ -1,6 +1,6 @@
 {
   "name": "@opes/api",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
+    "@jitl/quickjs-singlefile-mjs-release-sync": "^0.31.0",
     "@opes/contracts": "workspace:*",
     "@opes/db": "workspace:*",
     "@opes/module-sdk": "workspace:*",
@@ -20,6 +21,7 @@
     "drizzle-orm": ">=0.38.0 <1.0.0",
     "hash-wasm": "^4.12.0",
     "hono": "^4.7.0",
+    "quickjs-emscripten-core": "^0.31.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

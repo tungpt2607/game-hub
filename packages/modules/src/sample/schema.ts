@@ -20,3 +20,5 @@ export const sampleSchema: ModuleSchema<SampleConfig> = {
   ],
   scoring: { unit: 'điểm', higherIsBetter: true },
 };
+
+export default sampleSchema;

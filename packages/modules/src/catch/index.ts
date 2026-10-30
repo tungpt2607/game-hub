@@ -5,3 +5,5 @@ import { catchSchema } from './schema';
 
 /** Game Hứng quà: kéo giỏ hứng vật phẩm rơi (xem docs/02-chuan-module.md). */
 export const catchModule = defineModule<CatchConfig>({ ...catchSchema, Runtime: CatchRuntime });
+
+export default catchModule;

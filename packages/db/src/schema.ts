@@ -149,6 +149,67 @@ export const templateVersions = pgTable(
   (t) => [uniqueIndex('template_versions_template_version_idx').on(t.templateId, t.version)],
 );
 
+// ---------- Game (module) ----------
+
+/** Mô tả game đọc từ gói biên dịch (dạng JSON, không có hàm). */
+export interface GameModuleMeta {
+  key: string;
+  kind: 'game' | 'leaderboard' | 'reward';
+  version: string;
+  name: string;
+  description: string;
+  defaults: Record<string, unknown>;
+  screens: { id: string; label: string }[];
+  presets: { id: string; name: string; description?: string; config: Record<string, unknown> }[];
+  scoring: { unit: string; higherIsBetter: boolean } | null;
+}
+
+/**
+ * Game lưu trong cơ sở dữ liệu (Bước 7): mã nguồn các file theo chuẩn module và bản nháp đang sửa.
+ * Mỗi lần phát hành tạo một dòng trong game_module_versions; template ghi nhớ phiên bản nó dùng.
+ */
+export const gameModules = pgTable('game_modules', {
+  key: text('key').primaryKey(),
+  kind: text('kind').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  /** Bản nháp: mã nguồn (đường dẫn → nội dung) và gói đã biên dịch; trống nếu không có nháp. */
+  draftFiles: jsonb('draft_files').$type<Record<string, string>>(),
+  draftSchemaJs: text('draft_schema_js'),
+  draftRuntimeJs: text('draft_runtime_js'),
+  draftMeta: jsonb('draft_meta').$type<GameModuleMeta>(),
+  draftUpdatedAt: timestamp('draft_updated_at', { withTimezone: true }),
+  draftUpdatedBy: uuid('draft_updated_by').references(() => users.id, { onDelete: 'set null' }),
+  /** Phiên bản phát hành mới nhất (template mới dùng bản này). */
+  latestVersion: text('latest_version'),
+  /** true = nạp sẵn từ code của hệ thống. */
+  builtin: boolean('builtin').notNull().default(false),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+});
+
+export const gameModuleVersions = pgTable(
+  'game_module_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    moduleKey: text('module_key')
+      .notNull()
+      .references(() => gameModules.key, { onDelete: 'cascade' }),
+    version: text('version').notNull(),
+    files: jsonb('files').$type<Record<string, string>>().notNull(),
+    /** Gói mô tả: chạy trong hộp cách ly ở API để kiểm tra, chuẩn hóa cấu hình. */
+    schemaJs: text('schema_js').notNull(),
+    /** Gói chạy cho trình duyệt (CommonJS, React và module-sdk do nơi chạy cung cấp). */
+    runtimeJs: text('runtime_js').notNull(),
+    meta: jsonb('meta').$type<GameModuleMeta>().notNull(),
+    notes: text('notes'),
+    publishedBy: uuid('published_by').references(() => users.id, { onDelete: 'set null' }),
+    publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('game_module_versions_key_version_idx').on(t.moduleKey, t.version)],
+);
+
 // ---------- Link chơi thử ----------
 
 export const previewLinkMode = pgEnum('preview_link_mode', ['live', 'snapshot']);
