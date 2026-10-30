@@ -1,6 +1,6 @@
 {
   "name": "@opes/api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,6 +14,8 @@
     "@hono/node-server": "^1.14.0",
     "@opes/contracts": "workspace:*",
     "@opes/db": "workspace:*",
+    "@opes/module-sdk": "workspace:*",
+    "@opes/modules": "workspace:*",
     "aws4fetch": "^1.0.20",
     "drizzle-orm": ">=0.38.0 <1.0.0",
     "hash-wasm": "^4.12.0",

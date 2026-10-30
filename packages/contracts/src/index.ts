@@ -6,3 +6,4 @@ export * from './auth';
 export * from './error';
 export * from './health';
 export * from './media';
+export * from './templates';

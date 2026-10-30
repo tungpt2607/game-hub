@@ -1,7 +1,5 @@
 import type { ComponentType } from 'react';
-import type { Fields } from './fields';
-
-export type ModuleKind = 'game' | 'leaderboard' | 'reward';
+import type { ModuleSchema } from './meta';
 
 /** Chế độ chạy: `preview` = chơi thử, không kết nối gì; `live` = chiến dịch thật (Giai đoạn 2). */
 export type RunMode = 'preview' | 'live';
@@ -34,47 +32,11 @@ export interface RuntimeProps<Config> {
   storageKey?: string;
 }
 
-export interface ModuleScreen {
-  id: string;
-  label: string;
-}
-
-/** Bộ cấu hình mẫu có sẵn của module (ví dụ giao diện Tết, Trung thu). */
-export interface ModulePreset<Config> {
-  id: string;
-  name: string;
-  description?: string;
-  config: Config;
-}
-
-export interface ModuleDefinition<Config> {
-  /** Định danh duy nhất, ví dụ "game.catch". */
-  key: string;
-  kind: ModuleKind;
-  /** Semver, ví dụ "1.0.0". */
-  version: string;
-  /** Tên hiển thị (tiếng Việt). */
-  name: string;
-  description: string;
-  fields: Fields;
-  defaults: Config;
-  /** Các màn hình để nhảy tới khi xem trước; màn hình đầu tiên là màn hình mở đầu. */
-  screens: ModuleScreen[];
+export interface ModuleDefinition<Config> extends ModuleSchema<Config> {
   Runtime: ComponentType<RuntimeProps<Config>>;
-  /** Các mẫu có sẵn để tạo template nhanh. */
-  presets?: ModulePreset<Config>[];
-  /** Mô tả cách tính điểm (module game). */
-  scoring?: { unit: string; higherIsBetter: boolean };
 }
 
 /** Khai báo module; chỉ giúp suy kiểu `Config` từ `defaults`. */
 export function defineModule<Config>(def: ModuleDefinition<Config>): ModuleDefinition<Config> {
   return def;
-}
-
-const MODULE_KEY = /^(game|leaderboard|reward)\.[a-z][a-z0-9-]*$/;
-
-/** Kiểm tra định danh module có đúng dạng "<loại>.<tên>" và khớp với `kind`. */
-export function isValidModuleKey(key: string, kind: ModuleKind): boolean {
-  return MODULE_KEY.test(key) && key.startsWith(`${kind}.`);
 }

@@ -320,4 +320,133 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(files.size).toBe(1);
     });
   });
+
+  describe('thư viện template', () => {
+    async function create(cookie: string, body: Record<string, unknown>) {
+      return call('POST', '/templates', body, cookie);
+    }
+
+    it('tạo từ mặc định, mẫu có sẵn, cấu hình gửi lên và nhân bản', async () => {
+      const admin = await setupAdmin();
+      const a = await create(admin, { name: 'Mặc định', moduleKey: 'game.catch', source: { type: 'defaults' } });
+      expect(a.status).toBe(201);
+      expect(a.json.template.moduleName).toBe('Hứng quà');
+      expect(a.json.template.publishedVersion).toBe(0);
+      expect(a.json.template.hasUnpublishedChanges).toBe(true);
+      expect(a.json.template.errors).toEqual({});
+
+      const tet = await create(admin, {
+        name: 'Tết Sen',
+        brandName: 'Sữa Sen',
+        moduleKey: 'game.catch',
+        source: { type: 'preset', presetId: 'tet' },
+      });
+      expect(tet.json.template.config.content.title).toBe('Hứng lộc đầu xuân');
+
+      // Cấu hình thiếu trường được điền từ mặc định, khóa thừa bị bỏ.
+      const partial = await create(admin, {
+        name: 'Từ phòng thử',
+        moduleKey: 'game.catch',
+        source: { type: 'config', config: { content: { title: 'Thử' }, khongCo: 1 } },
+      });
+      expect(partial.json.template.config.content.title).toBe('Thử');
+      expect(partial.json.template.config.rules.lives).toBe(3);
+      expect(partial.json.template.config).not.toHaveProperty('khongCo');
+
+      const copy = await create(admin, { name: 'Bản sao', source: { type: 'duplicate', templateId: tet.json.template.id } });
+      expect(copy.json.template.config.content.title).toBe('Hứng lộc đầu xuân');
+      expect(copy.json.template.moduleKey).toBe('game.catch');
+
+      const bad = await create(admin, { name: 'X', moduleKey: 'game.khong-co', source: { type: 'defaults' } });
+      expect(bad.json.error.code).toBe('MODULE_NOT_FOUND');
+
+      const list = await call('GET', '/templates?q=sen', undefined, admin);
+      expect(list.json.items.map((i: any) => i.name).sort()).toEqual(['Tết Sen']);
+    });
+
+    it('lưu nháp được cả khi còn lỗi, nhưng công bố bị chặn cho tới khi sửa xong', async () => {
+      const admin = await setupAdmin();
+      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
+      const broken = structuredClone(t.config);
+      broken.content.title = '';
+      const saved = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'Game', config: broken, baseRevision: t.revision },
+        admin,
+      );
+      expect(saved.status).toBe(200);
+      expect(saved.json.template.errors['content.title']).toBe('Không được để trống');
+
+      const blocked = await call('POST', `/templates/${t.id}/publish`, { baseRevision: saved.json.template.revision }, admin);
+      expect(blocked.status).toBe(422);
+      expect(blocked.json.error.fields['content.title']).toBeTruthy();
+
+      broken.content.title = 'Đã sửa';
+      const fixed = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'Game', config: broken, baseRevision: saved.json.template.revision },
+        admin,
+      );
+      const published = await call('POST', `/templates/${t.id}/publish`, { baseRevision: fixed.json.template.revision }, admin);
+      expect(published.status).toBe(200);
+      expect(published.json.template.publishedVersion).toBe(1);
+      expect(published.json.template.hasUnpublishedChanges).toBe(false);
+      expect(published.json.template.publishedConfig.content.title).toBe('Đã sửa');
+      expect(published.json.template.versions[0].publishedByName).toBe('Quản trị 1');
+    });
+
+    it('lưu nháp không đổi bản đã công bố; khôi phục lịch sử vào bản nháp', async () => {
+      const admin = await setupAdmin();
+      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
+      const v1 = (await call('POST', `/templates/${t.id}/publish`, { baseRevision: t.revision }, admin)).json.template;
+
+      const draft = structuredClone(v1.config);
+      draft.content.title = 'Bản nháp mới';
+      const saved = (await call('PUT', `/templates/${t.id}`, { name: 'Game', config: draft, baseRevision: v1.revision }, admin)).json.template;
+      expect(saved.hasUnpublishedChanges).toBe(true);
+      expect(saved.publishedConfig.content.title).toBe('Hứng quà rinh điểm');
+
+      const v2 = (await call('POST', `/templates/${t.id}/publish`, { baseRevision: saved.revision }, admin)).json.template;
+      expect(v2.versions.map((v: any) => v.version)).toEqual([2, 1]);
+
+      const old = await call('GET', `/templates/${t.id}/versions/1`, undefined, admin);
+      expect(old.json.config.content.title).toBe('Hứng quà rinh điểm');
+
+      const restored = (await call('POST', `/templates/${t.id}/versions/1/restore`, { baseRevision: v2.revision }, admin)).json.template;
+      expect(restored.config.content.title).toBe('Hứng quà rinh điểm');
+      expect(restored.publishedConfig.content.title).toBe('Bản nháp mới');
+      expect(restored.hasUnpublishedChanges).toBe(true);
+    });
+
+    it('hai người cùng sửa: người lưu sau được báo xung đột thay vì ghi đè', async () => {
+      const admin = await setupAdmin();
+      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
+      const first = await call('PUT', `/templates/${t.id}`, { name: 'A', config: t.config, baseRevision: t.revision }, admin);
+      expect(first.status).toBe(200);
+      const second = await call('PUT', `/templates/${t.id}`, { name: 'B', config: t.config, baseRevision: t.revision }, admin);
+      expect(second.status).toBe(409);
+      expect(second.json.error.code).toBe('TEMPLATE_CONFLICT');
+    });
+
+    it('lưu trữ, khôi phục, và chỉ xóa hẳn được khi đã lưu trữ', async () => {
+      const admin = await setupAdmin();
+      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
+      expect((await call('DELETE', `/templates/${t.id}`, undefined, admin)).json.error.code).toBe('TEMPLATE_NOT_ARCHIVED');
+
+      await call('POST', `/templates/${t.id}/archive`, undefined, admin);
+      expect((await call('GET', '/templates', undefined, admin)).json.items).toHaveLength(0);
+      expect((await call('GET', '/templates?status=archived', undefined, admin)).json.items).toHaveLength(1);
+      const edit = await call('PUT', `/templates/${t.id}`, { name: 'X', config: t.config, baseRevision: t.revision }, admin);
+      expect(edit.json.error.code).toBe('TEMPLATE_ARCHIVED');
+
+      await call('POST', `/templates/${t.id}/unarchive`, undefined, admin);
+      expect((await call('GET', '/templates', undefined, admin)).json.items).toHaveLength(1);
+
+      await call('POST', `/templates/${t.id}/archive`, undefined, admin);
+      expect((await call('DELETE', `/templates/${t.id}`, undefined, admin)).status).toBe(204);
+      expect((await call('GET', `/templates/${t.id}`, undefined, admin)).status).toBe(404);
+    });
+  });
 });

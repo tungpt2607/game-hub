@@ -12,6 +12,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -78,7 +79,7 @@ export const auditLogs = pgTable(
 
 // ---------- Media ----------
 
-export const mediaKind = pgEnum('media_kind', ['image', 'audio']);
+export const mediaKind = pgEnum('media_kind', ['image', 'audio', 'font']);
 
 export const media = pgTable('media', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -102,14 +103,26 @@ export const templates = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
+    /** Ghi chú nội bộ. */
     description: text('description'),
+    /** Tên nhãn hàng gõ tay, để tìm và lọc (giai đoạn 2 thay bằng hồ sơ nhãn hàng). */
+    brandName: text('brand_name'),
     /** Ví dụ "game.catch". */
     moduleKey: text('module_key').notNull(),
     moduleVersion: text('module_version').notNull(),
-    /** Đã kiểm tra theo lược đồ của module trước khi lưu. */
+    /** Bản nháp: được chuẩn hóa theo lược đồ module, có thể còn lỗi (quyết định 81). */
     config: jsonb('config').$type<Record<string, unknown>>().notNull(),
-    /** Tăng mỗi lần lưu; link chơi thử "luôn mới nhất" luôn đọc bản mới nhất. */
+    /** Tăng mỗi lần lưu nháp; dùng để phát hiện hai người cùng sửa. */
     revision: integer('revision').notNull().default(1),
+    /** Bản đã công bố (link "luôn mới nhất" đọc bản này); trống nếu chưa công bố lần nào. */
+    publishedConfig: jsonb('published_config').$type<Record<string, unknown>>(),
+    publishedModuleVersion: text('published_module_version'),
+    /** Số lần đã công bố (= số phiên bản cao nhất trong template_versions). */
+    publishedVersion: integer('published_version').notNull().default(0),
+    /** Bản nháp ở revision nào thì được công bố; khác `revision` nghĩa là có thay đổi chưa công bố. */
+    publishedRevision: integer('published_revision'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    publishedBy: uuid('published_by').references(() => users.id, { onDelete: 'set null' }),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
@@ -117,6 +130,23 @@ export const templates = pgTable(
     archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
   (t) => [index('templates_module_key_idx').on(t.moduleKey)],
+);
+
+/** Lịch sử các lần công bố; xem lại và khôi phục vào bản nháp (quyết định 78). */
+export const templateVersions = pgTable(
+  'template_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => templates.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
+    moduleVersion: text('module_version').notNull(),
+    config: jsonb('config').$type<Record<string, unknown>>().notNull(),
+    publishedBy: uuid('published_by').references(() => users.id, { onDelete: 'set null' }),
+    publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('template_versions_template_version_idx').on(t.templateId, t.version)],
 );
 
 // ---------- Link chơi thử ----------

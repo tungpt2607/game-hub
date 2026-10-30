@@ -1,4 +1,4 @@
-import { field, type EmojiOrImage, type FontValue, type MediaRef } from '@opes/module-sdk';
+import { field, type EmojiOrImage, type FontValue, type MediaRef } from '@opes/module-sdk/core';
 
 export interface SampleItem extends Record<string, unknown> {
   symbol: EmojiOrImage;
