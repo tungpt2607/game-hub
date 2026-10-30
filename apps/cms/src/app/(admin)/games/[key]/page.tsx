@@ -37,7 +37,10 @@ import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import PublishIcon from '@mui/icons-material/Publish';
+import RedoIcon from '@mui/icons-material/Redo';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import UndoIcon from '@mui/icons-material/Undo';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import { GAME_PATH, compareVersions, type GameModuleDetail, type GameVersionDetail } from '@opes/contracts';
 import type { GameSource, SerializedSchema } from '@opes/module-sdk';
@@ -496,7 +499,26 @@ export default function GameEditorPage() {
   const code = (
     <Stack spacing={1.5}>
       <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-        <Box sx={{ px: 1.5, py: 0.75, bgcolor: 'action.hover', fontFamily: 'monospace', fontSize: 13 }}>{selected}</Box>
+        <Stack direction="row" alignItems="center" sx={{ pl: 1.5, pr: 0.5, py: 0.25, bgcolor: 'action.hover' }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0, fontFamily: 'monospace', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selected}
+          </Box>
+          <Tooltip title={t('cms.games.undo')}>
+            <IconButton size="small" onClick={() => editor.current?.undo()} aria-label={t('cms.games.undo')}>
+              <UndoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('cms.games.redo')}>
+            <IconButton size="small" onClick={() => editor.current?.redo()} aria-label={t('cms.games.redo')}>
+              <RedoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('cms.games.search')}>
+            <IconButton size="small" onClick={() => editor.current?.toggleSearch()} aria-label={t('cms.games.search')}>
+              <SearchIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
         {files[selected] !== undefined && (
           <CodeEditor
             path={selected}
