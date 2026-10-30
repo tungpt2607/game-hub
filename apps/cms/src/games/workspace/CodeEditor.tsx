@@ -10,7 +10,7 @@ import { closeSearchPanel, openSearchPanel, searchPanelOpen } from '@codemirror/
 import { EditorState, type Extension } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, keymap } from '@codemirror/view';
-import { extOf } from './zip';
+import { extOf } from '../zip';
 
 /**
  * Trình sửa code (CodeMirror 6, đóng gói sẵn trong CMS, không tải gì từ mạng ngoài).

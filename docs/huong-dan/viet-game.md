@@ -110,10 +110,11 @@ thành:
 
 1. Vào CMS → **Game** → bấm **Tải lên game mới (.zip)** → chọn `hoa-mai.zip`.
 2. Chờ vài giây. CMS biên dịch code, tải ảnh lên kho rồi mở màn sửa game **Chạm hoa mai**.
-3. Màn sửa game có 3 cột:
-   - **trái**: danh sách file code và file kèm (ảnh);
-   - **giữa**: code của file đang chọn, bên dưới là kết quả biên dịch;
-   - **phải**: khung điện thoại chạy thử game.
+3. Màn sửa game giống VS Code:
+   - **cây thư mục** bên trái: mọi file của game, gồm cả thư mục `assets/`. Trên điện thoại, bấm nút ☰ để mở cây thư mục;
+   - **hàng tab** phía trên: các file đang mở. Tab chữ nghiêng là tab xem tạm, bấm đúp để giữ lại. Dấu ● là file đã sửa mà chưa lưu;
+   - **khung code** ở giữa, bên dưới là kết quả biên dịch;
+   - **khung điện thoại** bên phải để chạy thử game (trên điện thoại là tab **Chạy thử**).
 
 Nếu CMS báo lỗi thay vì mở màn sửa game:
 
@@ -135,7 +136,7 @@ Nếu khung báo `Không có file assets/hoa-mai.png`, tên ảnh trong `presets
 
 Ví dụ: thêm dòng chữ nhỏ dưới nút "Bắt đầu" để người làm template tự nhập nội dung, như "Chương trình đến hết 15/02".
 
-1. Ở cột trái, bấm `config.ts`. Tìm dòng:
+1. Ở cây thư mục, bấm `config.ts`. Tìm dòng:
 
 ```ts
   content: { title: string; intro: string; startLabel: string; logo: MediaRef | null };
@@ -177,9 +178,23 @@ và thêm ngay bên dưới:
    - Nếu hiện lỗi màu đỏ, bấm vào chỗ ghi `tên-file:dòng:cột` để nhảy tới chỗ sai.
 6. Bấm **Lưu nháp**. Bản nháp được lưu lại; đồng nghiệp mở game này cũng thấy.
 
-Phím tắt trong khung code: **Ctrl+F** để tìm và thay, **Ctrl+Z** để hoàn tác, **Ctrl+Shift+Z** để huỷ hoàn tác. Trên điện thoại không có phím tắt: dùng 3 nút **↶ Hoàn tác**, **↷ Huỷ hoàn tác** và **🔍 Tìm** ở thanh tên file phía trên khung code.
+Phím tắt:
 
-Muốn thêm hay đổi ảnh ngay trong CMS: ở mục **File kèm** bên trái bấm **+** để tải ảnh lên. Nút chép bên cạnh mỗi ảnh chép sẵn đoạn `asset('…')` để dán vào code.
+| Phím | Tác dụng |
+|---|---|
+| Ctrl+S | Lưu nháp |
+| Ctrl+P | Tìm và mở nhanh một file theo tên |
+| Ctrl+F | Tìm và thay trong file đang mở |
+| Ctrl+Z / Ctrl+Shift+Z | Hoàn tác / Huỷ hoàn tác |
+| F2 / Delete | Đổi tên / Xóa mục đang chọn trong cây thư mục |
+
+Trên điện thoại không có phím tắt: dùng 3 nút **↶ Hoàn tác**, **↷ Huỷ hoàn tác** và **🔍 Tìm** ở bên phải hàng tab.
+
+**Quản lý file trong cây thư mục** (chuột phải vào một mục, hoặc bấm nút ⋯ bên cạnh mục đó):
+- **Tạo file code**, **Tạo thư mục**, **Tải file lên**, **Đổi tên**, **Di chuyển tới…**, **Chép đường dẫn**, **Xóa**.
+- Trên máy tính có thể kéo một file sang thư mục khác. Kéo ảnh từ máy tính thả vào thư mục trong `assets/` là tải ảnh lên đúng chỗ đó.
+- Đổi tên hoặc di chuyển một file mà code khác đang trỏ tới (import hoặc `asset('…')`): CMS hỏi **Cập nhật các chỗ trỏ tới?** Bấm **Cập nhật** thì code được sửa theo.
+- Bấm vào một ảnh để xem trước. Ở dưới ảnh có nút chép sẵn đoạn `asset('…')` để dán vào code.
 
 ### Bước 9. Sửa logic game (luật chơi)
 
@@ -196,7 +211,7 @@ Logic của game nằm trong `Runtime.tsx`. Trước khi sửa, xem file này g�
 
 #### 9a. Sửa nhanh: cho vật phẩm hiện dày hơn
 
-1. Ở cột trái, bấm `Runtime.tsx`. Tìm dòng:
+1. Ở cây thư mục, bấm `Runtime.tsx`. Tìm dòng:
 
 ```ts
 const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = { easy: 700, normal: 550, hard: 420 };
