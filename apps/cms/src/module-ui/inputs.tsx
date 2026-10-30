@@ -228,7 +228,7 @@ export function MediaInput({
           }}
         >
           {value && kind === 'image' && (
-            <img src={value.url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            <img src={value.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           )}
           {value && kind === 'audio' && <AudiotrackOutlined color="action" />}
         </Box>

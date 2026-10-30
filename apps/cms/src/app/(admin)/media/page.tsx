@@ -29,6 +29,15 @@ import { precheck, uploadFile } from '../../../lib/media-upload';
 
 type KindFilter = 'all' | 'image' | 'audio';
 
+/** Ảnh luôn nằm gọn trong ô vuông (Safari tính sai max-height phần trăm trong ô aspect-ratio). */
+const FIT_IMAGE = {
+  position: 'absolute',
+  inset: 8,
+  width: 'calc(100% - 16px)',
+  height: 'calc(100% - 16px)',
+  objectFit: 'contain',
+} as const;
+
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav';
 
 function formatSize(bytes: number) {
@@ -237,9 +246,11 @@ export default function MediaPage() {
             <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box
                 sx={{
+                  position: 'relative',
                   aspectRatio: '1 / 1',
                   display: 'grid',
                   placeItems: 'center',
+                  overflow: 'hidden',
                   bgcolor: 'action.hover',
                   // Nền ô vuông để thấy rõ ảnh trong suốt.
                   backgroundImage:
@@ -255,7 +266,7 @@ export default function MediaPage() {
                     src={item.url}
                     alt={item.originalName ?? ''}
                     loading="lazy"
-                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    style={FIT_IMAGE}
                   />
                 ) : (
                   <audio controls preload="none" src={item.url} style={{ width: '100%' }} />

@@ -94,13 +94,17 @@ async function prepare(file: File): Promise<Prepared> {
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
   const target = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
-  const blob = await canvasToBlob(canvas, target, target === 'image/jpeg' ? 0.85 : 0.9);
-  // Trình duyệt không hỗ trợ WebP sẽ trả về PNG; khi đó hoặc khi nén không nhỏ hơn thì giữ file gốc.
-  if (!blob || blob.type !== target || (scale === 1 && blob.size >= file.size)) return base;
+  let blob = await canvasToBlob(canvas, target, target === 'image/jpeg' ? 0.85 : 0.9);
+  // Safari không tạo được WebP và trả về PNG. Nếu đã thu nhỏ thì vẫn dùng bản PNG đó
+  // (đúng kích thước tối đa); chỉ nén lại mà không thu nhỏ thì giữ file gốc.
+  if (blob && blob.type !== target && !(blob.type === 'image/png' && scale < 1)) blob = null;
+  if (!blob || blob.size > MEDIA_RULES.image.maxBytes || (scale === 1 && blob.size >= file.size)) return base;
+  const mime = blob.type;
+  const ext = mime === 'image/webp' ? 'webp' : mime === 'image/png' ? 'png' : 'jpg';
   return {
     blob,
-    mime: target,
-    fileName: target === file.type ? file.name : renameExt(file.name, target === 'image/webp' ? 'webp' : 'jpg'),
+    mime,
+    fileName: mime === file.type ? file.name : renameExt(file.name, ext),
     width: canvas.width,
     height: canvas.height,
     durationMs: null,

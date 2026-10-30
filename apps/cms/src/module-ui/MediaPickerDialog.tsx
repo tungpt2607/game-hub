@@ -180,9 +180,11 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
                 >
                   <Box
                     sx={{
+                      position: 'relative',
                       aspectRatio: '1 / 1',
                       display: 'grid',
                       placeItems: 'center',
+                      overflow: 'hidden',
                       bgcolor: 'action.hover',
                       backgroundImage:
                         kind === 'image'
@@ -197,7 +199,13 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
                         src={item.url}
                         alt=""
                         loading="lazy"
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        style={{
+                          position: 'absolute',
+                          inset: 4,
+                          width: 'calc(100% - 8px)',
+                          height: 'calc(100% - 8px)',
+                          objectFit: 'contain',
+                        }}
                       />
                     ) : (
                       <AudiotrackOutlined color="action" fontSize="large" />
