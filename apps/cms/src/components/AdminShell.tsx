@@ -26,6 +26,7 @@ import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleOutlined from '@mui/icons-material/PeopleOutlined';
 import ScienceOutlined from '@mui/icons-material/ScienceOutlined';
+import SportsEsportsOutlined from '@mui/icons-material/SportsEsportsOutlined';
 import type { MeResponse, User } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { api, handleAuthError } from '../lib/api';
@@ -48,6 +49,7 @@ const NAV: NavItem[] = [
     href: '/templates',
     icon: <ExtensionOutlined />,
   },
+  { label: t('cms.nav.games'), href: '/games', icon: <SportsEsportsOutlined /> },
   { label: t('cms.nav.playground'), href: '/playground', icon: <ScienceOutlined /> },
   { label: t('cms.nav.media'), href: '/media', icon: <ImageOutlined /> },
   { label: t('cms.nav.users'), href: '/users', icon: <PeopleOutlined /> },

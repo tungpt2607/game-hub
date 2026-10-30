@@ -47,8 +47,36 @@ function loaderFor(path) {
   return 'js';
 }
 
+/** Tên module ảo chứa địa chỉ các file trong thư mục assets/ của game. */
+export const ASSETS_MODULE = 'opes:assets';
+
+/**
+ * Mã của module ảo `opes:assets`:
+ *   import assets, { asset } from 'opes:assets';
+ *   assets['ome/background.webp']        // địa chỉ file
+ *   asset('ome/background.webp', 'Nền')   // MediaRef dùng được trong cấu hình (ảnh, âm thanh, font)
+ */
+function assetsModule(assets) {
+  const urls = {};
+  const ids = {};
+  for (const [path, a] of Object.entries(assets ?? {})) {
+    urls[path] = a.url;
+    ids[path] = `asset:${(a.sha256 ?? '').slice(0, 12)}/${path}`;
+  }
+  return `
+const urls = ${JSON.stringify(urls)};
+const ids = ${JSON.stringify(ids)};
+export default urls;
+export function asset(path, name) {
+  const url = urls[path];
+  if (url === undefined) throw new Error('Không có file assets/' + path);
+  return { id: ids[path], url, name: name === undefined ? path.split('/').pop() : name };
+}
+`;
+}
+
 /** Plugin đọc file từ bộ nhớ (map đường dẫn → nội dung) thay vì ổ đĩa. */
-function virtualFiles(files, { externals, sdkPrefix }) {
+function virtualFiles(files, { externals, sdkPrefix, assets }) {
   const find = (path) => {
     for (const ext of EXTS) {
       const candidate = normalizePath(path + ext);
@@ -60,6 +88,7 @@ function virtualFiles(files, { externals, sdkPrefix }) {
     name: 'opes-virtual-files',
     setup(build) {
       build.onResolve({ filter: /.*/ }, (args) => {
+        if (args.path === ASSETS_MODULE) return { path: ASSETS_MODULE, namespace: 'opes-assets' };
         if (externals.includes(args.path)) return { path: args.path, external: true };
         if (args.path === SDK_CORE && sdkPrefix) {
           const found = find(`${sdkPrefix}/core`);
@@ -79,6 +108,11 @@ function virtualFiles(files, { externals, sdkPrefix }) {
           ],
         };
       });
+      build.onLoad({ filter: /.*/, namespace: 'opes-assets' }, () => ({
+        contents: assetsModule(assets),
+        loader: 'js',
+        resolveDir: '/',
+      }));
       build.onLoad({ filter: /.*/, namespace: 'opes' }, (args) => ({
         contents: files[args.path],
         loader: loaderFor(args.path),
@@ -122,23 +156,34 @@ const SCHEMA_BANNER =
  * @param {{ errors?: Array<{ text: string, location?: { file: string, line: number, column: number } | null }> }} failure
  */
 export function formatBuildErrors(failure) {
+  return buildErrors(failure).map((e) => (e.file ? `${e.file}:${e.line}:${e.column} ${e.text}` : e.text));
+}
+
+/**
+ * Lỗi biên dịch có vị trí, để trình sửa code nhảy tới đúng dòng.
+ * @returns {Array<{ file: string | null, line: number, column: number, text: string }>}
+ */
+export function buildErrors(failure) {
   const errors = failure?.errors ?? [];
-  if (!errors.length) return [String(failure?.message ?? failure)];
-  return errors.map((e) => {
-    const loc = e.location ? `${e.location.file.replace(/^opes:/, '')}:${e.location.line}:${e.location.column} ` : '';
-    return `${loc}${e.text}`;
-  });
+  if (!errors.length) return [{ file: null, line: 0, column: 0, text: String(failure?.message ?? failure) }];
+  return errors.map((e) => ({
+    file: e.location ? e.location.file.replace(/^opes:/, '') : null,
+    line: e.location?.line ?? 0,
+    column: e.location?.column ?? 0,
+    text: e.text,
+  }));
 }
 
 /**
  * Biên dịch một game.
  * @param {any} esbuild Đối tượng esbuild (gói `esbuild` trong Node, `esbuild-wasm` trong trình duyệt).
- * @param {{ files: Record<string, string>, sdkCore: Record<string, string> }} input
+ * @param {{ files: Record<string, string>, sdkCore: Record<string, string>, assets?: Record<string, { url: string, sha256?: string }> }} input
  *   files: mã nguồn của game, khóa là đường dẫn tương đối (ví dụ "config.ts", "Runtime.tsx").
- *   sdkCore: các file lõi của module-sdk (core.ts, fields.ts, validation.ts, meta.ts).
+ *   sdkCore: các file lõi của module-sdk (core.ts và các file nó xuất lại).
+ *   assets: file trong thư mục assets/ của game (đường dẫn bỏ "assets/" → địa chỉ), dùng qua `opes:assets`.
  * @returns {Promise<{ schemaJs: string, runtimeJs: string }>}
  */
-export async function bundleGame(esbuild, { files, sdkCore }) {
+export async function bundleGame(esbuild, { files, sdkCore, assets }) {
   const source = {};
   for (const [path, content] of Object.entries(files)) source[normalizePath(path)] = content;
   for (const required of ['schema', 'index']) {
@@ -157,7 +202,9 @@ export async function bundleGame(esbuild, { files, sdkCore }) {
     format: 'iife',
     target: 'es2020',
     banner: { js: SCHEMA_BANNER },
-    plugins: [virtualFiles({ ...source, ...sdk, '__schema_entry.ts': SCHEMA_ENTRY }, { externals: [], sdkPrefix: '__sdk' })],
+    plugins: [
+      virtualFiles({ ...source, ...sdk, '__schema_entry.ts': SCHEMA_ENTRY }, { externals: [], sdkPrefix: '__sdk', assets }),
+    ],
   });
 
   const runtime = await esbuild.build({
@@ -165,7 +212,7 @@ export async function bundleGame(esbuild, { files, sdkCore }) {
     entryPoints: ['__runtime_entry.ts'],
     format: 'cjs',
     target: 'es2020',
-    plugins: [virtualFiles({ ...source, '__runtime_entry.ts': RUNTIME_ENTRY }, { externals: RUNTIME_EXTERNALS })],
+    plugins: [virtualFiles({ ...source, '__runtime_entry.ts': RUNTIME_ENTRY }, { externals: RUNTIME_EXTERNALS, assets })],
   });
 
   return { schemaJs: schema.outputFiles[0].text, runtimeJs: runtime.outputFiles[0].text };

@@ -1,5 +1,6 @@
 /**
- * Biên dịch các game có sẵn trong src/ thành gói để nạp vào cơ sở dữ liệu (bundles/builtin.json).
+ * Biên dịch các game có sẵn trong src/ thành gói để nạp vào cơ sở dữ liệu (bundles/builtin.json), và
+ * chép lõi module-sdk (bundles/sdk-core.json) cho trình biên dịch trong CMS.
  * Chạy: pnpm --filter @opes/modules bundle  (turbo tự chạy trước typecheck/test/build của gói phụ thuộc).
  */
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -52,4 +53,6 @@ for (const game of GAMES) {
 }
 mkdirSync(path.join(pkg, 'bundles'), { recursive: true });
 writeFileSync(path.join(pkg, 'bundles/builtin.json'), JSON.stringify(out));
+// Lõi module-sdk dạng mã nguồn, để CMS biên dịch game ngay trong trình duyệt (Bước 7c).
+writeFileSync(path.join(pkg, 'bundles/sdk-core.json'), JSON.stringify(sdkCore));
 console.log(`Đã biên dịch ${out.length} game vào bundles/builtin.json`);

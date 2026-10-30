@@ -12,6 +12,8 @@ coverage/
 
 # Tài nguyên mẫu module được chép khi build (nguồn: packages/modules/assets)
 apps/*/public/module-assets/
+# Trình biên dịch game trong trình duyệt của CMS (chép từ gói esbuild-wasm khi build)
+apps/cms/public/esbuild.wasm
 
 # Gói game biên dịch từ packages/modules/src (pnpm --filter @opes/modules bundle)
 packages/modules/bundles/
