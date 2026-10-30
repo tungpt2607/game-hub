@@ -18,11 +18,11 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import type { TemplateDetail, TemplateSource, TemplateSummary } from '@opes/contracts';
-import { MODULES } from '@opes/modules';
 import { t } from '@opes/i18n';
 import { api, ApiRequestError, handleAuthError } from '../lib/api';
 import { readPlaygroundConfig } from './playground-storage';
 import { TemplateThumb } from './TemplateThumb';
+import { useGameModules } from './useGame';
 
 export type CreateMode =
   | { type: 'new' }
@@ -45,7 +45,8 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
   const [name, setName] = useState('');
   const [brandName, setBrandName] = useState('');
   const [note, setNote] = useState('');
-  const [moduleKey, setModuleKey] = useState(MODULES[0]?.key ?? '');
+  const { modules } = useGameModules();
+  const [moduleKey, setModuleKey] = useState('');
   const [choiceId, setChoiceId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -70,10 +71,11 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
     // Chỉ đặt lại khi mở hộp; `mode` có thể là object mới ở mỗi lần render của trang cha.
   }, [open]);
 
-  const mod = MODULES.find((m) => m.key === moduleKey);
+  const mod = modules?.find((m) => m.key === moduleKey) ?? (moduleKey ? undefined : modules?.[0]);
+  const selectedKey = mod?.key ?? moduleKey;
   useEffect(() => {
-    if (open && mode.type === 'new') setPlayground(readPlaygroundConfig(moduleKey));
-  }, [open, mode.type, moduleKey]);
+    if (open && mode.type === 'new' && selectedKey) setPlayground(readPlaygroundConfig(selectedKey));
+  }, [open, mode.type, selectedKey]);
 
   const choices: Choice[] =
     mode.type === 'new' && mod
@@ -82,13 +84,13 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
             id: `preset:${p.id}`,
             title: p.name,
             subtitle: p.description,
-            config: p.config as Record<string, unknown>,
+            config: p.config,
             source: { type: 'preset', presetId: p.id } as TemplateSource,
           })),
           {
             id: 'defaults',
             title: t('cms.templates.fromDefaults'),
-            config: mod.defaults as Record<string, unknown>,
+            config: mod.defaults,
             source: { type: 'defaults' },
           },
           ...(playground
@@ -121,7 +123,7 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
     try {
       const res = await api<{ template: TemplateDetail }>('/templates', {
         method: 'POST',
-        body: { name, brandName, note, moduleKey: mode.type === 'duplicate' ? undefined : moduleKey, source },
+        body: { name, brandName, note, moduleKey: mode.type === 'duplicate' ? undefined : selectedKey, source },
       });
       router.push(`/templates/${res.template.id}`);
     } catch (err) {
@@ -183,11 +185,11 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
                 <TextField
                   select
                   label={t('cms.templates.module')}
-                  value={moduleKey}
+                  value={modules ? selectedKey : ''}
                   onChange={(e) => setModuleKey(e.target.value)}
                   sx={{ maxWidth: 320 }}
                 >
-                  {MODULES.map((m) => (
+                  {(modules ?? []).map((m) => (
                     <MenuItem key={m.key} value={m.key}>
                       {m.name}
                     </MenuItem>

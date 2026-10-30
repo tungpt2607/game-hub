@@ -188,3 +188,25 @@ body {
   font-size: 11px;
   pointer-events: none;
 }
+
+/* Khung chạy game cho CMS (/embed). */
+.embed-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+.embed-message {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background: #fff;
+  color: #b42318;
+  font-size: 14px;
+}

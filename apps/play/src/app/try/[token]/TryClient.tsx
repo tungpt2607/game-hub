@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { TryResponse } from '@opes/contracts';
-import { createSandboxHost } from '@opes/module-sdk';
-import { getModule } from '@opes/modules';
+import { createSandboxHost, type ModuleDefinition } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
+import { loadGame } from '../../../lib/load-game';
 
 type State =
   | { kind: 'loading' }
@@ -92,15 +92,41 @@ function PasswordForm({ token, title, onUnlocked }: { token: string; title: stri
   );
 }
 
-function Game({ token, moduleKey, config, title }: { token: string; moduleKey: string; config: Record<string, unknown>; title: string }) {
-  const mod = getModule(moduleKey);
+type GameState = { kind: 'loading' } | { kind: 'ready'; mod: ModuleDefinition<unknown> } | { kind: 'error' };
+
+function Game({
+  token,
+  moduleKey,
+  moduleVersion,
+  config,
+  title,
+}: {
+  token: string;
+  moduleKey: string;
+  moduleVersion: string;
+  config: Record<string, unknown>;
+  title: string;
+}) {
+  const [game, setGame] = useState<GameState>({ kind: 'loading' });
   const host = useMemo(() => createSandboxHost(), []);
   const [muted, setMuted] = useState(false);
   useEffect(() => {
     document.title = title;
   }, [title]);
-  if (!mod) return <Message title={t('play.try.notPublishedTitle')} text={t('play.try.notPublishedText')} />;
-  const Runtime = mod.Runtime;
+  useEffect(() => {
+    let alive = true;
+    setGame({ kind: 'loading' });
+    loadGame(moduleKey, moduleVersion).then(
+      (mod) => alive && setGame({ kind: 'ready', mod }),
+      () => alive && setGame({ kind: 'error' }),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [moduleKey, moduleVersion]);
+  if (game.kind === 'loading') return <Loading />;
+  if (game.kind === 'error') return <Message title={t('play.try.gameErrorTitle')} text={t('play.try.gameErrorText')} />;
+  const Runtime = game.mod.Runtime;
   return (
     <div className="game-backdrop">
       <div className="game-frame">
@@ -120,6 +146,17 @@ function Game({ token, moduleKey, config, title }: { token: string; moduleKey: s
   );
 }
 
+function Loading() {
+  return (
+    <main className="screen">
+      <div className="card" role="status" aria-live="polite">
+        <div className="spinner" aria-hidden="true" />
+        <h1>{t('play.try.preparing')}</h1>
+      </div>
+    </main>
+  );
+}
+
 export function TryClient({ token }: { token: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
 
@@ -132,22 +169,21 @@ export function TryClient({ token }: { token: string }) {
     void load();
   }, [load]);
 
-  if (state.kind === 'loading') {
-    return (
-      <main className="screen">
-        <div className="card" role="status" aria-live="polite">
-          <div className="spinner" aria-hidden="true" />
-          <h1>{t('play.try.preparing')}</h1>
-        </div>
-      </main>
-    );
-  }
+  if (state.kind === 'loading') return <Loading />;
   if (state.kind === 'network') return <Message title={t('play.try.networkTitle')} text={t('play.try.network')} />;
 
   const data = state.data;
   switch (data.status) {
     case 'ok':
-      return <Game token={token} moduleKey={data.moduleKey} config={data.config} title={data.title} />;
+      return (
+        <Game
+          token={token}
+          moduleKey={data.moduleKey}
+          moduleVersion={data.moduleVersion}
+          config={data.config}
+          title={data.title}
+        />
+      );
     case 'password_required':
       return <PasswordForm token={token} title={data.title} onUnlocked={() => void load()} />;
     case 'expired':

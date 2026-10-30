@@ -26,6 +26,12 @@ Quyền được kiểm tra **ở API** cho mọi lời gọi; CMS chỉ ẩn n�
 - Khóa tạm 15 phút sau 5 lần sai mật khẩu liên tiếp.
 - Sẵn chỗ cho đăng nhập Google Workspace của OPES ở giai đoạn sau.
 
+## Code game lưu trong cơ sở dữ liệu (Bước 7)
+
+- **Ở API**: chỉ chạy gói mô tả của game (kiểm tra và chuẩn hóa cấu hình) trong hộp cách ly QuickJS: không mạng, không ổ đĩa, không biến môi trường; tối đa 64MB và 2 giây mỗi lần.
+- **Ở trình duyệt**: gói chạy của game chỉ chạy trên tên miền trang chơi. CMS xem trước và kiểm tra form qua iframe `/embed` của trang chơi, trao đổi bằng `postMessage`, nên code game không đọc được cookie hay phiên đăng nhập CMS. Iframe có `sandbox` (không điều hướng được trang CMS); trang `/embed` chỉ cho tên miền CMS nhúng (`frame-ancestors`, đặt bằng `CMS_PUBLIC_URL`) và chỉ nhận lệnh từ tên miền đó.
+- Game chỉ dùng được React và `@opes/module-sdk`; thư viện khác bị từ chối khi biên dịch và khi chạy.
+
 ## Phiên người chơi (không đăng nhập) [GĐ2]
 
 - Cookie phiên ký bằng `SESSION_SECRET`, chỉ chứa `sessionId` và `campaignId`.

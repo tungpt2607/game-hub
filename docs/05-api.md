@@ -10,7 +10,7 @@ Mọi endpoint nằm dưới `/api`. Dữ liệu vào/ra là JSON, mô tả bằ
 
 ## Công khai: trang người chơi (`/api/public`)
 
-Giai đoạn 1 chỉ có hai endpoint `/try/...`; các endpoint `/campaigns/...` là **[GĐ2]**.
+Giai đoạn 1 có các endpoint `/try/...` và `/modules/...`; các endpoint `/campaigns/...` là **[GĐ2]**.
 
 Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu tiên).
 
@@ -28,8 +28,9 @@ Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu ti
 | POST | `/campaigns/:slug/events` | Ghi sự kiện cho báo cáo (gom nhiều sự kiện một lần) |
 | GET | `/try/:token` | `{ status: 'ok', moduleKey, moduleVersion, title, config }`; hoặc `password_required` (chỉ kèm tiêu đề), `not_found`, `disabled` (tắt link hoặc template đã lưu trữ), `expired`, `not_published`. Mỗi lần trả `ok` tăng lượt mở. Bật `MEDIA_PROXY` thì URL media (cả ở API công khai lẫn API quản trị) đổi thành `/media/...` trên tên miền trang đang mở |
 | POST | `/try/:token/unlock` | Gửi mật khẩu; đúng thì đặt cookie mở khóa cho link này trong 30 ngày (đổi mật khẩu thì cookie cũ hết tác dụng). Sai quá 10 lần/15 phút mỗi IP thì tạm khóa |
+| GET | `/modules/:key/:version/runtime.js` | Gói chạy của một phiên bản game (lưu trong cơ sở dữ liệu). Phiên bản đã phát hành không đổi nên được lưu đệm 1 năm (`immutable`) |
 
-Đây là hai lời gọi duy nhất của trang chơi thử. Sau khi tải cấu hình, game chạy hoàn toàn trong trình duyệt.
+Trang chơi thử tải cấu hình qua `/try/:token`, rồi tải gói chạy đúng phiên bản game qua `/modules/...`. Sau đó game chạy hoàn toàn trong trình duyệt.
 
 ## CMS (`/api/admin`)
 
@@ -41,8 +42,8 @@ Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiể
 | Người dùng | `GET/POST /users`, `PATCH /users/:id` | admin |
 | Media | `POST /media/upload-url` (xin link tải lên trực tiếp vào kho S3), `POST /media/:id/complete` | operator |
 | Nhãn hàng | `GET/POST /brands`, `GET/PATCH /brands/:id` | operator |
-| Module | `GET /modules` (danh mục module, lược đồ, mặc định) | operator |
-| Template | `GET /templates?status=active\|archived&q=`, `POST /templates` (nguồn: `defaults`, `preset`, `config`, `duplicate`), `GET /templates/:id`, `PUT /templates/:id` (lưu nháp, kèm `baseRevision`; 409 nếu người khác vừa lưu), `POST /templates/:id/publish` (422 nếu còn lỗi), `GET /templates/:id/versions/:n`, `POST /templates/:id/versions/:n/restore`, `POST /templates/:id/archive`, `POST /templates/:id/unarchive`, `DELETE /templates/:id` (chỉ khi đã lưu trữ) | admin (GĐ1) |
+| Module | `GET /modules` (danh sách game trong cơ sở dữ liệu, các phiên bản, mặc định và mẫu của bản mới nhất), `GET /modules/host` (địa chỉ khung chạy game `/embed` trên trang chơi) | admin (GĐ1) |
+| Template | `GET /templates?status=active\|archived&q=`, `POST /templates` (nguồn: `defaults`, `preset`, `config`, `duplicate`), `GET /templates/:id`, `PUT /templates/:id` (lưu nháp, kèm `baseRevision`; 409 nếu người khác vừa lưu), `POST /templates/:id/publish` (422 nếu còn lỗi), `POST /templates/:id/upgrade` (nâng bản nháp lên phiên bản game mới nhất), `GET /templates/:id/versions/:n`, `POST /templates/:id/versions/:n/restore`, `POST /templates/:id/archive`, `POST /templates/:id/unarchive`, `DELETE /templates/:id` (chỉ khi đã lưu trữ) | admin (GĐ1) |
 | Link chơi thử | `GET /preview-links?templateId=`, `POST /preview-links?templateId=` (luôn mới nhất / bản chụp từ bản công bố hoặc bản nháp, mã ngẫu nhiên hoặc tự đặt, mật khẩu, hạn), `PATCH /preview-links/:id` (tên, mật khẩu, hạn, tắt/bật), `DELETE /preview-links/:id` | admin (GĐ1) |
 | Kho quà | `GET/POST /prizes`, `PATCH /prizes/:id`, `POST /prizes/:id/adjust` | admin |
 | Chiến dịch | `GET/POST /campaigns`, `GET/PATCH /campaigns/:id` (sửa bản nháp), `POST /campaigns/:id/duplicate` | operator |

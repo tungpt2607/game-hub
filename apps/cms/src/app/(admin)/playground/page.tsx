@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import LinearProgress from '@mui/material/LinearProgress';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -18,14 +19,14 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
-import { normalizeConfig, validateConfig } from '@opes/module-sdk';
-import { MODULES } from '@opes/modules';
+import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { PreviewFrame } from '../../../module-ui/PreviewFrame';
 import { SchemaForm } from '../../../module-ui/SchemaForm';
 import { CreateTemplateDialog } from '../../../module-ui/CreateTemplateDialog';
 import { readPlayground, writePlayground } from '../../../module-ui/playground-storage';
+import { useGameForm, useGameModules } from '../../../module-ui/useGame';
 
 /**
  * Phòng thử module: form cấu hình tự sinh bên trái, khung xem trước bên phải.
@@ -34,8 +35,9 @@ import { readPlayground, writePlayground } from '../../../module-ui/playground-s
 export default function PlaygroundPage() {
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
-  const [moduleKey, setModuleKey] = useState(MODULES[0]?.key ?? '');
-  const mod = MODULES.find((m) => m.key === moduleKey) ?? MODULES[0];
+  const { modules, error: modulesError } = useGameModules();
+  const [moduleKey, setModuleKey] = useState('');
+  const mod = modules?.find((m) => m.key === moduleKey) ?? modules?.[0];
   const [configs, setConfigs] = useState<Record<string, unknown>>({});
   const [tab, setTab] = useState<'form' | 'preview'>('form');
   const [presetMenu, setPresetMenu] = useState<HTMLElement | null>(null);
@@ -44,49 +46,83 @@ export default function PlaygroundPage() {
   const [resetCount, setResetCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  /** Game đã chuẩn hóa cấu hình nhớ trong trình duyệt theo lược đồ hiện tại. */
+  const normalized = useRef(new Set<string>());
 
   // Đọc cấu hình đã nhớ (sau khi trang hiện, vì máy chủ không có localStorage).
   useEffect(() => {
     const stored = readPlayground();
-    const configs: Record<string, unknown> = {};
-    for (const m of MODULES) {
-      const raw = stored.configs?.[m.key];
-      if (raw !== undefined) configs[m.key] = normalizeConfig(m.fields, raw, m.defaults);
-    }
-    setConfigs(configs);
-    if (stored.moduleKey && MODULES.some((m) => m.key === stored.moduleKey)) setModuleKey(stored.moduleKey);
-    setResetCount((n) => n + 1);
+    setConfigs(stored.configs ?? {});
+    if (stored.moduleKey) setModuleKey(stored.moduleKey);
     setLoaded(true);
   }, []);
 
+  const source = useMemo<GameSource | null>(
+    () => (mod?.latestVersion ? { kind: 'version', key: mod.key, version: mod.latestVersion } : null),
+    [mod?.key, mod?.latestVersion],
+  );
+  const stored = mod ? configs[mod.key] : undefined;
+  const game = useGameForm(source, stored);
+  const schema = game.schema;
+  const { normalize } = game;
+
+  // Cấu hình nhớ từ trước có thể thiếu trường mới: chuẩn hóa theo lược đồ một lần khi tải game.
   useEffect(() => {
-    if (!loaded) return;
+    if (!schema || !loaded || normalized.current.has(schema.key)) return;
+    normalized.current.add(schema.key);
+    const raw = configs[schema.key];
+    if (raw === undefined) return;
+    normalize(raw).then(
+      (next) => {
+        setConfigs((prev) => ({ ...prev, [schema.key]: next }));
+        setResetCount((n) => n + 1);
+      },
+      () => {},
+    );
+  }, [schema, loaded, configs, normalize]);
+
+  useEffect(() => {
+    if (!loaded || !mod) return;
     const timer = setTimeout(() => {
-      writePlayground({ moduleKey, configs });
+      writePlayground({ moduleKey: mod.key, configs });
     }, 300);
     return () => clearTimeout(timer);
-  }, [loaded, moduleKey, configs]);
+  }, [loaded, mod, configs]);
 
-  // Cấu hình mặc định không bị sửa trực tiếp (form luôn tạo object mới khi thay đổi).
-  const config = mod ? (configs[mod.key] ?? mod.defaults) : null;
-  const errors = useMemo(() => (mod ? validateConfig(mod.fields, config) : {}), [mod, config]);
+  // Chưa có cấu hình riêng thì dùng mặc định (form luôn tạo object mới khi thay đổi).
+  const config = schema ? (configs[schema.key] ?? schema.defaults) : null;
+  const errors = game.check?.errors ?? {};
   const errorCount = Object.keys(errors).length;
 
-  if (!mod) return <Alert severity="info">Chưa có module nào.</Alert>;
+  if (modulesError) return <Alert severity="error">{t('common.networkError')}</Alert>;
+  if (!modules) return <LinearProgress />;
+  if (!mod || !source) return <Alert severity="info">Chưa có module nào.</Alert>;
 
   const setConfig = (next: unknown) => setConfigs((prev) => ({ ...prev, [mod.key]: next }));
 
-  const form = (
+  const form = game.error ? (
+    <Alert severity="error">{t('cms.templates.gameLoadFailed', { message: game.error })}</Alert>
+  ) : !schema || schema.key !== mod.key ? (
+    <LinearProgress />
+  ) : (
     <Stack spacing={2}>
-      {errorCount === 0 ? (
+      {!game.check ? null : errorCount === 0 ? (
         <Alert severity="success">{t('cms.playground.valid')}</Alert>
       ) : (
         <Alert severity="info">{t('cms.playground.invalid', { count: errorCount })}</Alert>
       )}
-      <SchemaForm key={`${mod.key}-${resetCount}`} fields={mod.fields} value={config} errors={errors} onChange={setConfig} />
+      <SchemaForm
+        key={`${mod.key}-${resetCount}`}
+        fields={schema.fields}
+        value={config}
+        errors={errors}
+        hidden={game.check?.hidden}
+        labels={game.check?.labels}
+        onChange={setConfig}
+      />
     </Stack>
   );
-  const preview = <PreviewFrame key={mod.key} module={mod} config={config} />;
+  const preview = <PreviewFrame key={mod.key} source={source} config={config} />;
 
   return (
     <Stack spacing={3}>
@@ -106,7 +142,7 @@ export default function PlaygroundPage() {
             onChange={(e) => setModuleKey(e.target.value)}
             sx={{ minWidth: 220 }}
           >
-            {MODULES.map((m) => (
+            {modules.map((m) => (
               <MenuItem key={m.key} value={m.key}>
                 {m.name}
               </MenuItem>
@@ -152,7 +188,7 @@ export default function PlaygroundPage() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        {mod.description} · <code>{mod.key}</code> v{mod.version}
+        {mod.description} · <code>{mod.key}</code> v{mod.latestVersion}
       </Typography>
 
       {wide ? (
@@ -176,7 +212,7 @@ export default function PlaygroundPage() {
 
       <CreateTemplateDialog
         open={createOpen}
-        mode={{ type: 'config', moduleKey: mod.key, config: config as Record<string, unknown> }}
+        mode={{ type: 'config', moduleKey: mod.key, config: (config ?? {}) as Record<string, unknown> }}
         onClose={() => setCreateOpen(false)}
       />
       <ConfirmDialog

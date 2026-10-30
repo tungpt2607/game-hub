@@ -14,6 +14,10 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 | 6a | Game Hứng quà | Module `game.catch` (kéo giỏ, hết giờ/hết mạng, độ khó theo thời gian hoặc theo màn, hướng dẫn, hiệu ứng, màn kết thúc có lời nhắn theo điểm, kỷ lục, nút kêu gọi, chia sẻ) + 4 mẫu; Phòng thử nhớ tạm cấu hình | Chơi Hứng quà trong Phòng thử module |
 | 6b | Thư viện template | Lưu nháp, Công bố, lịch sử và khôi phục, nhân bản, lưu trữ/xóa, tải font riêng | Tạo và lưu game |
 | 6c | Link chơi thử | `/try/<mã>`: nhiều link, luôn mới nhất/bản chụp, mật khẩu, hạn, QR, đếm lượt mở | **Tạo game và gửi link cho người khác chơi** |
+| 7a | Game lưu trong cơ sở dữ liệu | Bảng `game_modules`, `game_module_versions`; biên dịch mã nguồn game (`@opes/module-bundler`); API kiểm tra cấu hình trong hộp cách ly QuickJS; nạp sẵn 3 game | (bên trong) |
+| 7b | Chạy game từ cơ sở dữ liệu | Trang chơi và CMS tải game theo phiên bản từ cơ sở dữ liệu; CMS xem trước và kiểm tra form qua khung `/embed` của trang chơi; template giữ phiên bản game, nút "Nâng lên bản mới" | Template ghi rõ phiên bản game |
+| 7c | Mục Game trong CMS | Tải lên/tải về .zip, sửa code từng file, chạy thử bản nháp, phát hành phiên bản, lịch sử | Thêm và sửa game từ CMS |
+| 7d | Hướng dẫn viết game | Tài liệu và gói mẫu | |
 
 ## Giai đoạn 2 trở đi (định hướng)
 

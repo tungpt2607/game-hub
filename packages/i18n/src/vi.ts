@@ -179,6 +179,15 @@ export const vi = {
       restoreText: 'Bản nháp sẽ được thay bằng cấu hình của lần công bố này. Link chơi thử chỉ đổi khi bạn bấm Công bố.',
       restoreTextDirty: 'Bạn có thay đổi chưa lưu; chúng sẽ bị bỏ. Bản nháp sẽ được thay bằng cấu hình của lần công bố này.',
       restoredToast: 'Đã khôi phục lần công bố {version} vào bản nháp.',
+      upgrade: 'Nâng lên bản mới',
+      upgradeHint: 'Game có phiên bản mới {latest} (template đang dùng {current}).',
+      upgradeTitle: 'Nâng lên phiên bản game {version}?',
+      upgradeText:
+        'Bản nháp sẽ chạy bằng phiên bản mới; cấu hình được giữ, trường mới lấy giá trị mặc định. Link chơi thử chỉ đổi sau khi bạn Công bố.',
+      upgradeTextDirty:
+        'Thay đổi chưa lưu sẽ được lưu nháp trước. Bản nháp sẽ chạy bằng phiên bản mới; cấu hình được giữ, trường mới lấy giá trị mặc định. Link chơi thử chỉ đổi sau khi bạn Công bố.',
+      upgradedToast: 'Đã nâng lên phiên bản game {version}. Công bố để áp dụng cho link chơi thử.',
+      gameLoadFailed: 'Không tải được game: {message}',
       saveDraft: 'Lưu nháp',
       saving: 'Đang lưu…',
       saved: 'Đã lưu nháp.',
@@ -301,6 +310,8 @@ export const vi = {
       unmute: 'Bật tiếng',
       badge: 'Xem trước – không kết nối gì',
       crashed: 'Module gặp lỗi khi chạy: {message}',
+      frameTitle: 'Xem trước game',
+      loadFailed: 'Không tải được game để xem trước: {message}',
     },
   },
   play: {
@@ -328,6 +339,8 @@ export const vi = {
       askSender: 'Liên hệ người gửi link để nhận link mới.',
       notPublishedTitle: 'Game chưa sẵn sàng',
       notPublishedText: 'Game này chưa được công bố. Vui lòng quay lại sau.',
+      gameErrorTitle: 'Không tải được game',
+      gameErrorText: 'Kiểm tra kết nối mạng rồi tải lại trang.',
     },
   },
 } as const;

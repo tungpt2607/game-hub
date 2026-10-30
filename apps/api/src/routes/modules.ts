@@ -1,12 +1,12 @@
 import { asc, desc } from 'drizzle-orm';
 import { Hono } from 'hono';
-import type { GameModuleListResponse } from '@opes/contracts';
+import type { GameHostResponse, GameModuleListResponse } from '@opes/contracts';
 import { schema } from '@opes/db';
 import { requireAuth, requireRole } from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { ensureBuiltinModules } from '../lib/modules';
 
-/** /admin/modules: danh sách game lưu trong cơ sở dữ liệu (Bước 7a chỉ đọc; sửa và phát hành ở 7c). */
+/** /admin/modules: danh sách game lưu trong cơ sở dữ liệu (sửa và phát hành ở Bước 7c). */
 export function moduleRoutes(deps: AppDeps) {
   const app = new Hono<AppEnv>();
   app.use('*', requireAuth(deps), requireRole('admin'));
@@ -37,11 +37,23 @@ export function moduleRoutes(deps: AppDeps) {
           latestVersion: m.latestVersion,
           builtin: m.builtin,
           versions: own.map((v) => ({ version: v.version, publishedAt: v.publishedAt.toISOString(), notes: v.notes })),
-          presets: (latest?.meta.presets ?? []).map((p) => ({ id: p.id, name: p.name, description: p.description })),
+          defaults: latest?.meta.defaults ?? {},
+          presets: (latest?.meta.presets ?? []).map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            config: p.config,
+          })),
           updatedAt: m.updatedAt.toISOString(),
         };
       }),
     };
+    return c.json(body);
+  });
+
+  /** Khung chạy game nằm trên tên miền trang chơi (code game không chạy trên tên miền CMS). */
+  app.get('/host', (c) => {
+    const body: GameHostResponse = { url: `${deps.playPublicUrl()}/embed` };
     return c.json(body);
   });
 

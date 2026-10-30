@@ -603,5 +603,52 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(saved.json.template.errors['quiz.questions.0.answers']).toBe('Đánh dấu đúng một đáp án đúng');
       expect(saved.json.template.errors['rules.lives']).toBe('Tối đa là 10');
     });
+
+    it('trả gói chạy của từng phiên bản cho trang chơi, lưu đệm lâu', async () => {
+      await setupAdmin();
+      const ok = await app.request('/api/public/modules/game.catch-quiz/1.0.0/runtime.js');
+      expect(ok.status).toBe(200);
+      expect(ok.headers.get('content-type')).toContain('text/javascript');
+      expect(ok.headers.get('cache-control')).toContain('immutable');
+      expect(await ok.text()).toContain('require("react")');
+      expect((await app.request('/api/public/modules/game.catch-quiz/9.9.9/runtime.js')).status).toBe(404);
+      expect((await app.request('/api/public/modules/..%2Fx/1.0.0/runtime.js')).status).toBe(404);
+    });
+
+    it('cho CMS biết địa chỉ khung chạy game', async () => {
+      const admin = await setupAdmin();
+      const res = await call('GET', '/modules/host', undefined, admin);
+      expect(res.status).toBe(200);
+      expect(res.json.url).toMatch(/\/embed$/);
+      expect((await call('GET', '/modules/host')).status).toBe(401);
+    });
+
+    it('template giữ phiên bản game cũ cho tới khi "Nâng lên bản mới"', async () => {
+      const admin = await setupAdmin();
+      const t = (
+        await call('POST', '/templates', { name: 'OME', moduleKey: 'game.catch-quiz', source: { type: 'preset', presetId: 'ome-catch' } }, admin)
+      ).json.template;
+      expect(t.moduleVersion).toBe('1.0.0');
+      expect(t.latestModuleVersion).toBe('1.0.0');
+
+      // Phát hành giả một bản mới (Bước 7c sẽ làm việc này từ CMS).
+      await db.execute(sql`
+        insert into ${schema.gameModuleVersions} (module_key, version, files, schema_js, runtime_js, meta)
+        select module_key, '1.1.0', files, schema_js, runtime_js, jsonb_set(meta, '{version}', '"1.1.0"')
+        from ${schema.gameModuleVersions} where module_key = 'game.catch-quiz' and version = '1.0.0'`);
+      await db.execute(sql`update ${schema.gameModules} set latest_version = '1.1.0' where key = 'game.catch-quiz'`);
+
+      const before = (await call('GET', `/templates/${t.id}`, undefined, admin)).json.template;
+      expect(before.moduleVersion).toBe('1.0.0');
+      expect(before.latestModuleVersion).toBe('1.1.0');
+
+      const stale = await call('POST', `/templates/${t.id}/upgrade`, { baseRevision: t.revision - 1 }, admin);
+      expect(stale.status).toBe(409);
+      const up = await call('POST', `/templates/${t.id}/upgrade`, { baseRevision: t.revision }, admin);
+      expect(up.status).toBe(200);
+      expect(up.json.template.moduleVersion).toBe('1.1.0');
+      expect(up.json.template.revision).toBe(t.revision + 1);
+      expect(up.json.template.config.quiz.questions).toHaveLength(6);
+    });
   });
 });

@@ -33,8 +33,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import type { TemplateDetail, TemplateVersionResponse } from '@opes/contracts';
-import { validateConfig } from '@opes/module-sdk';
-import { getModule } from '@opes/modules';
+import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
@@ -42,6 +41,7 @@ import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
 import { SchemaForm } from '../../../../module-ui/SchemaForm';
 import { StatusChip } from '../../../../module-ui/StatusChip';
+import { useGameForm } from '../../../../module-ui/useGame';
 
 type Config = Record<string, unknown>;
 
@@ -74,7 +74,8 @@ export default function TemplateEditorPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
-  const [busy, setBusy] = useState<'save' | 'publish' | 'restore' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'publish' | 'restore' | 'upgrade' | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [tab, setTab] = useState<'form' | 'preview'>('form');
   const [infoOpen, setInfoOpen] = useState(false);
@@ -83,7 +84,14 @@ export default function TemplateEditorPage() {
   const [viewing, setViewing] = useState<TemplateVersionResponse | null>(null);
   const [restoreVersion, setRestoreVersion] = useState<number | null>(null);
 
-  const mod = template ? getModule(template.moduleKey) : undefined;
+  // Bản nháp chạy bằng phiên bản game template đang dùng (đổi khi bấm "Nâng lên bản mới").
+  const moduleKey = template?.moduleKey;
+  const moduleVersion = template?.moduleVersion;
+  const source = useMemo<GameSource | null>(
+    () => (moduleKey && moduleVersion ? { kind: 'version', key: moduleKey, version: moduleVersion } : null),
+    [moduleKey, moduleVersion],
+  );
+  const game = useGameForm(source, draft?.config);
 
   const apply = useCallback((tpl: TemplateDetail) => {
     setTemplate(tpl);
@@ -117,7 +125,7 @@ export default function TemplateEditorPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const errors = useMemo(() => (mod && draft ? validateConfig(mod.fields, draft.config) : {}), [mod, draft]);
+  const errors = game.check?.errors ?? template?.errors ?? {};
   const errorCount = Object.keys(errors).length;
 
   const fail = (e: unknown) => {
@@ -179,6 +187,27 @@ export default function TemplateEditorPage() {
     }
   }
 
+  async function onUpgrade() {
+    if (!template) return;
+    setBusy('upgrade');
+    setError(null);
+    try {
+      const current = dirty ? await save() : template;
+      if (!current) return;
+      const res = await api<{ template: TemplateDetail }>(`/templates/${current.id}/upgrade`, {
+        method: 'POST',
+        body: { baseRevision: current.revision },
+      });
+      apply(res.template);
+      setToast(t('cms.templates.upgradedToast', { version: res.template.moduleVersion }));
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(null);
+      setUpgradeOpen(false);
+    }
+  }
+
   async function viewVersion(version: number) {
     if (!template) return;
     try {
@@ -221,11 +250,13 @@ export default function TemplateEditorPage() {
       </Stack>
     );
   }
-  if (!template || !draft) return <LinearProgress />;
-  if (!mod) return <Alert severity="error">{t('cms.templates.moduleMissing', { key: template.moduleKey })}</Alert>;
+  if (!template || !draft || !source) return <LinearProgress />;
 
   const archived = template.status === 'archived';
-  const canPublish = !archived && errorCount === 0 && (dirty || template.hasUnpublishedChanges);
+  const checked = game.check !== null;
+  const canPublish = checked && !archived && errorCount === 0 && (dirty || template.hasUnpublishedChanges);
+  const canUpgrade =
+    !archived && template.latestModuleVersion !== null && template.latestModuleVersion !== template.moduleVersion;
   const publishHint = archived
     ? t('cms.templates.archivedHint')
     : errorCount > 0
@@ -248,13 +279,25 @@ export default function TemplateEditorPage() {
     </Stack>
   );
 
-  const form = (
+  const form = game.error ? (
+    <Alert severity="error">{t('cms.templates.gameLoadFailed', { message: game.error })}</Alert>
+  ) : !game.schema ? (
+    <LinearProgress />
+  ) : (
     <Stack spacing={2}>
       {errorCount > 0 && <Alert severity="info">{t('cms.playground.invalid', { count: errorCount })}</Alert>}
-      <SchemaForm key={formKey} fields={mod.fields} value={draft.config} errors={errors} onChange={(config) => update({ config })} />
+      <SchemaForm
+        key={formKey}
+        fields={game.schema.fields}
+        value={draft.config}
+        errors={errors}
+        hidden={game.check?.hidden}
+        labels={game.check?.labels}
+        onChange={(config) => update({ config })}
+      />
     </Stack>
   );
-  const preview = <PreviewFrame key={mod.key} module={mod} config={draft.config} />;
+  const preview = <PreviewFrame source={source} config={draft.config} />;
 
   return (
     <Stack spacing={2.5}>
@@ -275,7 +318,7 @@ export default function TemplateEditorPage() {
               )}
             </Stack>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {[draft.brandName, mod.name].filter(Boolean).join(' · ')}
+              {[draft.brandName, `${template.moduleName} v${template.moduleVersion}`].filter(Boolean).join(' · ')}
             </Typography>
             {statusLine}
           </Box>
@@ -315,6 +358,18 @@ export default function TemplateEditorPage() {
       </Stack>
 
       {archived && <Alert severity="warning">{t('cms.templates.archivedHint')}</Alert>}
+      {canUpgrade && (
+        <Alert
+          severity="info"
+          action={
+            <Button color="inherit" size="small" onClick={() => setUpgradeOpen(true)} disabled={busy !== null}>
+              {t('cms.templates.upgrade')}
+            </Button>
+          }
+        >
+          {t('cms.templates.upgradeHint', { current: template.moduleVersion, latest: template.latestModuleVersion ?? '' })}
+        </Alert>
+      )}
       {conflict && (
         <Alert
           severity="warning"
@@ -415,7 +470,15 @@ export default function TemplateEditorPage() {
             </Typography>
           )}
         </DialogTitle>
-        <DialogContent dividers>{viewing && <PreviewFrame module={mod} config={viewing.config} maxHeight={560} />}</DialogContent>
+        <DialogContent dividers>
+          {viewing && (
+            <PreviewFrame
+              source={{ kind: 'version', key: template.moduleKey, version: viewing.moduleVersion }}
+              config={viewing.config}
+              maxHeight={560}
+            />
+          )}
+        </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewing(null)}>{t('common.close')}</Button>
           {viewing && !archived && (
@@ -434,6 +497,15 @@ export default function TemplateEditorPage() {
         busy={busy === 'restore'}
         onConfirm={() => void onRestore()}
         onClose={() => setRestoreVersion(null)}
+      />
+      <ConfirmDialog
+        open={upgradeOpen}
+        title={t('cms.templates.upgradeTitle', { version: template.latestModuleVersion ?? '' })}
+        text={dirty ? t('cms.templates.upgradeTextDirty') : t('cms.templates.upgradeText')}
+        confirmLabel={t('cms.templates.upgrade')}
+        busy={busy === 'upgrade'}
+        onConfirm={() => void onUpgrade()}
+        onClose={() => setUpgradeOpen(false)}
       />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast(null)} message={toast} />
     </Stack>

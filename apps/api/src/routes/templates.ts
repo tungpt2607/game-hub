@@ -75,6 +75,15 @@ function ensureRevision(row: TemplateRow, baseRevision: number) {
   if (row.revision !== baseRevision) throw conflict(row.revision);
 }
 
+async function latestVersionOf(db: Database, key: string): Promise<string | null> {
+  const [m] = await db
+    .select({ latest: schema.gameModules.latestVersion })
+    .from(schema.gameModules)
+    .where(eq(schema.gameModules.key, key))
+    .limit(1);
+  return m?.latest ?? null;
+}
+
 async function detail(db: Database, row: TemplateRow): Promise<TemplateDetail> {
   const versions = await db
     .select({
@@ -90,7 +99,8 @@ async function detail(db: Database, row: TemplateRow): Promise<TemplateDetail> {
   const mod = await moduleFor(db, row).catch(() => null);
   return {
     ...toSummary(row, await moduleNames(db)),
-    moduleVersion: row.moduleVersion,
+    moduleVersion: mod?.version ?? row.moduleVersion,
+    latestModuleVersion: await latestVersionOf(db, row.moduleKey),
     revision: row.revision,
     publishedConfig: row.publishedConfig,
     errors: mod ? await sandbox.validate(mod.schemaJs, row.config) : {},
@@ -261,6 +271,39 @@ export function templateRoutes(deps: AppDeps) {
       data: { name: result.name, version: result.publishedVersion },
     });
     return c.json({ template: await detail(db, result) });
+  });
+
+  /**
+   * Nâng bản nháp lên phiên bản game mới nhất (quyết định 138): cấu hình được chuẩn hóa theo bản mới.
+   * Link chơi thử chỉ đổi sau khi Công bố.
+   */
+  app.post('/:id/upgrade', async (c) => {
+    const db = c.get('db');
+    const input = parseInput(TemplatePublishRequestSchema, await readJson(c.req));
+    const row = await findTemplate(db, c.req.param('id'));
+    ensureActive(row);
+    ensureRevision(row, input.baseRevision);
+    const mod = await getModuleVersion(db, row.moduleKey);
+    const [saved] = await db
+      .update(schema.templates)
+      .set({
+        config: await sandbox.normalize(mod.schemaJs, row.config),
+        moduleVersion: mod.version,
+        revision: sql`${schema.templates.revision} + 1`,
+        updatedBy: c.get('user').id,
+        updatedAt: deps.now(),
+      })
+      .where(and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)))
+      .returning();
+    if (!saved) throw conflict((await findTemplate(db, row.id)).revision);
+    await audit(db, {
+      userId: c.get('user').id,
+      action: 'template.upgrade',
+      entity: 'template',
+      entityId: row.id,
+      data: { name: row.name, from: row.moduleVersion, to: mod.version },
+    });
+    return c.json({ template: await detail(db, saved!) });
   });
 
   async function findVersion(db: Database, templateId: string, versionParam: string) {

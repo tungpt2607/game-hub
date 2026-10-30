@@ -25,7 +25,7 @@ import { userRoutes } from './routes/users';
 
 export type { AppDeps } from './context';
 
-export const API_VERSION = '0.6.0';
+export const API_VERSION = '0.7.0';
 
 let storageCache: Storage | null | undefined;
 

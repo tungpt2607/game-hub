@@ -43,7 +43,10 @@ export const TemplateVersionInfoSchema = z.object({
 export type TemplateVersionInfo = z.infer<typeof TemplateVersionInfoSchema>;
 
 export const TemplateDetailSchema = TemplateSummarySchema.extend({
+  /** Phiên bản game bản nháp đang dùng (bản nháp và lần công bố tiếp theo chạy bằng bản này). */
   moduleVersion: z.string(),
+  /** Phiên bản game mới nhất; khác moduleVersion thì có thể "Nâng lên bản mới". */
+  latestModuleVersion: z.string().nullable(),
   revision: z.number().int(),
   publishedConfig: configSchema.nullable(),
   /** Lỗi của bản nháp theo đường dẫn trường; rỗng = công bố được. */
