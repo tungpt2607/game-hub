@@ -20,3 +20,5 @@ export const catchSchema: ModuleSchema<CatchConfig> = {
   ],
   scoring: { unit: 'điểm', higherIsBetter: true },
 };
+
+export default catchSchema;

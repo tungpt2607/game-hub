@@ -8,13 +8,13 @@ import {
   PreviewLinkUpdateRequestSchema,
 } from '@opes/contracts';
 import { schema, type Database } from '@opes/db';
-import { validateConfig } from '@opes/module-sdk/core';
-import { getModuleSchema } from '@opes/modules/schemas';
 import { requireAuth, requireRole } from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { audit } from '../lib/audit';
 import { hashPassword, randomToken } from '../lib/crypto';
 import { AppError, parseInput, readJson } from '../lib/errors';
+import { sandbox } from '../lib/module-sandbox';
+import { getModuleVersion } from '../lib/modules';
 
 type LinkRow = typeof schema.previewLinks.$inferSelect;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -102,8 +102,8 @@ export function previewLinkRoutes(deps: AppDeps) {
           config: template.publishedConfig,
         };
       } else {
-        const mod = getModuleSchema(template.moduleKey);
-        const count = mod ? Object.keys(validateConfig(mod.fields, template.config)).length : 0;
+        const mod = await getModuleVersion(db, template.moduleKey, template.moduleVersion).catch(() => null);
+        const count = mod ? Object.keys(await sandbox.validate(mod.schemaJs, template.config)).length : 0;
         if (count > 0) {
           throw new AppError(422, ErrorCode.TEMPLATE_INVALID, `Bản nháp còn ${count} lỗi nên chưa chụp được. Sửa và lưu nháp trước.`);
         }

@@ -7,11 +7,13 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./schemas": "./src/schemas.ts"
+    "./schemas": "./src/schemas.ts",
+    "./bundles": "./bundles/builtin.json"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "bundle": "node scripts/build-bundles.mjs"
   },
   "dependencies": {
     "@opes/module-sdk": "workspace:*"
@@ -21,6 +23,8 @@
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
-    "react": "^19.1.0"
+    "react": "^19.1.0",
+    "@opes/module-bundler": "workspace:*",
+    "esbuild": "^0.25.0"
   }
 }

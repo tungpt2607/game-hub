@@ -20,3 +20,5 @@ export const catchQuizSchema: ModuleSchema<CatchQuizConfig> = {
   ],
   scoring: { unit: 'điểm', higherIsBetter: true },
 };
+
+export default catchQuizSchema;

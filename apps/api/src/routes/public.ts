@@ -3,13 +3,13 @@ import { Hono, type Context } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { ErrorCode, type TryResponse, TryUnlockRequestSchema } from '@opes/contracts';
 import { schema, type Database } from '@opes/db';
-import { normalizeConfig } from '@opes/module-sdk/core';
-import { getModuleSchema } from '@opes/modules/schemas';
 import { clientIp } from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { hashToken, verifyPassword } from '../lib/crypto';
 import { AppError, parseInput, readJson } from '../lib/errors';
 import { rewriteMediaUrls } from '../lib/media-urls';
+import { sandbox } from '../lib/module-sandbox';
+import { getModuleVersion } from '../lib/modules';
 import { hitRateLimit } from '../lib/rate-limit';
 
 type LinkRow = typeof schema.previewLinks.$inferSelect;
@@ -54,13 +54,19 @@ export function publicRoutes(deps: AppDeps) {
 
     const raw = link.mode === 'snapshot' ? (link.snapshot?.config ?? null) : template.publishedConfig;
     const moduleKey = link.mode === 'snapshot' ? (link.snapshot?.moduleKey ?? template.moduleKey) : template.moduleKey;
+    const moduleVersion =
+      link.mode === 'snapshot'
+        ? (link.snapshot?.moduleVersion ?? template.moduleVersion)
+        : (template.publishedModuleVersion ?? template.moduleVersion);
     if (link.passwordHash && getCookie(c, unlockCookie(link)) !== unlockValue(link, deps.sessionSecret())) {
       return respond(c, { status: 'password_required', title: titleOf(raw, template.name) }, 401);
     }
-    const mod = getModuleSchema(moduleKey);
+    const mod = raw
+      ? await getModuleVersion(db, moduleKey, moduleVersion).catch(() => getModuleVersion(db, moduleKey).catch(() => null))
+      : null;
     if (!raw || !mod) return respond(c, { status: 'not_published' }, 404);
 
-    let config = normalizeConfig<Record<string, unknown>>(mod.fields, raw, mod.defaults);
+    let config = await sandbox.normalize(mod.schemaJs, raw);
     const storage = deps.getStorage();
     if (deps.mediaProxy() && storage) config = rewriteMediaUrls(config, storage.publicUrl(''));
 
