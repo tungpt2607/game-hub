@@ -60,6 +60,8 @@ function checkField(f: Field, v: unknown, root: unknown, path: string, errors: C
       if (typeof v !== 'string') return fail('Cần nhập chữ');
       if (f.required && v.trim() === '') return fail('Không được để trống');
       if (f.maxLength !== undefined && v.length > f.maxLength) return fail(`Tối đa ${f.maxLength} ký tự`);
+      if (f.format === 'url' && v.trim() !== '' && !/^https?:\/\/\S+$/i.test(v.trim()))
+        return fail('Cần là link bắt đầu bằng https://');
       return;
     }
     case 'number': {

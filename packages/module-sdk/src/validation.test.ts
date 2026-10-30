@@ -84,6 +84,17 @@ describe('validateConfig', () => {
   });
 });
 
+describe('định dạng link', () => {
+  const linkFields: Fields = { url: field.text({ label: 'Link', format: 'url' }) };
+  it('chấp nhận link http(s) hoặc để trống', () => {
+    expect(validateConfig(linkFields, { url: 'https://opes.vn/khuyen-mai' })).toEqual({});
+    expect(validateConfig(linkFields, { url: '' })).toEqual({});
+  });
+  it('từ chối chữ không phải link', () => {
+    expect(validateConfig(linkFields, { url: 'opes.vn' }).url).toBe('Cần là link bắt đầu bằng https://');
+  });
+});
+
 describe('normalizeConfig', () => {
   it('điền giá trị thiếu từ mặc định và bỏ khóa thừa', () => {
     const out = normalizeConfig(fields, { title: 'Mới', extra: 1, look: { primary: 42 } }, valid);

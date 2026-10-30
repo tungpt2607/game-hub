@@ -87,6 +87,22 @@ Nguyên tắc thiết kế xuyên suốt:
 | 79 | Font | Danh sách Google Fonts có tiếng Việt, và tải font riêng (WOFF2/TTF) |
 | 80 | Khung xem trước | Chọn kích thước máy, chơi thử ngay trong khung, nhảy tới từng màn hình, bật/tắt tiếng |
 | 81 | Cấu hình có lỗi | Vẫn lưu nháp được; **Công bố** bị chặn cho tới khi sửa hết lỗi |
+| 95 | Phòng thử module | Giữ lại sau Bước 6; nhớ tạm cấu hình trong trình duyệt (chỉ trên máy đó) |
+| 97 | Điều khiển Hứng quà | Kéo ngón tay; máy tính dùng chuột hoặc phím mũi tên |
+| 98 | Kết thúc ván | Cấu hình: hết giờ, hết mạng, hoặc cái nào đến trước |
+| 99 | Mất mạng | Cấu hình theo từng vật phẩm: "hứng phải thì mất mạng", "để rơi thì mất mạng" |
+| 100 | Độ khó tăng dần | Chọn theo game: tăng dần theo thời gian, hoặc theo màn (đủ điểm thì lên màn) |
+| 101 | Màn hướng dẫn | Tự liệt kê vật phẩm và điểm từ cấu hình, cộng lời dẫn và ảnh minh họa tùy chọn; bật/tắt được |
+| 102 | Hiệu ứng | Số điểm bay lên; rung màn hình (và rung máy) khi mất mạng; pháo giấy ở màn kết thúc; đếm ngược 3-2-1 |
+| 103 | Màn kết thúc | Lời nhắn theo mức điểm, điểm cao nhất trên máy người chơi, nút kêu gọi có link, nút chia sẻ |
+| 104 | Tạo template | Từ mẫu có sẵn, nhân bản template, từ cấu hình mặc định, từ Phòng thử module |
+| 105 | Thông tin template | Tên, tên nhãn hàng (chữ), ghi chú nội bộ; ảnh nhỏ tự vẽ từ cấu hình. Chưa có nhãn (tag) |
+| 106 | Bỏ template | Lưu trữ (ẩn, link ngừng chạy, khôi phục được); trong mục Đã lưu trữ mới xóa hẳn được |
+| 107 | Số link chơi thử | Nhiều link mỗi template, mỗi link có tên, bật/tắt và đếm lượt mở riêng |
+| 108 | Dạng link | Mặc định mã ngẫu nhiên; có thể đổi thành tên tự đặt khi tạo |
+| 109 | Hạn link | Mặc định không hết hạn; sửa được |
+| 110 | Mẫu Hứng quà có sẵn | Tết, Trung thu, Giáng sinh, Trái cây / F&B (dùng emoji, không dùng ảnh có bản quyền) |
+| 111 | Chia Bước 6 | 6a game Hứng quà + mẫu; 6b Thư viện template; 6c Link chơi thử và trang /try |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 

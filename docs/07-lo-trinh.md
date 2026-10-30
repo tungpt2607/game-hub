@@ -11,7 +11,9 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 | 3 | Cơ sở dữ liệu | Lược đồ Drizzle và migration cho các bảng giai đoạn 1 (tài khoản, media, template, link chơi thử); tài khoản quản trị đầu tiên; hướng dẫn tạo Neon | Bảng dữ liệu trên Neon |
 | 4 | Đăng nhập và nền CMS | Đăng nhập, đổi mật khẩu, quản lý tài khoản, bố cục CMS, tải ảnh và nhạc lên R2 | Đăng nhập CMS, tạo tài khoản đồng nghiệp, tải file lên |
 | 5 | Chuẩn module + form tự sinh | `packages/module-sdk` (loại trường, kiểm tra cấu hình, `SandboxHost`, font), `packages/modules` (module mẫu `game.sample`), form tự sinh và khung xem trước trong CMS (`apps/cms/src/module-ui`), trang **Phòng thử module** | Mở Phòng thử module: sửa form, game mẫu đổi ngay trong khung điện thoại |
-| 6 | Hứng quà + thư viện template + link chơi thử | Module `game.catch` đầy đủ tùy chỉnh; màn thư viện template; link chơi thử `/try/<token>` (luôn mới nhất/bản chụp, mật khẩu, hạn, QR, đếm lượt mở) | **Tạo game và gửi link cho người khác chơi** |
+| 6a | Game Hứng quà | Module `game.catch` (kéo giỏ, hết giờ/hết mạng, độ khó theo thời gian hoặc theo màn, hướng dẫn, hiệu ứng, màn kết thúc có lời nhắn theo điểm, kỷ lục, nút kêu gọi, chia sẻ) + 4 mẫu; Phòng thử nhớ tạm cấu hình | Chơi Hứng quà trong Phòng thử module |
+| 6b | Thư viện template | Lưu nháp, Công bố, lịch sử và khôi phục, nhân bản, lưu trữ/xóa, tải font riêng | Tạo và lưu game |
+| 6c | Link chơi thử | `/try/<mã>`: nhiều link, luôn mới nhất/bản chụp, mật khẩu, hạn, QR, đếm lượt mở | **Tạo game và gửi link cho người khác chơi** |
 
 ## Giai đoạn 2 trở đi (định hướng)
 

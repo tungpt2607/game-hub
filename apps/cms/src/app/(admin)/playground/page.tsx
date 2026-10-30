@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
+import Menu from '@mui/material/Menu';
+import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -14,17 +16,34 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { validateConfig } from '@opes/module-sdk';
+import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
+import { normalizeConfig, validateConfig } from '@opes/module-sdk';
 import { MODULES } from '@opes/modules';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { PreviewFrame } from '../../../module-ui/PreviewFrame';
 import { SchemaForm } from '../../../module-ui/SchemaForm';
 
+/** Nơi nhớ tạm cấu hình phòng thử trong trình duyệt (chỉ trên máy này). */
+const STORAGE_KEY = 'opes-playground:v1';
+
+interface Stored {
+  moduleKey?: string;
+  configs?: Record<string, unknown>;
+}
+
+function readStored(): Stored {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Stored) : {};
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Phòng thử module: form cấu hình tự sinh bên trái, khung xem trước bên phải.
- * Chỉ để thử chuẩn module; cấu hình không được lưu (lưu nháp/công bố là việc của thư viện template, Bước 6).
+ * Cấu hình được nhớ tạm trong trình duyệt; lưu thật (nháp/công bố) nằm ở Thư viện template.
  */
 export default function PlaygroundPage() {
   const theme = useTheme();
@@ -33,8 +52,37 @@ export default function PlaygroundPage() {
   const mod = MODULES.find((m) => m.key === moduleKey) ?? MODULES[0];
   const [configs, setConfigs] = useState<Record<string, unknown>>({});
   const [tab, setTab] = useState<'form' | 'preview'>('form');
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [presetMenu, setPresetMenu] = useState<HTMLElement | null>(null);
+  /** Mẫu đang chờ xác nhận: id mẫu, hoặc '' = cấu hình mặc định. */
+  const [pendingPreset, setPendingPreset] = useState<string | null>(null);
   const [resetCount, setResetCount] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+
+  // Đọc cấu hình đã nhớ (sau khi trang hiện, vì máy chủ không có localStorage).
+  useEffect(() => {
+    const stored = readStored();
+    const configs: Record<string, unknown> = {};
+    for (const m of MODULES) {
+      const raw = stored.configs?.[m.key];
+      if (raw !== undefined) configs[m.key] = normalizeConfig(m.fields, raw, m.defaults);
+    }
+    setConfigs(configs);
+    if (stored.moduleKey && MODULES.some((m) => m.key === stored.moduleKey)) setModuleKey(stored.moduleKey);
+    setResetCount((n) => n + 1);
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const timer = setTimeout(() => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ moduleKey, configs } satisfies Stored));
+      } catch {
+        // Trình duyệt chặn lưu trữ: phòng thử vẫn chạy, chỉ không nhớ được.
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [loaded, moduleKey, configs]);
 
   // Cấu hình mặc định không bị sửa trực tiếp (form luôn tạo object mới khi thay đổi).
   const config = mod ? (configs[mod.key] ?? mod.defaults) : null;
@@ -81,9 +129,34 @@ export default function PlaygroundPage() {
               </MenuItem>
             ))}
           </TextField>
-          <Button startIcon={<RestartAltIcon />} onClick={() => setConfirmReset(true)} sx={{ flexShrink: 0 }}>
-            {t('cms.playground.reset')}
+          <Button
+            startIcon={<AutoAwesomeOutlined />}
+            onClick={(e) => setPresetMenu(e.currentTarget)}
+            sx={{ flexShrink: 0 }}
+          >
+            {t('cms.playground.usePreset')}
           </Button>
+          <Menu anchorEl={presetMenu} open={Boolean(presetMenu)} onClose={() => setPresetMenu(null)}>
+            {(mod.presets ?? []).map((p) => (
+              <MenuItem
+                key={p.id}
+                onClick={() => {
+                  setPresetMenu(null);
+                  setPendingPreset(p.id);
+                }}
+              >
+                <ListItemText primary={p.name} secondary={p.description} />
+              </MenuItem>
+            ))}
+            <MenuItem
+              onClick={() => {
+                setPresetMenu(null);
+                setPendingPreset('');
+              }}
+            >
+              <ListItemText primary={t('cms.playground.defaults')} secondary={t('cms.playground.defaultsHint')} />
+            </MenuItem>
+          </Menu>
         </Stack>
       </Stack>
 
@@ -111,20 +184,27 @@ export default function PlaygroundPage() {
       )}
 
       <ConfirmDialog
-        open={confirmReset}
-        title={t('cms.playground.resetTitle')}
-        text={t('cms.playground.resetText')}
-        confirmLabel={t('cms.playground.reset')}
+        open={pendingPreset !== null}
+        title={t('cms.playground.presetTitle', {
+          name:
+            pendingPreset === ''
+              ? t('cms.playground.defaults')
+              : (mod.presets?.find((p) => p.id === pendingPreset)?.name ?? ''),
+        })}
+        text={t('cms.playground.presetText')}
+        confirmLabel={t('cms.playground.presetConfirm')}
         onConfirm={() => {
+          const preset = mod.presets?.find((p) => p.id === pendingPreset);
           setConfigs((prev) => {
             const next = { ...prev };
-            delete next[mod.key];
+            if (preset) next[mod.key] = structuredClone(preset.config);
+            else delete next[mod.key];
             return next;
           });
           setResetCount((n) => n + 1);
-          setConfirmReset(false);
+          setPendingPreset(null);
         }}
-        onClose={() => setConfirmReset(false)}
+        onClose={() => setPendingPreset(null)}
       />
     </Stack>
   );
