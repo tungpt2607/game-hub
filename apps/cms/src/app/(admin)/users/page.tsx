@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -30,6 +30,7 @@ import { t } from '@opes/i18n';
 import { useCurrentUser } from '../../../components/AuthContext';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { copyText, selectAll } from '../../../lib/clipboard';
 
 const formatDate = (iso: string | null) =>
   iso
@@ -312,17 +313,14 @@ function TemporaryPasswordDialog({
   result: TemporaryPasswordResponse | null;
   onClose: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => setCopied(false), [result]);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => setCopyState('idle'), [result]);
 
   async function copy() {
     if (!result) return;
-    try {
-      await navigator.clipboard.writeText(result.temporaryPassword);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
+    const ok = await copyText(result.temporaryPassword, input.current);
+    setCopyState(ok ? 'copied' : 'failed');
   }
 
   return (
@@ -332,27 +330,46 @@ function TemporaryPasswordDialog({
         <DialogContentText sx={{ mb: 2 }}>
           {t('cms.users.tempLead', { name: result?.user.name ?? '' })}
         </DialogContentText>
-        <Box
-          sx={{
-            fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: 1,
-            textAlign: 'center',
-            p: 2,
-            borderRadius: 2,
-            bgcolor: 'action.hover',
-            userSelect: 'all',
+        {/* Ô chỉ-đọc: trên iPhone chọn được chữ trong ô nhập, còn chữ thường trong hộp thoại thì không. */}
+        <TextField
+          value={result?.temporaryPassword ?? ''}
+          inputRef={input}
+          fullWidth
+          aria-label={t('cms.users.tempTitle')}
+          onFocus={() => input.current && selectAll(input.current)}
+          onClick={() => input.current && selectAll(input.current)}
+          slotProps={{
+            htmlInput: {
+              readOnly: true,
+              spellCheck: false,
+              autoCapitalize: 'off',
+              autoCorrect: 'off',
+              style: {
+                fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: 1,
+                textAlign: 'center',
+              },
+            },
           }}
-        >
-          {result?.temporaryPassword}
-        </Box>
+        />
+        {copyState === 'copied' && (
+          <Alert severity="success" sx={{ mt: 1.5 }}>
+            {t('common.copied')}
+          </Alert>
+        )}
+        {copyState === 'failed' && (
+          <Alert severity="warning" sx={{ mt: 1.5 }}>
+            {t('common.copyFailed')}
+          </Alert>
+        )}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           {result?.user.email}
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={copy}>{copied ? t('common.copied') : t('common.copy')}</Button>
+        <Button onClick={() => void copy()}>{t('common.copy')}</Button>
         <Button onClick={onClose} variant="contained">
           {t('common.close')}
         </Button>

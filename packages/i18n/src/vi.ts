@@ -9,6 +9,7 @@ export const vi = {
     close: 'Đóng',
     copy: 'Sao chép',
     copied: 'Đã sao chép',
+    copyFailed: 'Trình duyệt không cho sao chép tự động. Chạm vào ô phía trên để chọn rồi bấm Sao chép của máy.',
     loading: 'Đang tải…',
     retry: 'Thử lại',
     loadMore: 'Tải thêm',
