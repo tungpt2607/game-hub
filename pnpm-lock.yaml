@@ -38,6 +38,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.17(hono@4.13.14)
+      '@jitl/quickjs-singlefile-mjs-release-sync':
+        specifier: ^0.31.0
+        version: 0.31.0
       '@opes/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -62,6 +65,9 @@ importers:
       hono:
         specifier: ^4.7.0
         version: 4.13.14
+      quickjs-emscripten-core:
+        specifier: ^0.31.0
+        version: 0.31.0
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -183,6 +189,12 @@ importers:
 
   packages/i18n: {}
 
+  packages/module-bundler:
+    devDependencies:
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+
   packages/module-sdk:
     devDependencies:
       '@types/react':
@@ -198,9 +210,15 @@ importers:
         specifier: workspace:*
         version: link:../module-sdk
     devDependencies:
+      '@opes/module-bundler':
+        specifier: workspace:*
+        version: link:../module-bundler
       '@types/react':
         specifier: ^19.1.0
         version: 19.3.0
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
       react:
         specifier: ^19.1.0
         version: 19.3.1
@@ -1129,6 +1147,12 @@ packages:
     engines: {node: '>=20.9.0'}
     cpu: [x64]
     os: [win32]
+
+  '@jitl/quickjs-ffi-types@0.31.0':
+    resolution: {integrity: sha512-1yrgvXlmXH2oNj3eFTrkwacGJbmM0crwipA3ohCrjv52gBeDaD7PsTvFYinlAnqU8iPME3LGP437yk05a2oejw==}
+
+  '@jitl/quickjs-singlefile-mjs-release-sync@0.31.0':
+    resolution: {integrity: sha512-VyN48sbNnlhvH/17xoy3Ck15Y9ChFg/e9hcLP/yFdwrGy/x2s1Hnbg0orL3OYiQYKRSpdecrB09rwEPUdDt8BA==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -2319,6 +2343,9 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
+  quickjs-emscripten-core@0.31.0:
+    resolution: {integrity: sha512-oQz8p0SiKDBc1TC7ZBK2fr0GoSHZKA0jZIeXxsnCyCs4y32FStzCW4d1h6E1sE0uHDMbGITbk2zhNaytaoJwXQ==}
+
   react-dom@19.3.1:
     resolution: {integrity: sha512-Y0bARz53lhEC1NMCASs0/j+faB/zqt3R8hpvg1e8+61ZVJ4UL0UdC4cBbXfZMcIuhrfgeILTLe+ZeBCavQPtKQ==}
     peerDependencies:
@@ -3316,6 +3343,12 @@ snapshots:
 
   '@img/sharp-win32-x64@0.35.5':
     optional: true
+
+  '@jitl/quickjs-ffi-types@0.31.0': {}
+
+  '@jitl/quickjs-singlefile-mjs-release-sync@0.31.0':
+    dependencies:
+      '@jitl/quickjs-ffi-types': 0.31.0
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -4384,6 +4417,10 @@ snapshots:
       dijkstrajs: 1.0.3
       pngjs: 5.0.0
       yargs: 15.4.1
+
+  quickjs-emscripten-core@0.31.0:
+    dependencies:
+      '@jitl/quickjs-ffi-types': 0.31.0
 
   react-dom@19.3.1(react@19.3.1):
     dependencies:

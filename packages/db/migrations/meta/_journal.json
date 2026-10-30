@@ -15,6 +15,13 @@
       "when": 1793335356564,
       "tag": "0001_confused_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793351684956,
+      "tag": "0002_shocking_maestro",
+      "breakpoints": true
     }
   ]
 }
