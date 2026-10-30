@@ -199,14 +199,15 @@ export default function GameEditorPage() {
     setAssets(nextAssets);
   };
 
-  /** Lưu nháp (kèm gói đã biên dịch nếu không lỗi). */
+  /** Lưu nháp (kèm gói đã biên dịch nếu không lỗi). Bật "tự định dạng khi lưu" thì định dạng trước. */
   async function save(): Promise<GameModuleDetail | null> {
     if (!mod) return null;
-    const compiled = await compileGame(files, assets);
+    const toSave = (await workspace.current?.prepareSave()) ?? files;
+    const compiled = await compileGame(toSave, assets);
     const res = await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(mod.key)}/draft`, {
       method: 'PUT',
       body: {
-        files,
+        files: toSave,
         assets,
         schemaJs: compiled.ok ? compiled.schemaJs : null,
         runtimeJs: compiled.ok ? compiled.runtimeJs : null,
@@ -214,7 +215,7 @@ export default function GameEditorPage() {
       },
     });
     setMod(res.module);
-    setSavedFiles(files);
+    setSavedFiles(toSave);
     setSavedAssets(assets);
     clearLocalDraft(mod.key);
     return res.module;
@@ -321,11 +322,6 @@ export default function GameEditorPage() {
       : null;
   const canPublish = hasDraft && compiled && !previewError && !versionProblem && busy === null;
 
-  const jump = (file: string | null, line: number, column: number) => {
-    setTab('code');
-    setTimeout(() => workspace.current?.jump(file, line, column), 0);
-  };
-
   const status = (
     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
       <Chip size="small" variant="outlined" label={<code>{mod.key}</code>} />
@@ -348,40 +344,6 @@ export default function GameEditorPage() {
     </Stack>
   );
 
-  const errorPanel =
-    compile.state === 'compiling' ? (
-      <Typography variant="body2" color="text.secondary">
-        {t('cms.games.compiling')}
-      </Typography>
-    ) : errors.length > 0 ? (
-      <Alert severity="error">
-        <Typography variant="body2" fontWeight={600}>
-          {t('cms.games.compileErrors', { count: errors.length })}
-        </Typography>
-        <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-          {errors.slice(0, 10).map((e, i) => (
-            <li key={i}>
-              {e.file ? (
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => jump(e.file, e.line, e.column)}
-                  sx={{ all: 'unset', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'monospace' }}
-                >
-                  {e.file}:{e.line}:{e.column}
-                </Box>
-              ) : null}{' '}
-              {e.text}
-            </li>
-          ))}
-        </Box>
-      </Alert>
-    ) : compiled ? (
-      <Typography variant="body2" color="success.main">
-        {t('cms.games.compiledOk')}
-      </Typography>
-    ) : null;
-
   const code = (
     <Stack spacing={1.5}>
       <Workspace
@@ -390,7 +352,8 @@ export default function GameEditorPage() {
         assets={assets}
         savedFiles={savedFiles}
         errors={errors}
-        height={wide ? 'calc(100vh - 300px)' : 'calc(100vh - 240px)'}
+        compiling={compile.state === 'compiling'}
+        height={wide ? 'calc(100vh - 260px)' : 'calc(100vh - 220px)'}
         onChange={(f, a) => change(f, a)}
         uploadAssets={(pending: Record<string, PendingAsset>) => uploadAssets(moduleKey, pending)}
         onSave={() => {
@@ -398,7 +361,6 @@ export default function GameEditorPage() {
         }}
         onNotice={(message, severity) => (severity === 'error' ? setError(message) : setToast(message))}
       />
-      {errorPanel}
     </Stack>
   );
 

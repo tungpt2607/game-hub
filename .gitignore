@@ -14,6 +14,8 @@ coverage/
 apps/*/public/module-assets/
 # Trình biên dịch game trong trình duyệt của CMS (chép từ gói esbuild-wasm khi build)
 apps/cms/public/esbuild.wasm
+# Khai báo kiểu cho gợi ý code TypeScript trong CMS (scripts/build-ts-libs.mjs)
+apps/cms/public/ts-libs.json
 
 # Gói game biên dịch từ packages/modules/src (pnpm --filter @opes/modules bundle)
 packages/modules/bundles/
