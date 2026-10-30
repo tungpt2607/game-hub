@@ -372,6 +372,28 @@ export const vi = {
       tabCode: 'Code',
       tabPreview: 'Chạy thử',
     },
+    leave: {
+      title: 'Rời trang?',
+      text: 'Có thay đổi chưa lưu. Rời trang thì các thay đổi này sẽ mất.',
+      stay: 'Ở lại',
+      leave: 'Rời đi',
+    },
+    localDraft: {
+      text: 'Có thay đổi chưa lưu nháp từ lần sửa trước ({count} file, lúc {time}), còn giữ trên trình duyệt này.',
+      outdated: 'Bản nháp trên máy chủ đã được lưu sau lần đó (có thể bởi đồng nghiệp); khôi phục sẽ thay nội dung đang mở.',
+      restore: 'Khôi phục',
+      discard: 'Bỏ đi',
+    },
+    diff: {
+      titleVsLatest: 'Thay đổi so với bản đang chạy v{version} ({count} file)',
+      titleFirst: 'Các file sẽ phát hành ({count} file)',
+      none: 'Không có file nào khác với bản đang chạy.',
+      added: 'Thêm',
+      removed: 'Xóa',
+      modified: 'Sửa',
+      tooLarge: 'File thay đổi quá nhiều để hiển thị từng dòng.',
+      loadFailed: 'Không tải được bản đang chạy để so sánh: {message}',
+    },
     workspace: {
       explorer: 'File của game',
       newFile: 'Tạo file code',

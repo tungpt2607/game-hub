@@ -14,6 +14,7 @@ export function ConfirmDialog({
   title,
   text,
   confirmLabel,
+  cancelLabel,
   danger,
   busy,
   onConfirm,
@@ -23,6 +24,8 @@ export function ConfirmDialog({
   title: string;
   text: string;
   confirmLabel: string;
+  /** Chữ trên nút hủy; mặc định "Hủy". */
+  cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
   onConfirm: () => void;
@@ -36,7 +39,7 @@ export function ConfirmDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={busy}>
-          {t('common.cancel')}
+          {cancelLabel ?? t('common.cancel')}
         </Button>
         <Button onClick={onConfirm} variant="contained" color={danger ? 'error' : 'primary'} disabled={busy}>
           {confirmLabel}
