@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../../scripts/copy-module-assets.mjs && next dev -p 3000",
-    "build": "node ../../scripts/copy-module-assets.mjs && next build",
+    "dev": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && next dev -p 3000",
+    "build": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
@@ -20,7 +20,11 @@
     "@opes/contracts": "workspace:*",
     "@opes/i18n": "workspace:*",
     "@opes/module-sdk": "workspace:*",
+    "@monaco-editor/react": "^4.7.0",
+    "@opes/module-bundler": "workspace:*",
     "@opes/modules": "workspace:*",
+    "esbuild-wasm": "^0.25.0",
+    "jszip": "^3.10.1",
     "next": "^15.3.0",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
@@ -29,6 +33,7 @@
   "devDependencies": {
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0"
+    "@types/react-dom": "^19.1.0",
+    "monaco-editor": "0.52.2"
   }
 }

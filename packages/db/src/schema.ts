@@ -164,6 +164,15 @@ export interface GameModuleMeta {
   scoring: { unit: string; higherIsBetter: boolean } | null;
 }
 
+/** File kèm game (thư mục assets/ trong gói .zip), lưu trên kho media; khóa là đường dẫn bỏ "assets/". */
+export interface GameAsset {
+  url: string;
+  size: number;
+  mime: string;
+  sha256: string;
+}
+export type GameAssets = Record<string, GameAsset>;
+
 /**
  * Game lưu trong cơ sở dữ liệu (Bước 7): mã nguồn các file theo chuẩn module và bản nháp đang sửa.
  * Mỗi lần phát hành tạo một dòng trong game_module_versions; template ghi nhớ phiên bản nó dùng.
@@ -175,6 +184,7 @@ export const gameModules = pgTable('game_modules', {
   description: text('description').notNull().default(''),
   /** Bản nháp: mã nguồn (đường dẫn → nội dung) và gói đã biên dịch; trống nếu không có nháp. */
   draftFiles: jsonb('draft_files').$type<Record<string, string>>(),
+  draftAssets: jsonb('draft_assets').$type<GameAssets>(),
   draftSchemaJs: text('draft_schema_js'),
   draftRuntimeJs: text('draft_runtime_js'),
   draftMeta: jsonb('draft_meta').$type<GameModuleMeta>(),
@@ -198,6 +208,7 @@ export const gameModuleVersions = pgTable(
       .references(() => gameModules.key, { onDelete: 'cascade' }),
     version: text('version').notNull(),
     files: jsonb('files').$type<Record<string, string>>().notNull(),
+    assets: jsonb('assets').$type<GameAssets>().notNull().default({}),
     /** Gói mô tả: chạy trong hộp cách ly ở API để kiểm tra, chuẩn hóa cấu hình. */
     schemaJs: text('schema_js').notNull(),
     /** Gói chạy cho trình duyệt (CommonJS, React và module-sdk do nơi chạy cung cấp). */

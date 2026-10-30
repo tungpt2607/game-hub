@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { createDb, runMigrations, schema, type Database } from '@opes/db';
 import { createApp } from './app';
+import builtin from '@opes/modules/bundles';
 import { resetModuleRegistry } from './lib/modules';
 import type { Storage } from './lib/storage';
 
@@ -649,6 +650,96 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(up.json.template.moduleVersion).toBe('1.1.0');
       expect(up.json.template.revision).toBe(t.revision + 1);
       expect(up.json.template.config.quiz.questions).toHaveLength(6);
+    });
+
+    describe('sửa code game trong CMS', () => {
+      /** Gói của game mẫu, đổi key thành game mới (thay cho biên dịch trong trình duyệt). */
+      function samplePackage(key = 'game.thu-nghiem', version = '0.1.0') {
+        const b = (builtin as any[]).find((x) => x.meta.key === 'game.sample');
+        const swap = (js: string) => js.replaceAll('"game.sample"', JSON.stringify(key)).replaceAll('"0.1.0"', JSON.stringify(version));
+        return { files: { ...b.files }, assets: {}, schemaJs: swap(b.schemaJs), runtimeJs: swap(b.runtimeJs) };
+      }
+
+      it('tạo game mới, phát hành, rồi template dùng được', async () => {
+        const admin = await setupAdmin();
+        const created = await call('POST', '/modules', samplePackage(), admin);
+        expect(created.status).toBe(201);
+        const mod = created.json.module;
+        expect(mod.key).toBe('game.thu-nghiem');
+        expect(mod.latestVersion).toBeNull();
+        expect(mod.draft.version).toBe('0.1.0');
+        expect((await call('POST', '/modules', samplePackage(), admin)).status).toBe(409);
+
+        // Chưa phát hành thì chưa tạo template được.
+        expect((await call('POST', '/templates', { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } }, admin)).status).toBe(400);
+
+        const published = await call('POST', '/modules/game.thu-nghiem/publish', { notes: 'Bản đầu', baseUpdatedAt: mod.draft.updatedAt }, admin);
+        expect(published.status).toBe(200);
+        expect(published.json.module.latestVersion).toBe('0.1.0');
+        expect(published.json.module.draft).toBeNull();
+        expect(published.json.module.versions[0]).toMatchObject({ version: '0.1.0', notes: 'Bản đầu', publishedByName: 'Quản trị 1' });
+
+        const tpl = await call('POST', '/templates', { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } }, admin);
+        expect(tpl.status).toBe(201);
+        expect(tpl.json.template.moduleVersion).toBe('0.1.0');
+        const version = await call('GET', '/modules/game.thu-nghiem/versions/0.1.0', undefined, admin);
+        expect(Object.keys(version.json.files)).toContain('schema.ts');
+      });
+
+      it('bản nháp: chống ghi chen, giữ key, phiên bản phải tăng, bỏ nháp', async () => {
+        const admin = await setupAdmin();
+        await call('GET', '/modules', undefined, admin);
+        const pkg = samplePackage('game.sample', '0.1.0');
+        const first = await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin);
+        expect(first.status).toBe(200);
+        const at = first.json.module.draft.updatedAt;
+        expect((await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin)).status).toBe(409);
+
+        const otherKey = await call('PUT', '/modules/game.sample/draft', { ...samplePackage('game.khac'), baseUpdatedAt: at }, admin);
+        expect(otherKey.status).toBe(422);
+        expect(otherKey.json.error.message).toContain('game.sample');
+
+        const badPath = await call('PUT', '/modules/game.sample/draft', { ...pkg, files: { ...pkg.files, 'a b.ts': '' }, baseUpdatedAt: at }, admin);
+        expect(badPath.status).toBe(422);
+
+        // Lưu được cả khi chưa biên dịch được.
+        const broken = await call('PUT', '/modules/game.sample/draft', { ...pkg, schemaJs: null, runtimeJs: null, baseUpdatedAt: at }, admin);
+        expect(broken.status).toBe(200);
+        expect(broken.json.module.draft.version).toBeNull();
+        const at2 = broken.json.module.draft.updatedAt;
+        expect((await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: at2 }, admin)).status).toBe(422);
+
+        const same = await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: at2 }, admin);
+        const notNewer = await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: same.json.module.draft.updatedAt }, admin);
+        expect(notNewer.status).toBe(422);
+        expect(notNewer.json.error.message).toContain('0.1.1');
+
+        const bumped = await call('PUT', '/modules/game.sample/draft', { ...samplePackage('game.sample', '0.2.0'), baseUpdatedAt: same.json.module.draft.updatedAt }, admin);
+        const ok = await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: bumped.json.module.draft.updatedAt }, admin);
+        expect(ok.status).toBe(200);
+        expect(ok.json.module.latestVersion).toBe('0.2.0');
+
+        await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin);
+        const dropped = await call('DELETE', '/modules/game.sample/draft', undefined, admin);
+        expect(dropped.status).toBe(200);
+        expect(dropped.json.module.draft).toBeNull();
+      });
+
+      it('file kèm: xin link tải lên, địa chỉ theo nội dung file', async () => {
+        const admin = await setupAdmin();
+        const sha = 'a'.repeat(64);
+        const up = await call('POST', '/modules/game.moi/assets/upload-url', { path: 'ome/nen.webp', mime: 'image/webp', size: 1000, sha256: sha }, admin);
+        expect(up.status).toBe(200);
+        expect(up.json.url).toBe(`https://media.example/game-assets/game.moi/${sha}.webp`);
+        expect(up.json.uploadUrl).toContain('game-assets/game.moi/');
+        const bad = await call('POST', '/modules/game.moi/assets/upload-url', { path: 'x.exe', mime: 'application/x-msdownload', size: 10, sha256: sha }, admin);
+        expect(bad.status).toBe(422);
+
+        const pkg = { ...samplePackage('game.moi'), assets: { 'ome/nen.webp': { url: '/media/la', size: 1000, mime: 'image/webp', sha256: sha } } };
+        const created = await call('POST', '/modules', pkg, admin);
+        expect(created.status).toBe(201);
+        expect(created.json.module.draft.assets['ome/nen.webp'].url).toBe(up.json.url);
+      });
     });
   });
 });

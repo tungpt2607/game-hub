@@ -15,7 +15,7 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import LinearProgress from '@mui/material/LinearProgress';
-import type { GameSource } from '@opes/module-sdk';
+import type { GameSource, SerializedSchema } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { FRAME_ALLOW, FRAME_SANDBOX, useGameFrame } from './useGame';
 
@@ -33,6 +33,8 @@ interface Props {
   config: unknown;
   /** Chiều cao tối đa của khung (px); mặc định vừa màn hình. */
   maxHeight?: number;
+  /** Báo mô tả game khi tải xong (hoặc null khi đang tải / lỗi). */
+  onSchema?: (schema: SerializedSchema | null, error: string | null) => void;
 }
 
 /**
@@ -40,7 +42,7 @@ interface Props {
  * chơi lại. Game chạy trong iframe trên tên miền trang chơi (tách khỏi CMS), với SandboxHost nên không
  * gọi mạng; cấu hình thay đổi được áp dụng ngay.
  */
-export function PreviewFrame({ source, config, maxHeight }: Props) {
+export function PreviewFrame({ source, config, maxHeight, onSchema }: Props) {
   const [deviceId, setDeviceId] = useState<DeviceId>('medium');
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
   const { schema, error, client } = useGameFrame(frame, source);
@@ -58,6 +60,11 @@ export function PreviewFrame({ source, config, maxHeight }: Props) {
   useEffect(() => {
     setScreen(firstScreen);
   }, [schema, firstScreen]);
+
+  useEffect(() => {
+    onSchema?.(schema, error);
+    // Chỉ báo khi kết quả tải đổi.
+  }, [schema, error]);
 
   // Gửi cấu hình và trạng thái hiện tại sang khung mỗi khi đổi.
   useEffect(() => {

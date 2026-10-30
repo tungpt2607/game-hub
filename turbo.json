@@ -20,7 +20,8 @@
         "dist/**",
         ".next/**",
         "!.next/cache/**",
-        "public/module-assets/**"
+        "public/module-assets/**",
+        "public/esbuild.wasm"
       ]
     },
     "typecheck": {

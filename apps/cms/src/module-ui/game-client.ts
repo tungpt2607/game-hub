@@ -123,3 +123,20 @@ export class GameClient {
     this.pending.clear();
   }
 }
+
+/** Tải game trong một khung ẩn để đọc mô tả (key, phiên bản, mẫu…), rồi đóng khung. */
+export async function inspectGame(source: GameSource): Promise<SerializedSchema> {
+  const url = await gameHostUrl();
+  const frame = document.createElement('iframe');
+  frame.setAttribute('sandbox', FRAME_SANDBOX);
+  frame.setAttribute('aria-hidden', 'true');
+  Object.assign(frame.style, { position: 'fixed', width: '1px', height: '1px', left: '-10px', top: '-10px', border: '0', opacity: '0' });
+  document.body.appendChild(frame);
+  const client = new GameClient(frame, url);
+  try {
+    return await client.load(source);
+  } finally {
+    client.destroy();
+    frame.remove();
+  }
+}
