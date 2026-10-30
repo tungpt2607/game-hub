@@ -331,9 +331,7 @@ export default function GameEditorPage() {
     setTimeout(() => {
       const ed = editor.current;
       if (!ed || line <= 0) return;
-      ed.revealLineInCenter(line);
-      ed.setPosition({ lineNumber: line, column: column + 1 });
-      ed.focus();
+      ed.goTo(line, column);
     }, 50);
   };
 
