@@ -26,7 +26,7 @@ Xác thực bằng cookie phiên người chơi (tạo ở lời gọi đầu ti
 | GET | `/campaigns/:slug/rewards` | Quà của tôi |
 | POST | `/campaigns/:slug/rewards/:id/shipping` | Điền địa chỉ giao hàng |
 | POST | `/campaigns/:slug/events` | Ghi sự kiện cho báo cáo (gom nhiều sự kiện một lần) |
-| GET | `/try/:token` | `{ status: 'ok', moduleKey, moduleVersion, title, config }`; hoặc `password_required` (chỉ kèm tiêu đề), `not_found`, `disabled` (tắt link hoặc template đã lưu trữ), `expired`, `not_published`. Mỗi lần trả `ok` tăng lượt mở. Bật `PLAY_MEDIA_PROXY` thì URL media trong cấu hình đổi thành `/media/...` trên tên miền trang chơi |
+| GET | `/try/:token` | `{ status: 'ok', moduleKey, moduleVersion, title, config }`; hoặc `password_required` (chỉ kèm tiêu đề), `not_found`, `disabled` (tắt link hoặc template đã lưu trữ), `expired`, `not_published`. Mỗi lần trả `ok` tăng lượt mở. Bật `MEDIA_PROXY` thì URL media (cả ở API công khai lẫn API quản trị) đổi thành `/media/...` trên tên miền trang đang mở |
 | POST | `/try/:token/unlock` | Gửi mật khẩu; đúng thì đặt cookie mở khóa cho link này trong 30 ngày (đổi mật khẩu thì cookie cũ hết tác dụng). Sai quá 10 lần/15 phút mỗi IP thì tạm khóa |
 
 Đây là hai lời gọi duy nhất của trang chơi thử. Sau khi tải cấu hình, game chạy hoàn toàn trong trình duyệt.

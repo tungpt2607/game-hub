@@ -17,6 +17,7 @@ import { createS3Storage, s3ConfigFromEnv, type Storage } from './lib/storage';
 import { authRoutes } from './routes/auth';
 import { mediaRoutes } from './routes/media';
 import { previewLinkRoutes } from './routes/preview-links';
+import { rewriteMediaUrls } from './lib/media-urls';
 import { publicRoutes } from './routes/public';
 import { templateRoutes } from './routes/templates';
 import { userRoutes } from './routes/users';
@@ -51,7 +52,8 @@ const defaultDeps: AppDeps = {
     process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production',
   now: () => new Date(),
   playPublicUrl: () => (process.env.PLAY_PUBLIC_URL || 'https://opes-gamehub-play.vercel.app').replace(/\/+$/, ''),
-  playMediaProxy: () => process.env.PLAY_MEDIA_PROXY === 'true',
+  // PLAY_MEDIA_PROXY là tên cũ, vẫn được nhận.
+  mediaProxy: () => process.env.MEDIA_PROXY === 'true' || process.env.PLAY_MEDIA_PROXY === 'true',
 };
 
 /** Tạo ứng dụng API. Mọi đường dẫn nằm dưới /api. */
@@ -85,6 +87,20 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
     await next();
   });
   app.use('/admin/*', withDb);
+
+  /** Đổi địa chỉ kho media trong mọi phản hồi JSON của CMS thành "/media/..." (khi bật MEDIA_PROXY). */
+  app.use('/admin/*', async (c, next) => {
+    await next();
+    const storage = deps.getStorage();
+    if (!deps.mediaProxy() || !storage || !c.res.headers.get('content-type')?.includes('application/json')) return;
+    const data: unknown = await c.res.clone().json();
+    const headers = new Headers(c.res.headers);
+    headers.delete('content-length');
+    c.res = new Response(JSON.stringify(rewriteMediaUrls(data, storage.publicUrl(''))), {
+      status: c.res.status,
+      headers,
+    });
+  });
 
   app.route('/admin/auth', authRoutes(deps));
   app.route('/admin/users', userRoutes(deps));
