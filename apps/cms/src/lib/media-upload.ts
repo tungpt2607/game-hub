@@ -114,12 +114,12 @@ async function prepare(file: File): Promise<Prepared> {
   // (đúng kích thước tối đa); chỉ nén lại mà không thu nhỏ thì giữ file gốc.
   if (blob && blob.type !== target && !(blob.type === 'image/png' && scale < 1)) blob = null;
   if (!blob || blob.size > MEDIA_RULES.image.maxBytes || (scale === 1 && blob.size >= file.size)) return base;
-  const mime = blob.type;
-  const ext = mime === 'image/webp' ? 'webp' : mime === 'image/png' ? 'png' : 'jpg';
+  const outMime = blob.type;
+  const ext = outMime === 'image/webp' ? 'webp' : outMime === 'image/png' ? 'png' : 'jpg';
   return {
     blob,
-    mime,
-    fileName: mime === file.type ? file.name : renameExt(file.name, ext),
+    mime: outMime,
+    fileName: outMime === file.type ? file.name : renameExt(file.name, ext),
     width: canvas.width,
     height: canvas.height,
     durationMs: null,
