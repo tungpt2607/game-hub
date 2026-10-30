@@ -25,10 +25,14 @@ export interface FontValue {
 /** Điều kiện hiện trường, nhận toàn bộ cấu hình gốc. Trường bị ẩn thì không bị kiểm tra lỗi. */
 type VisibleWhen = (root: never) => boolean;
 
+/** Kiểm tra thêm cho trường (sau khi đã đúng kiểu); trả về câu báo lỗi, hoặc null nếu hợp lệ. */
+type FieldCheck = (value: never, root: never) => string | null;
+
 interface FieldBase {
   label: string;
   help?: string;
   visibleWhen?: VisibleWhen;
+  check?: FieldCheck;
 }
 
 export interface TextField extends FieldBase {
@@ -124,6 +128,11 @@ export const field = {
     },
   ): ListField => ({ type: 'list', ...o }) as ListField,
   group: (o: Omit<GroupField, 'type'>): GroupField => ({ type: 'group', ...o }),
+  /** Kiểm tra thêm có kiểu, ví dụ "phải có đúng một đáp án đúng". */
+  check:
+    <Value, Config = unknown>(fn: (value: Value, root: Config) => string | null): FieldCheck =>
+    (value: never, root: never) =>
+      fn(value as Value, root as Config),
   /** Điều kiện hiện trường có kiểu theo cấu hình của module. */
   when:
     <Config>(fn: (root: Config) => boolean): VisibleWhen =>

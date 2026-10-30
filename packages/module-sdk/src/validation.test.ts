@@ -84,6 +84,23 @@ describe('validateConfig', () => {
   });
 });
 
+describe('kiểm tra thêm (check)', () => {
+  const quizFields: Fields = {
+    answers: field.list<{ text: string; correct: boolean }>({
+      label: 'Đáp án',
+      newItem: { text: '', correct: false },
+      item: { text: field.text({ label: 'Đáp án' }), correct: field.boolean({ label: 'Đúng' }) },
+      check: field.check<{ correct: boolean }[]>((list) =>
+        list.filter((a) => a.correct).length === 1 ? null : 'Cần đúng một đáp án đúng',
+      ),
+    }),
+  };
+  it('báo lỗi khi điều kiện riêng của module không thỏa', () => {
+    expect(validateConfig(quizFields, { answers: [{ text: 'A', correct: false }] }).answers).toBe('Cần đúng một đáp án đúng');
+    expect(validateConfig(quizFields, { answers: [{ text: 'A', correct: true }] })).toEqual({});
+  });
+});
+
 describe('định dạng link', () => {
   const linkFields: Fields = { url: field.text({ label: 'Link', format: 'url' }) };
   it('chấp nhận link http(s) hoặc để trống', () => {

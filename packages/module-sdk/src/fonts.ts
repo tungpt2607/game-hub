@@ -44,7 +44,8 @@ export function googleFontHref(font: GoogleFont): string {
 
 /** Tên dùng trong CSS cho font riêng tải lên (tránh trùng tên font hệ thống). */
 export function customFontFamily(font: FontValue): string {
-  return font.media ? `opes-${font.media.id}` : font.family;
+  // Tên font chỉ giữ chữ, số, gạch (id của tài nguyên mẫu có thể chứa ":" và "/").
+  return font.media ? `opes-${font.media.id.replace(/[^A-Za-z0-9_-]/g, '-')}` : font.family;
 }
 
 /** Chuỗi `font-family` đầy đủ, có font dự phòng. */

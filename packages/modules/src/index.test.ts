@@ -36,6 +36,12 @@ describe('danh sách module', () => {
     expect(MODULE_SCHEMAS.map((m) => `${m.key}@${m.version}`)).toEqual(MODULES.map((m) => `${m.key}@${m.version}`));
   });
 
+  it('Hứng quà + câu hỏi có mẫu OME Catch với 6 câu hỏi và ảnh đi kèm', () => {
+    const preset = getModule('game.catch-quiz')?.presets?.find((p) => p.id === 'ome-catch');
+    expect(preset?.config.quiz.questions).toHaveLength(6);
+    expect(preset?.config.look.backgroundImage.url).toBe('/module-assets/catch-quiz/ome/background.webp');
+  });
+
   it('mỗi module có ít nhất một màn hình', () => {
     for (const m of MODULES) expect(m.screens.length).toBeGreaterThan(0);
   });

@@ -9,3 +9,6 @@ coverage/
 !.env.example
 .vercel/
 .DS_Store
+
+# Tài nguyên mẫu module được chép khi build (nguồn: packages/modules/assets)
+apps/*/public/module-assets/

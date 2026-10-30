@@ -47,7 +47,18 @@ function walkObject(fields: Fields, value: unknown, root: unknown, path: string,
   const obj = isObj(value) ? value : {};
   for (const [key, f] of Object.entries(fields)) {
     if (!isFieldVisible(f, root)) continue;
-    checkField(f, obj[key], root, join(path, key), errors);
+    const at = join(path, key);
+    checkField(f, obj[key], root, at, errors);
+    // Kiểm tra thêm của module, chỉ khi trường đã đúng kiểu.
+    if (f.check && errors[at] === undefined) {
+      let message: string | null = null;
+      try {
+        message = f.check(obj[key] as never, root as never);
+      } catch {
+        message = null;
+      }
+      if (message) errors[at] = message;
+    }
   }
 }
 
