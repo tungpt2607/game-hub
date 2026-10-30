@@ -19,3 +19,6 @@ apps/cms/public/ts-libs.json
 
 # Gói game biên dịch từ packages/modules/src (pnpm --filter @opes/modules bundle)
 packages/modules/bundles/
+
+# Multi-agent
+.agents/state/tool_log.jsonl
