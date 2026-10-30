@@ -16,12 +16,14 @@ import { AppError } from './lib/errors';
 import { createS3Storage, s3ConfigFromEnv, type Storage } from './lib/storage';
 import { authRoutes } from './routes/auth';
 import { mediaRoutes } from './routes/media';
+import { previewLinkRoutes } from './routes/preview-links';
+import { publicRoutes } from './routes/public';
 import { templateRoutes } from './routes/templates';
 import { userRoutes } from './routes/users';
 
 export type { AppDeps } from './context';
 
-export const API_VERSION = '0.4.0';
+export const API_VERSION = '0.5.0';
 
 let storageCache: Storage | null | undefined;
 
@@ -48,6 +50,8 @@ const defaultDeps: AppDeps = {
   secureCookies: () =>
     process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production',
   now: () => new Date(),
+  playPublicUrl: () => (process.env.PLAY_PUBLIC_URL || 'https://opes-gamehub-play.vercel.app').replace(/\/+$/, ''),
+  playMediaProxy: () => process.env.PLAY_MEDIA_PROXY === 'true',
 };
 
 /** Tạo ứng dụng API. Mọi đường dẫn nằm dưới /api. */
@@ -86,6 +90,10 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
   app.route('/admin/users', userRoutes(deps));
   app.route('/admin/media', mediaRoutes(deps));
   app.route('/admin/templates', templateRoutes(deps));
+  app.route('/admin/preview-links', previewLinkRoutes(deps));
+
+  app.use('/public/*', withDb);
+  app.route('/public', publicRoutes(deps));
 
   app.notFound((c) => {
     const body: ApiError = {

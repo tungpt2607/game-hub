@@ -29,6 +29,7 @@ import { useTheme } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import HistoryIcon from '@mui/icons-material/History';
+import LinkIcon from '@mui/icons-material/Link';
 import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import type { TemplateDetail, TemplateVersionResponse } from '@opes/contracts';
@@ -38,6 +39,7 @@ import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
+import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
 import { SchemaForm } from '../../../../module-ui/SchemaForm';
 import { StatusChip } from '../../../../module-ui/StatusChip';
 
@@ -77,6 +79,7 @@ export default function TemplateEditorPage() {
   const [tab, setTab] = useState<'form' | 'preview'>('form');
   const [infoOpen, setInfoOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(false);
   const [viewing, setViewing] = useState<TemplateVersionResponse | null>(null);
   const [restoreVersion, setRestoreVersion] = useState<number | null>(null);
 
@@ -278,6 +281,9 @@ export default function TemplateEditorPage() {
           </Box>
         </Stack>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
+          <Button startIcon={<LinkIcon />} onClick={() => setLinksOpen(true)}>
+            {t('cms.links.button')}
+          </Button>
           <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
             {t('cms.templates.history', { count: template.versions.length })}
           </Button>
@@ -355,6 +361,8 @@ export default function TemplateEditorPage() {
           setInfoOpen(false);
         }}
       />
+
+      <PreviewLinksDialog open={linksOpen} template={template} onClose={() => setLinksOpen(false)} />
 
       <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t('cms.templates.historyTitle')}</DialogTitle>

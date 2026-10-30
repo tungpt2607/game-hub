@@ -49,6 +49,8 @@ services:
       # Chạy trên máy bằng http nên tắt cờ Secure; bật lại khi có HTTPS.
       COOKIE_SECURE: 'false'
       PLAY_PUBLIC_URL: http://localhost:3001
+      # Trang chơi chuyển tiếp /media/* tới MinIO, nên API trả đường dẫn media dạng /media/...
+      PLAY_MEDIA_PROXY: 'true'
     ports:
       - '4000:4000'
     depends_on:
@@ -74,6 +76,7 @@ services:
       args:
         APP: play
         API_INTERNAL_URL: http://api:4000
+        MEDIA_PROXY_ORIGIN: http://minio:9000/gamehub-media
     ports:
       - '3001:3000'
     depends_on:

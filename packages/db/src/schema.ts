@@ -157,6 +157,8 @@ export interface PreviewSnapshot {
   moduleKey: string;
   moduleVersion: string;
   templateRevision: number;
+  /** Chụp từ lần công bố nào; null = chụp từ bản nháp. */
+  publishedVersion?: number | null;
   config: Record<string, unknown>;
 }
 
