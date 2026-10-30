@@ -94,13 +94,14 @@ export function publicRoutes(deps: AppDeps) {
     const db = c.get('db');
     const input = parseInput(TryUnlockRequestSchema, await readJson(c.req));
     const found = await findLink(db, c.req.param('token'));
-    if (!found || !found.link.passwordHash) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy link.');
-    const { link } = found;
+    const link = found?.link;
+    const passwordHash = link?.passwordHash;
+    if (!link || !passwordHash) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy link.');
     const allowed = await hitRateLimit(db, `try-unlock:${clientIp(c) ?? 'unknown'}:${link.id}`, 10, 15 * 60, deps.now());
     if (!allowed) {
       throw new AppError(429, ErrorCode.RATE_LIMITED, 'Bạn nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.');
     }
-    if (!(await verifyPassword(input.password, link.passwordHash))) {
+    if (!(await verifyPassword(input.password, passwordHash))) {
       throw new AppError(401, ErrorCode.WRONG_PASSWORD, 'Mật khẩu không đúng.');
     }
     setCookie(c, unlockCookie(link), unlockValue(link, deps.sessionSecret()), {
