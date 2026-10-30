@@ -78,7 +78,7 @@ export interface WorkspaceProps {
 
 type PathDialogState =
   | { mode: 'newFile' | 'newFolder'; folder: string }
-  | { mode: 'rename'; path: string; folder: boolean }
+  | { mode: 'rename'; path: string; isFolder: boolean }
   | null;
 
 interface PendingMove {
@@ -319,7 +319,7 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
         startUpload(folder);
         break;
       case 'rename':
-        setPathDialog({ mode: 'rename', path: menuPath, folder: !isFile });
+        setPathDialog({ mode: 'rename', path: menuPath, isFolder: !isFile });
         break;
       case 'move':
         setMoving(menuPath);
@@ -382,7 +382,7 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
           onOpen={openFile}
           onSelect={setSelected}
           onMenu={(path, position) => setMenu({ path, position })}
-          onRename={(p) => p !== ASSETS_DIR && setPathDialog({ mode: 'rename', path: p, folder: !fileExists(ws, p) })}
+          onRename={(p) => p !== ASSETS_DIR && setPathDialog({ mode: 'rename', path: p, isFolder: !fileExists(ws, p) })}
           onDelete={(p) => p !== ASSETS_DIR && setDeleting(p)}
           onMove={(from, folder) => {
             if (dirName(from) !== folder) move(from, joinPath(folder, baseName(from)));
@@ -514,15 +514,17 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
               ? t('cms.workspace.newFolder')
               : t('cms.workspace.rename')
         }
-        label={pathDialog?.mode === 'newFolder' || (pathDialog?.mode === 'rename' && pathDialog.folder) ? t('cms.workspace.folderPath') : t('cms.workspace.filePath')}
-        initial={
-          pathDialog?.mode === 'rename' ? pathDialog.path : pathDialog?.folder ? `${pathDialog.folder}/` : ''
+        label={
+          pathDialog?.mode === 'newFolder' || (pathDialog?.mode === 'rename' && pathDialog.isFolder)
+            ? t('cms.workspace.folderPath')
+            : t('cms.workspace.filePath')
         }
+        initial={!pathDialog ? '' : pathDialog.mode === 'rename' ? pathDialog.path : pathDialog.folder ? `${pathDialog.folder}/` : ''}
         selection={(() => {
           if (pathDialog?.mode !== 'rename') return undefined;
           const start = pathDialog.path.lastIndexOf('/') + 1;
-          const dot = pathDialog.folder ? -1 : pathDialog.path.lastIndexOf('.');
-          return [start, dot > start ? dot : pathDialog.path.length];
+          const dot = pathDialog.isFolder ? -1 : pathDialog.path.lastIndexOf('.');
+          return [start, dot > start ? dot : pathDialog.path.length] as [number, number];
         })()}
         hint={pathDialog?.mode === 'newFile' ? t('cms.workspace.newFileHint') : t('cms.workspace.pathHint')}
         confirmLabel={pathDialog?.mode === 'rename' ? t('cms.workspace.rename') : t('cms.workspace.create')}
@@ -530,7 +532,7 @@ export const Workspace = forwardRef<WorkspaceHandle, WorkspaceProps>(function Wo
           if (!pathDialog) return null;
           if (pathDialog.mode === 'newFile') return checkFilePath(ws, value, 'code');
           if (pathDialog.mode === 'newFolder') return checkFolderPath(ws, value);
-          return pathDialog.folder ? checkFolderPath(ws, value, pathDialog.path) : checkFilePath(ws, value, kindOf(pathDialog.path), pathDialog.path);
+          return pathDialog.isFolder ? checkFolderPath(ws, value, pathDialog.path) : checkFilePath(ws, value, kindOf(pathDialog.path), pathDialog.path);
         }}
         onConfirm={(value) => {
           const d = pathDialog;
