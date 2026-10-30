@@ -552,7 +552,10 @@ Import thư viện khác (ví dụ `lodash`, `phaser`) sẽ báo lỗi khi biên
 1. **Tải lên game mới**: Game → **Tải lên game mới (.zip)**. CMS biên dịch, đọc key từ `schema.ts`, tải `assets/` lên kho rồi mở màn sửa game. Game mới chỉ có **bản nháp**.
 2. **Sửa và chạy thử**: sửa code từng file ngay trong CMS (hoặc sửa trên máy rồi bấm **Tải lên .zip** để thay toàn bộ). CMS biên dịch lại sau khi bạn ngừng gõ. Lỗi hiện theo `file:dòng:cột`, bấm vào để nhảy tới. Khung bên phải chạy thử game với cấu hình mặc định hoặc từng mẫu.
 3. **Lưu nháp**: lưu được cả khi còn lỗi. Đồng nghiệp mở cùng game sẽ thấy bản nháp. Nếu hai người cùng sửa, người lưu sau được báo để tải lại.
-4. **Phát hành**: tăng `version` trong `schema.ts` rồi bấm **Phát hành**. CMS chặn khi:
+   - Dòng **"Chưa lưu"** chỉ hiện khi nội dung thật sự khác bản đã lưu (gõ rồi xoá về như cũ thì không còn).
+   - Còn thay đổi chưa lưu mà bấm sang mục khác trong CMS, hoặc đóng/tải lại trang: CMS hỏi **Rời trang?**
+   - **Bản tạm trên trình duyệt**: thay đổi chưa lưu được giữ tạm trên trình duyệt của máy đang dùng. Lỡ đóng tab, máy hết pin, trình duyệt treo… thì lần sau mở game sẽ có dòng hỏi **Khôi phục** / **Bỏ đi**. Không tự khôi phục; nếu bạn cố ý tải lại trang để bỏ thay đổi thì bấm **Bỏ đi**, hoặc cứ sửa tiếp là bản tạm bị bỏ.
+4. **Phát hành**: tăng `version` trong `schema.ts` rồi bấm **Phát hành**. Hộp phát hành liệt kê các file khác với bản đang chạy (thêm / sửa / xoá). Bấm vào một file code để xem từng dòng thay đổi: xanh là dòng thêm, đỏ là dòng xoá. CMS chặn khi:
    - còn lỗi biên dịch, hoặc game lỗi khi chạy thử;
    - phiên bản không lớn hơn bản trước;
    - cấu hình mặc định hoặc một mẫu không hợp lệ.

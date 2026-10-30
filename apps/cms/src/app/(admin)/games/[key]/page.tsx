@@ -42,6 +42,11 @@ import { uploadAssets } from '../../../../games/assets';
 import { compileGame, type CompileResult } from '../../../../games/compiler';
 import type { GameAssets, GameFiles, PendingAsset } from '../../../../games/types';
 import { Workspace, type WorkspaceHandle } from '../../../../games/workspace/Workspace';
+import { diffPackages, sameAssets, sameFiles } from '../../../../games/changes';
+import { LocalDraftBanner } from '../../../../games/LocalDraftBanner';
+import { clearLocalDraft, readLocalDraft, writeLocalDraft, type LocalDraft } from '../../../../games/localDraft';
+import { PublishDialog } from '../../../../games/PublishDialog';
+import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
 import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
@@ -62,7 +67,9 @@ export default function GameEditorPage() {
   const [assets, setAssets] = useState<GameAssets>({});
   /** Code lúc lưu nháp gần nhất (đánh dấu ● file đã sửa). */
   const [savedFiles, setSavedFiles] = useState<GameFiles>({});
-  const [dirty, setDirty] = useState(false);
+  const [savedAssets, setSavedAssets] = useState<GameAssets>({});
+  /** Bản tạm trên trình duyệt đang chờ hỏi Khôi phục / Bỏ đi. */
+  const [localOffer, setLocalOffer] = useState<LocalDraft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
@@ -96,10 +103,22 @@ export default function GameEditorPage() {
     setFiles(nextFiles);
     setAssets(nextAssets);
     setSavedFiles(nextFiles);
+    setSavedAssets(nextAssets);
     setMod(next);
-    setDirty(false);
     setConflict(false);
+    // Có bản tạm khác bản vừa tải: hỏi người dùng (không tự khôi phục).
+    const local = readLocalDraft(next.key);
+    if (local && !(sameFiles(local.files, nextFiles) && sameAssets(local.assets, nextAssets))) setLocalOffer(local);
+    else {
+      setLocalOffer(null);
+      clearLocalDraft(next.key);
+    }
   }, []);
+
+  /** "Chưa lưu" = khác bản đã lưu (gõ rồi xóa về như cũ thì không còn). */
+  const dirty = useMemo(() => !sameFiles(files, savedFiles) || !sameAssets(assets, savedAssets), [files, savedFiles, assets, savedAssets]);
+  /** Bản nháp trên máy chủ mà bản tạm dựa vào. */
+  const serverBase = mod ? (mod.draft?.updatedAt ?? `v:${mod.latestVersion ?? ''}`) : '';
 
   const load = useCallback(async () => {
     try {
@@ -141,12 +160,18 @@ export default function GameEditorPage() {
     };
   }, [mod, files, assets]);
 
+  // Bản tạm trên trình duyệt: ghi sau khi ngừng sửa 1 giây; hết thay đổi thì xóa. Đang hỏi khôi phục thì để nguyên.
   useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+    if (!mod || localOffer) return;
+    if (!dirty) {
+      clearLocalDraft(mod.key);
+      return;
+    }
+    const timer = setTimeout(() => {
+      writeLocalDraft(mod.key, { files, assets, base: serverBase, savedAt: new Date().toISOString() });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [mod, localOffer, dirty, files, assets, serverBase]);
 
   const source = useMemo<GameSource | null>(() => (runtimeJs ? { kind: 'code', code: runtimeJs, label: moduleKey } : null), [runtimeJs, moduleKey]);
   const previewConfig = useMemo(() => {
@@ -168,9 +193,10 @@ export default function GameEditorPage() {
   };
 
   const change = (nextFiles: GameFiles, nextAssets: GameAssets = assets) => {
+    // Sửa tiếp mà không chọn khôi phục: bỏ bản tạm cũ.
+    if (localOffer) setLocalOffer(null);
     setFiles(nextFiles);
     setAssets(nextAssets);
-    setDirty(true);
   };
 
   /** Lưu nháp (kèm gói đã biên dịch nếu không lỗi). */
@@ -189,7 +215,8 @@ export default function GameEditorPage() {
     });
     setMod(res.module);
     setSavedFiles(files);
-    setDirty(false);
+    setSavedAssets(assets);
+    clearLocalDraft(mod.key);
     return res.module;
   }
 
@@ -228,6 +255,7 @@ export default function GameEditorPage() {
     run('discard', async () => {
       if (!mod) return;
       const res = await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(mod.key)}/draft`, { method: 'DELETE' });
+      clearLocalDraft(mod.key);
       setDiscardOpen(false);
       await apply(res.module);
       setToast(t('cms.games.discarded'));
@@ -459,6 +487,23 @@ export default function GameEditorPage() {
 
       {busy?.startsWith('zip:') && <Alert severity="info">{t('cms.games.uploadingAssets', { progress: busy.slice(4) })}</Alert>}
       {busy !== null && <LinearProgress />}
+      {localOffer && (
+        <LocalDraftBanner
+          savedAt={localOffer.savedAt}
+          fileCount={diffPackages({ files, assets }, localOffer).length}
+          outdated={localOffer.base !== serverBase}
+          onRestore={() => {
+            const local = localOffer;
+            setLocalOffer(null);
+            setFiles(local.files);
+            setAssets(local.assets);
+          }}
+          onDiscard={() => {
+            setLocalOffer(null);
+            clearLocalDraft(mod.key);
+          }}
+        />
+      )}
       {conflict && (
         <Alert
           severity="warning"
@@ -505,6 +550,9 @@ export default function GameEditorPage() {
 
       <PublishDialog
         open={publishOpen}
+        moduleKey={mod.key}
+        files={files}
+        assets={assets}
         version={draftVersion}
         latest={mod.latestVersion}
         templateCount={mod.templateCount}
@@ -569,63 +617,8 @@ export default function GameEditorPage() {
         onConfirm={() => void onDiscard()}
         onClose={() => setDiscardOpen(false)}
       />
+      <LeaveGuard when={dirty} />
       <Snackbar open={Boolean(toast)} autoHideDuration={5000} onClose={() => setToast(null)} message={toast} />
     </Stack>
-  );
-}
-
-function PublishDialog({
-  open,
-  version,
-  latest,
-  templateCount,
-  busy,
-  onClose,
-  onPublish,
-}: {
-  open: boolean;
-  version: string | null;
-  latest: string | null;
-  templateCount: number;
-  busy: boolean;
-  onClose: () => void;
-  onPublish: (notes: string) => void;
-}) {
-  const [notes, setNotes] = useState('');
-  useEffect(() => {
-    if (open) setNotes('');
-  }, [open]);
-  return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t('cms.games.publishTitle', { version: version ?? '' })}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ pt: 1 }}>
-          <Typography variant="body2">
-            {latest ? t('cms.games.publishTextUpdate', { latest }) : t('cms.games.publishTextFirst')}
-          </Typography>
-          {templateCount > 0 && (
-            <Typography variant="body2" color="text.secondary">
-              {t('cms.games.publishTemplates', { count: templateCount })}
-            </Typography>
-          )}
-          <TextField
-            label={t('cms.games.notes')}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            multiline
-            minRows={2}
-            slotProps={{ htmlInput: { maxLength: 1000 } }}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={busy}>
-          {t('common.cancel')}
-        </Button>
-        <Button variant="contained" onClick={() => onPublish(notes)} disabled={busy}>
-          {busy ? t('cms.games.publishing') : t('cms.games.publish')}
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }

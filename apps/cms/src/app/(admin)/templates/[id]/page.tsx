@@ -36,6 +36,7 @@ import type { TemplateDetail, TemplateVersionResponse } from '@opes/contracts';
 import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ConfirmDialog';
+import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
@@ -114,16 +115,6 @@ export default function TemplateEditorPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  // Nhắc khi rời trang mà chưa lưu.
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
 
   const errors = game.check?.errors ?? template?.errors ?? {};
   const errorCount = Object.keys(errors).length;
@@ -507,6 +498,7 @@ export default function TemplateEditorPage() {
         onConfirm={() => void onUpgrade()}
         onClose={() => setUpgradeOpen(false)}
       />
+      <LeaveGuard when={dirty} />
       <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast(null)} message={toast} />
     </Stack>
   );
