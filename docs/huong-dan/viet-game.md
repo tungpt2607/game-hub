@@ -179,12 +179,153 @@ và thêm ngay bên dưới:
 
 Muốn thêm hay đổi ảnh ngay trong CMS: ở mục **File kèm** bên trái bấm **+** để tải ảnh lên. Nút chép bên cạnh mỗi ảnh chép sẵn đoạn `asset('…')` để dán vào code.
 
-### Bước 9. Phát hành
+### Bước 9. Sửa logic game (luật chơi)
+
+Logic của game nằm trong `Runtime.tsx`. Trước khi sửa, xem file này gồm những phần nào:
+
+| Phần trong `Runtime.tsx` | Làm gì |
+|---|---|
+| `LIFETIME`, `SPAWN_EVERY` (đầu file) | Vật phẩm tồn tại bao lâu và bao lâu hiện thêm một cái, theo độ khó (mili giây) |
+| `const [score, setScore] = useState(0)` … | Trạng thái của ván chơi: điểm, thời gian còn lại, các vật phẩm đang hiện |
+| `const start = useCallback(…)` | Bắt đầu ván: đặt điểm về 0, bật nhạc, chuyển sang màn "Đang chơi" |
+| `useEffect` có `setInterval` | Vòng lặp: mỗi 0,1 giây đếm ngược và xóa vật phẩm hết hạn; hết giờ thì sang màn "Kết thúc". Cứ mỗi `SPAWN_EVERY` thì sinh thêm vật phẩm ở chỗ ngẫu nhiên |
+| `const hit = (s: Spawned) => {…}` | Người chơi chạm trúng vật phẩm: xóa vật đó, cộng điểm, phát tiếng |
+| `return ( … )` | Vẽ giao diện của 3 màn: `intro` (mở đầu), `play` (đang chơi), `end` (kết thúc) |
+
+#### 9a. Sửa nhanh: cho vật phẩm hiện dày hơn
+
+1. Ở cột trái, bấm `Runtime.tsx`. Tìm dòng:
+
+```ts
+const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = { easy: 700, normal: 550, hard: 420 };
+```
+
+2. Giảm các con số, ví dụ đổi `normal: 550` thành `normal: 350`. Số càng nhỏ, vật phẩm hiện càng dày.
+3. Ở khung chạy thử, bấm nút chơi lại (mũi tên vòng) rồi bấm **Bắt đầu** để thấy khác biệt.
+
+#### 9b. Thêm luật mới: thưởng combo
+
+Luật mới: người chơi chạm liên tiếp đủ số lần mà không chạm vào vật điểm âm (như quả bom) thì lần chạm tiếp theo được **gấp đôi điểm**. Số lần chạm để có combo do người làm template tự chỉnh trong form; đặt 0 là tắt luật này.
+
+Một luật mới thường cần sửa 2 file: `config.ts` thêm ô vào form, `Runtime.tsx` dùng giá trị đó trong logic.
+
+**Trong `config.ts`:**
+
+1. Tìm dòng:
+
+```ts
+  rules: { duration: number; showTimer: boolean; difficulty: 'easy' | 'normal' | 'hard' };
+```
+
+và thêm `comboEvery: number`:
+
+```ts
+  rules: { duration: number; showTimer: boolean; difficulty: 'easy' | 'normal' | 'hard'; comboEvery: number };
+```
+
+2. Tìm dòng có `showTimer: field.boolean(` và thêm ngay bên dưới:
+
+```ts
+      comboEvery: field.number({
+        label: 'Thưởng combo sau mỗi',
+        min: 0,
+        max: 20,
+        integer: true,
+        unit: 'lần chạm',
+        help: 'Chạm liên tiếp đủ số lần này (không chạm vật điểm âm) thì lần chạm tiếp theo được gấp đôi điểm. 0 = tắt.',
+      }),
+```
+
+3. Tìm dòng cấu hình mặc định:
+
+```ts
+  rules: { duration: 20, showTimer: true, difficulty: 'normal' },
+```
+
+và thêm `comboEvery: 3`:
+
+```ts
+  rules: { duration: 20, showTimer: true, difficulty: 'normal', comboEvery: 3 },
+```
+
+**Trong `Runtime.tsx`:**
+
+4. Tìm dòng `const nextId = useRef(1);` và thêm ngay bên dưới hai dòng sau. Dòng đầu đếm số lần chạm liên tiếp, dòng sau giữ chữ "Combo" đang hiện:
+
+```ts
+  const combo = useRef(0);
+  const [comboText, setComboText] = useState('');
+```
+
+5. Trong phần `const start = useCallback(async () => {`, tìm dòng `scoreRef.current = 0;` và thêm ngay bên dưới (bắt đầu ván mới thì đếm lại combo):
+
+```ts
+    combo.current = 0;
+```
+
+6. Thay **toàn bộ** phần `const hit = (s: Spawned) => { … };` bằng:
+
+```ts
+  const hit = (s: Spawned) => {
+    setSpawned((list) => list.filter((x) => x.id !== s.id));
+    let points = s.item.points;
+    const every = config.rules.comboEvery;
+    if (points < 0) {
+      // Chạm vật điểm âm: mất chuỗi combo.
+      combo.current = 0;
+    } else if (every > 0) {
+      combo.current += 1;
+      if (combo.current > every) {
+        // Đủ chuỗi: lần chạm này được gấp đôi, rồi đếm lại từ đầu.
+        points *= 2;
+        combo.current = 0;
+        setComboText(`Combo x2  +${points}`);
+        setTimeout(() => setComboText(''), 900);
+      }
+    }
+    scoreRef.current += points;
+    setScore(scoreRef.current);
+    tap.play();
+    host.track('item_tap', { points });
+  };
+```
+
+7. Hiện chữ "Combo" trên màn đang chơi. Tìm dòng:
+
+```tsx
+            {config.rules.showTimer && <span>⏱ {timeLeft}s</span>}
+          </div>
+```
+
+và thêm ngay bên dưới:
+
+```tsx
+          {comboText && (
+            <div style={{ position: 'absolute', top: 70, left: 0, right: 0, textAlign: 'center', fontSize: 28, fontWeight: 800 }}>
+              {comboText}
+            </div>
+          )}
+```
+
+8. Kiểm tra:
+   - Dưới khung code phải hiện **Biên dịch thành công**.
+   - Ở khung chạy thử, bấm chơi lại rồi **Bắt đầu**. Chạm liên tiếp 4 món quà: lần thứ 4 hiện "Combo x2" và được gấp đôi điểm.
+   - Chạm vào quả bom thì chuỗi tính lại từ đầu.
+9. Bấm **Lưu nháp**.
+
+Từ giờ, trong form của mỗi template (nhóm **Luật chơi**) có ô **Thưởng combo sau mỗi … lần chạm**. Người làm template tự chỉnh số này mà không cần đụng vào code.
+
+> **Mẹo khi tự viết luật khác:**
+> - Giá trị người làm template được chỉnh thì đặt trong `config.ts`; trong `Runtime.tsx` đọc nó qua `config.…`.
+> - Giá trị thay đổi trong lúc chơi (điểm, combo…) giữ trong `useState` hoặc `useRef`. Nhớ đặt lại chúng trong `start`, để mỗi ván mới bắt đầu từ đầu.
+> - Mỗi lần sửa, nhìn dòng **Biên dịch thành công** và chơi thử ngay ở khung bên phải.
+
+### Bước 10. Phát hành
 
 1. Bấm **Phát hành**, ghi chú nếu muốn (ví dụ "Bản đầu tiên"), rồi bấm **Phát hành** lần nữa.
 2. Game có phiên bản **v1.0.0** và từ giờ xuất hiện khi tạo template.
 
-### Bước 10. Tạo template và gửi link chơi thử
+### Bước 11. Tạo template và gửi link chơi thử
 
 1. Vào **Thư viện template** → **Tạo template**.
 2. Nhập **Tên template**, ở ô **Loại game** chọn **Chạm hoa mai**, ở phần bắt đầu từ chọn mẫu **Tết hoa mai**, rồi bấm **Tạo**.
@@ -192,9 +333,9 @@ Muốn thêm hay đổi ảnh ngay trong CMS: ở mục **File kèm** bên trái
 4. Bấm **Công bố**.
 5. Bấm **Link chơi thử** → **Tạo link** → **Tạo link**, rồi bấm **Sao chép link** (hoặc **Mã QR** → **Tải ảnh QR**) và gửi cho người khác chơi.
 
-### Bước 11. Sửa game sau khi đã phát hành
+### Bước 12. Sửa game sau khi đã phát hành
 
-1. Vào **Game** → **Chạm hoa mai**, sửa code như Bước 8.
+1. Vào **Game** → **Chạm hoa mai**, sửa code như Bước 8 và Bước 9.
 2. Mở `schema.ts`, tăng phiên bản, ví dụ `version: '1.0.0'` → `version: '1.0.1'`. Mỗi lần phát hành phải tăng, nếu không nút Phát hành sẽ báo.
 3. Bấm **Lưu nháp**, rồi **Phát hành**.
 4. Template đã tạo trước đó **vẫn chạy bản cũ**, để người chơi không bị ảnh hưởng. Muốn template dùng bản mới:
