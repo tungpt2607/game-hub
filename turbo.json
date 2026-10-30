@@ -21,7 +21,8 @@
         ".next/**",
         "!.next/cache/**",
         "public/module-assets/**",
-        "public/esbuild.wasm"
+        "public/esbuild.wasm",
+        "public/ts-libs.json"
       ]
     },
     "typecheck": {

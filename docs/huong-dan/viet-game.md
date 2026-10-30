@@ -178,7 +178,9 @@ và thêm ngay bên dưới:
    - Nếu hiện lỗi màu đỏ, bấm vào chỗ ghi `tên-file:dòng:cột` để nhảy tới chỗ sai.
 6. Bấm **Lưu nháp**. Bản nháp được lưu lại; đồng nghiệp mở game này cũng thấy.
 
-Phím tắt:
+Cách dùng đầy đủ trình sửa code (gợi ý code, đi tới định nghĩa, tìm trong cả game, bảng lệnh…): xem [Hướng dẫn dùng trình sửa code](dung-trinh-sua-code.md).
+
+Phím tắt hay dùng:
 
 | Phím | Tác dụng |
 |---|---|

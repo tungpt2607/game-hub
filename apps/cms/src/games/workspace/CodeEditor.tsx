@@ -1,26 +1,27 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { basicSetup } from 'codemirror';
-import { indentWithTab, redo, undo } from '@codemirror/commands';
-import { javascript } from '@codemirror/lang-javascript';
-import { json } from '@codemirror/lang-json';
-import { markdown } from '@codemirror/lang-markdown';
+import { redo, undo } from '@codemirror/commands';
 import { closeSearchPanel, openSearchPanel, searchPanelOpen } from '@codemirror/search';
 import { EditorState, type Extension } from '@codemirror/state';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { EditorView, keymap } from '@codemirror/view';
-import { extOf } from '../zip';
+import { EditorView } from '@codemirror/view';
+import { baseExtensions, fileExtensions } from './editor/setup';
 
 /**
  * Trình sửa code (CodeMirror 6, đóng gói sẵn trong CMS, không tải gì từ mạng ngoài).
- * Có tô màu, tìm/thay (Ctrl+F, Esc để đóng), gập code, nhiều con trỏ; dùng được trên điện thoại.
  * Mỗi file giữ trạng thái riêng (lịch sử hoàn tác, vị trí con trỏ) khi chuyển qua lại.
+ * File có tiền tố "lib:" (thư viện React, module-sdk) mở ở chế độ chỉ đọc.
  */
 
 export interface EditorApi {
   /** Nhảy tới dòng (bắt đầu từ 1) và cột (bắt đầu từ 0), cuộn cho dòng nằm giữa. */
   goTo(line: number, column: number): void;
+  /** Nhảy tới vị trí (số ký tự từ đầu file), có thể chọn đoạn [pos, end). */
+  goToOffset(pos: number, end?: number): void;
+  /** File và vị trí con trỏ hiện tại. */
+  cursor(): { path: string; pos: number };
+  /** Thay toàn bộ nội dung (ví dụ sau khi định dạng), giữ lịch sử hoàn tác. */
+  replaceAll(text: string): void;
   focus(): void;
   undo(): void;
   redo(): void;
@@ -28,46 +29,28 @@ export interface EditorApi {
   toggleSearch(): void;
 }
 
-function languageFor(path: string): Extension {
-  switch (extOf(path)) {
-    case 'ts':
-      return javascript({ typescript: true });
-    case 'tsx':
-      return javascript({ typescript: true, jsx: true });
-    case 'js':
-      return javascript();
-    case 'jsx':
-      return javascript({ jsx: true });
-    case 'json':
-      return json();
-    case 'md':
-      return markdown();
-    default:
-      return [];
-  }
+export interface CursorInfo {
+  path: string;
+  pos: number;
+  line: number;
+  column: number;
 }
-
-/** Màn hình cảm ứng: chữ 16px để iPhone không tự phóng to khi chạm vào ô code. */
-const isTouch = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-
-const baseTheme = () =>
-  EditorView.theme({
-    '&': { height: '100%', fontSize: isTouch() ? '16px' : '13px' },
-    '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
-    // Ô nhập trong hộp tìm/thay cũng 16px trên điện thoại.
-    '.cm-panel.cm-search input': { fontSize: isTouch() ? '16px' : 'inherit' },
-  });
 
 export function CodeEditor({
   path,
   value,
+  shared,
   onChange,
+  onCursor,
   onMount,
   height,
 }: {
   path: string;
   value: string;
+  /** Phần mở rộng dùng chung cho mọi file (gợi ý TypeScript…); phải giữ nguyên giữa các lần render. */
+  shared: Extension;
   onChange: (value: string) => void;
+  onCursor?: (info: CursorInfo) => void;
   onMount?: (editor: EditorApi) => void;
   height: number | string;
 }) {
@@ -78,20 +61,25 @@ export function CodeEditor({
   const currentPath = useRef(path);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onCursorRef = useRef(onCursor);
+  onCursorRef.current = onCursor;
+
+  const reportCursor = (state: EditorState) => {
+    const pos = state.selection.main.head;
+    const line = state.doc.lineAt(pos);
+    onCursorRef.current?.({ path: currentPath.current, pos, line: line.number, column: pos - line.from });
+  };
 
   const makeState = (forPath: string, doc: string) =>
     EditorState.create({
       doc,
       extensions: [
-        basicSetup,
-        keymap.of([indentWithTab]),
-        languageFor(forPath),
-        oneDark,
-        baseTheme(),
-        EditorView.lineWrapping,
-        EditorState.tabSize.of(2),
+        baseExtensions,
+        fileExtensions(forPath, forPath.startsWith('lib:')),
+        shared,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) onChangeRef.current(update.state.doc.toString());
+          if (update.docChanged && !update.state.readOnly) onChangeRef.current(update.state.doc.toString());
+          if (update.docChanged || update.selectionSet) reportCursor(update.state);
         }),
       ],
     });
@@ -102,13 +90,27 @@ export function CodeEditor({
     const v = new EditorView({ state: makeState(path, value), parent: host.current });
     view.current = v;
     currentPath.current = path;
+    reportCursor(v.state);
+    const select = (from: number, to = from) => {
+      const len = v.state.doc.length;
+      const anchor = Math.max(0, Math.min(from, len));
+      const head = Math.max(0, Math.min(to, len));
+      v.dispatch({ selection: { anchor, head }, effects: EditorView.scrollIntoView(anchor, { y: 'center' }) });
+      v.focus();
+    };
     onMount?.({
       goTo(line, column) {
         const doc = v.state.doc;
         const info = doc.line(Math.max(1, Math.min(line, doc.lines)));
-        const pos = Math.min(info.from + Math.max(0, column), info.to);
-        v.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: 'center' }) });
-        v.focus();
+        select(Math.min(info.from + Math.max(0, column), info.to));
+      },
+      goToOffset: (pos, end) => select(pos, end ?? pos),
+      cursor: () => ({ path: currentPath.current, pos: v.state.selection.main.head }),
+      replaceAll(text) {
+        const current = v.state.doc.toString();
+        if (current === text) return;
+        const head = Math.min(v.state.selection.main.head, text.length);
+        v.dispatch({ changes: { from: 0, to: current.length, insert: text }, selection: { anchor: head } });
       },
       focus: () => v.focus(),
       undo: () => {
@@ -139,11 +141,12 @@ export function CodeEditor({
     if (!v || currentPath.current === path) return;
     states.current.set(currentPath.current, v.state);
     const saved = states.current.get(path);
-    v.setState(saved && saved.doc.toString() === value ? saved : makeState(path, value));
     currentPath.current = path;
+    v.setState(saved && saved.doc.toString() === value ? saved : makeState(path, value));
+    reportCursor(v.state);
   }, [path]);
 
-  // Nội dung đổi từ bên ngoài (tải .zip, lấy phiên bản cũ…): thay nội dung, giữ lịch sử hoàn tác.
+  // Nội dung đổi từ bên ngoài (tải .zip, đổi tên ký hiệu, tìm và thay trong cả game…): thay nội dung, giữ lịch sử hoàn tác.
   useEffect(() => {
     const v = view.current;
     if (!v || currentPath.current !== path) return;

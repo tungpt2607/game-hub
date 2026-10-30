@@ -4,17 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && next dev -p 3000",
-    "build": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && next build",
+    "dev": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && node ../../scripts/build-ts-libs.mjs && next dev -p 3000",
+    "build": "node ../../scripts/copy-module-assets.mjs && node ../../scripts/copy-esbuild-wasm.mjs && node ../../scripts/build-ts-libs.mjs && next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.0.0",
     "@codemirror/commands": "^6.0.0",
     "@codemirror/lang-javascript": "^6.0.0",
     "@codemirror/lang-json": "^6.0.0",
     "@codemirror/lang-markdown": "^6.0.0",
+    "@codemirror/language": "^6.0.0",
+    "@codemirror/lint": "^6.0.0",
     "@codemirror/search": "^6.0.0",
     "@codemirror/state": "^6.0.0",
     "@codemirror/theme-one-dark": "^6.0.0",
@@ -30,13 +33,14 @@
     "@opes/module-bundler": "workspace:*",
     "@opes/module-sdk": "workspace:*",
     "@opes/modules": "workspace:*",
-    "codemirror": "^6.0.0",
     "esbuild-wasm": "^0.25.0",
     "jszip": "^3.10.1",
     "next": "^15.3.0",
+    "prettier": "^3.5.0",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.0"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.5",

@@ -18,6 +18,26 @@ const nextConfig = {
   transpilePackages: ['@opes/i18n', '@opes/contracts', '@opes/module-sdk'],
   // Lint chạy riêng ở bước kiểm tra chung của repo.
   eslint: { ignoreDuringBuilds: true },
+  // TypeScript chạy trong trình duyệt (Web Worker của trình sửa code) không dùng các mô-đun của Node.
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        inspector: false,
+        perf_hooks: false,
+        module: false,
+        child_process: false,
+        worker_threads: false,
+        buffer: false,
+        'source-map-support': false,
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
