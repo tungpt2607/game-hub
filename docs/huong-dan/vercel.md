@@ -65,3 +65,16 @@ Bị chặn vì vượt giới hạn ("Deployment rate limited — retry in 24 h
 - Đổi biến môi trường xong phải **Redeploy** (Deployments → bản mới nhất → … → Redeploy) thì mới có hiệu lực.
 
 > **Lưu ý điều khoản:** gói Hobby (miễn phí) chỉ dành cho mục đích phi thương mại. Khi chạy cho nhãn hàng thật, cần nâng lên gói Pro hoặc chuyển sang máy chủ riêng bằng `docker-compose.yml`.
+
+## Giới hạn 100 lượt triển khai mỗi ngày
+
+Gói miễn phí của Vercel chỉ cho tối đa 100 lượt triển khai mỗi ngày. Vượt quá thì Vercel báo
+"Deployment rate limited — retry in 24 hours" và không cập nhật cho tới hôm sau.
+
+Để tiết kiệm lượt, cả 3 dự án chỉ triển khai khi code được gộp vào nhánh `main`
+(`git.deploymentEnabled` trong `vercel.json`). Các nhánh pull request không tạo bản xem trước;
+GitHub Actions vẫn kiểm tra đầy đủ (lint, kiểu, test, build, Docker) trước khi gộp. Ngoài ra
+`scripts/vercel-ignore.sh` bỏ qua dự án không có thay đổi.
+
+Nếu một lần gộp bị chặn vì giới hạn, hôm sau vào **Deployments** → **⋯** → **Create Deployment**,
+nhập `main` rồi **Deploy to Production** cho từng dự án.
