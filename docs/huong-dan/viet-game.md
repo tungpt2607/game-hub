@@ -1,10 +1,217 @@
 # Hướng dẫn viết game cho Game Hub OPES
 
-Tài liệu này dành cho người viết code game. Game viết xong được tải lên CMS (mục **Game**) bằng một file `.zip`, chạy thử ngay trong CMS rồi phát hành. Sau đó đồng nghiệp tạo template từ game đó và chỉnh mọi thứ bằng form, không cần sửa code.
+Tài liệu gồm hai phần:
 
-Cách nhanh nhất để bắt đầu: vào CMS → **Game** → **Tải gói mẫu (.zip)**, giải nén, sửa, rồi tải lên lại. Gói mẫu nằm trong repo ở `packages/modules/examples/game-mau`.
+- **Phần A – Làm từng bước**: đi từ gói mẫu tới một game chạy được, có link gửi người khác chơi. Làm lần đầu thì đọc phần này.
+- **Phần B – Tham khảo**: mô tả đầy đủ từng file, từng loại trường, giới hạn và các lỗi thường gặp.
 
-## 1. Gói game gồm những gì
+Không cần cài gì thêm: mọi bước làm được bằng trình duyệt, chương trình giải nén có sẵn trên máy và một trình soạn chữ (Notepad, TextEdit; nếu có VS Code thì tiện hơn).
+
+---
+
+## Phần A – Làm từng bước
+
+Ví dụ trong phần này: từ gói mẫu "Chạm quà", làm game **"Chạm hoa mai"**. Người chơi chạm vào bông hoa mai xuất hiện trên màn hình để ghi điểm trước khi hết giờ.
+
+### Bước 1. Tải gói mẫu
+
+1. Đăng nhập CMS, chọn mục **Game** ở menu bên trái.
+2. Bấm **Tải gói mẫu (.zip)**. Máy tải về file `game.mau.zip`.
+
+### Bước 2. Giải nén
+
+1. Giải nén `game.mau.zip`:
+   - Windows: chuột phải → **Extract All…**
+   - Mac: bấm đúp vào file.
+2. Đổi tên thư mục vừa giải nén thành `hoa-mai` cho dễ nhớ. Bên trong có:
+
+```
+hoa-mai/
+├── schema.ts         mô tả game: tên, key, phiên bản
+├── config.ts         form cấu hình và cấu hình mặc định
+├── presets.ts        các mẫu có sẵn
+├── Runtime.tsx       phần vẽ và chạy game
+├── index.ts          ghép mô tả với phần chạy (không cần sửa)
+├── opes-assets.d.ts  (không cần sửa)
+├── README.md
+└── assets/           ảnh đi kèm game
+    ├── hop-qua.svg
+    └── nen-dem.svg
+```
+
+### Bước 3. Đặt tên và key cho game
+
+1. Mở `schema.ts` bằng trình soạn chữ. Trên Windows: chuột phải → **Open with** → Notepad.
+2. Sửa 3 dòng sau:
+
+```ts
+  key: 'game.mau',
+  name: 'Game mẫu: Chạm quà',
+  description: 'Gói mẫu để học cách viết game: …',
+```
+
+thành:
+
+```ts
+  key: 'game.hoa-mai',
+  name: 'Chạm hoa mai',
+  description: 'Chạm vào bông hoa mai xuất hiện trên màn hình để ghi điểm trước khi hết giờ.',
+```
+
+3. Giữ nguyên `version: '1.0.0'` và lưu file.
+
+> **key** là "chứng minh thư" của game: chỉ dùng chữ thường không dấu, số và dấu `-`, phải bắt đầu bằng `game.`, và không đổi được sau khi tạo.
+
+### Bước 4. Thêm ảnh của bạn
+
+1. Chuẩn bị một ảnh bông hoa mai, nền trong suốt (PNG hoặc WebP, khoảng 300 × 300 px).
+2. Đặt tên file không dấu, không dấu cách, ví dụ `hoa-mai.png`, rồi chép vào thư mục `assets/`.
+3. Mở `presets.ts` và sửa:
+
+```ts
+    id: 'mua-le-hoi',
+    name: 'Mùa lễ hội',
+```
+
+thành:
+
+```ts
+    id: 'tet',
+    name: 'Tết hoa mai',
+```
+
+4. Vẫn trong `presets.ts`, sửa dòng:
+
+```ts
+        { symbol: { emoji: '', image: asset('hop-qua.svg', 'Hộp quà') }, points: 3 },
+```
+
+thành:
+
+```ts
+        { symbol: { emoji: '', image: asset('hoa-mai.png', 'Hoa mai') }, points: 3 },
+```
+
+5. Lưu file.
+
+> `asset('tên-file')` lấy file trong thư mục `assets/`. Tên phải khớp đúng từng chữ, kể cả chữ hoa và chữ thường.
+
+### Bước 5. Nén lại thành .zip
+
+1. Mở thư mục `hoa-mai` và chọn tất cả file và thư mục bên trong (Ctrl+A, trên Mac là Cmd+A).
+2. Nén lại:
+   - Windows: chuột phải → **Send to** → **Compressed (zipped) folder**.
+   - Mac: chuột phải → **Compress**.
+3. Đổi tên file vừa tạo thành `hoa-mai.zip`.
+
+> Nén cả thư mục `hoa-mai` cũng được: CMS tự bỏ thư mục ngoài cùng.
+
+### Bước 6. Tải game lên CMS
+
+1. Vào CMS → **Game** → bấm **Tải lên game mới (.zip)** → chọn `hoa-mai.zip`.
+2. Chờ vài giây. CMS biên dịch code, tải ảnh lên kho rồi mở màn sửa game **Chạm hoa mai**.
+3. Màn sửa game có 3 cột:
+   - **trái**: danh sách file code và file kèm (ảnh);
+   - **giữa**: code của file đang chọn, bên dưới là kết quả biên dịch;
+   - **phải**: khung điện thoại chạy thử game.
+
+Nếu CMS báo lỗi thay vì mở màn sửa game:
+
+| Báo lỗi | Cách sửa |
+|---|---|
+| `Đã có game "game.hoa-mai"` | Key đã có người dùng. Đổi key ở Bước 3 rồi nén lại. |
+| `Không thấy schema.ts` | Gói nén sai. Làm lại Bước 5. |
+| Lỗi có dạng `presets.ts:12:5 …` | Code ở file đó, dòng đó bị gõ sai (thường là thiếu dấu `'` hoặc `,`). Mở file, sửa, nén lại. |
+
+### Bước 7. Chạy thử
+
+1. Ở khung bên phải, mục **Cấu hình chạy thử**, chọn **Tết hoa mai**.
+2. Bấm **Bắt đầu** trong khung điện thoại và chạm thử vào bông hoa mai.
+3. Dùng các nút phía trên khung điện thoại để đổi kích thước máy, nhảy tới từng màn hình (Mở đầu, Đang chơi, Kết thúc) hoặc bật tiếng.
+
+Nếu khung báo `Không có file assets/hoa-mai.png`, tên ảnh trong `presets.ts` không khớp tên file. Sửa ngay trong CMS ở Bước 8.
+
+### Bước 8. Sửa code ngay trong CMS: thêm một ô vào form
+
+Ví dụ: thêm dòng chữ nhỏ dưới nút "Bắt đầu" để người làm template tự nhập nội dung, như "Chương trình đến hết 15/02".
+
+1. Ở cột trái, bấm `config.ts`. Tìm dòng:
+
+```ts
+  content: { title: string; intro: string; startLabel: string; logo: MediaRef | null };
+```
+
+và thêm `footer: string;`:
+
+```ts
+  content: { title: string; intro: string; startLabel: string; footer: string; logo: MediaRef | null };
+```
+
+2. Cũng trong `config.ts`, tìm dòng có `startLabel: field.text(` và thêm ngay bên dưới:
+
+```ts
+      footer: field.text({ label: 'Dòng chữ dưới nút', maxLength: 80 }),
+```
+
+3. Kéo xuống phần cấu hình mặc định, tìm `startLabel: 'Bắt đầu',` và thêm ngay bên dưới:
+
+```ts
+    footer: 'Chương trình đến hết 15/02',
+```
+
+4. Bấm `Runtime.tsx`. Tìm đoạn:
+
+```tsx
+          <button type="button" style={button} onClick={() => void start()}>
+            {config.content.startLabel}
+          </button>
+```
+
+và thêm ngay bên dưới:
+
+```tsx
+          {config.content.footer && <p style={{ margin: 0, fontSize: 13, opacity: 0.8 }}>{config.content.footer}</p>}
+```
+
+5. Ngừng gõ khoảng một giây. Dưới khung code sẽ hiện **Biên dịch thành công**, và khung chạy thử hiện dòng chữ mới dưới nút.
+   - Nếu hiện lỗi màu đỏ, bấm vào chỗ ghi `tên-file:dòng:cột` để nhảy tới chỗ sai.
+6. Bấm **Lưu nháp**. Bản nháp được lưu lại; đồng nghiệp mở game này cũng thấy.
+
+Muốn thêm hay đổi ảnh ngay trong CMS: ở mục **File kèm** bên trái bấm **+** để tải ảnh lên. Nút chép bên cạnh mỗi ảnh chép sẵn đoạn `asset('…')` để dán vào code.
+
+### Bước 9. Phát hành
+
+1. Bấm **Phát hành**, ghi chú nếu muốn (ví dụ "Bản đầu tiên"), rồi bấm **Phát hành** lần nữa.
+2. Game có phiên bản **v1.0.0** và từ giờ xuất hiện khi tạo template.
+
+### Bước 10. Tạo template và gửi link chơi thử
+
+1. Vào **Thư viện template** → **Tạo template**.
+2. Nhập **Tên template**, ở ô **Loại game** chọn **Chạm hoa mai**, ở phần bắt đầu từ chọn mẫu **Tết hoa mai**, rồi bấm **Tạo**.
+3. Chỉnh nội dung trong form (tiêu đề, dòng chữ dưới nút, thời gian chơi…). Khung bên phải cập nhật ngay.
+4. Bấm **Công bố**.
+5. Bấm **Link chơi thử** → **Tạo link** → **Tạo link**, rồi bấm **Sao chép link** (hoặc **Mã QR** → **Tải ảnh QR**) và gửi cho người khác chơi.
+
+### Bước 11. Sửa game sau khi đã phát hành
+
+1. Vào **Game** → **Chạm hoa mai**, sửa code như Bước 8.
+2. Mở `schema.ts`, tăng phiên bản, ví dụ `version: '1.0.0'` → `version: '1.0.1'`. Mỗi lần phát hành phải tăng, nếu không nút Phát hành sẽ báo.
+3. Bấm **Lưu nháp**, rồi **Phát hành**.
+4. Template đã tạo trước đó **vẫn chạy bản cũ**, để người chơi không bị ảnh hưởng. Muốn template dùng bản mới:
+   1. mở template, bấm **Nâng lên bản mới** ở thông báo màu xanh;
+   2. kiểm tra lại bằng khung chạy thử;
+   3. bấm **Công bố**. Link chơi thử sẽ đổi theo.
+
+Lỡ sửa hỏng thì có ba cách quay lại:
+- bấm **Bỏ bản nháp** để về bản đã phát hành;
+- vào **Phiên bản** → **Lấy làm bản nháp** để lấy lại code của một bản cũ;
+- bấm **Tải về .zip** để giữ một bản trên máy.
+
+---
+
+## Phần B – Tham khảo
+
+### B1. Gói game gồm những gì
 
 ```
 game-cua-ban/
@@ -24,7 +231,7 @@ game-cua-ban/
 - Tên file và thư mục chỉ dùng **chữ không dấu, số, `-` `_` `.`**, không có dấu cách.
 - Nén cả thư mục hay chỉ nén các file bên trong đều được: nếu mọi file nằm chung một thư mục gốc, CMS tự bỏ thư mục đó.
 
-## 2. `schema.ts`: mô tả game
+### B2. `schema.ts`: mô tả game
 
 ```ts
 import type { ModuleSchema } from '@opes/module-sdk/core';
@@ -55,7 +262,7 @@ export default schema;
 - **version**: dạng `1.2.3`. Mỗi lần phát hành phải **lớn hơn** bản trước. Quy ước: sửa lỗi nhỏ tăng số cuối (`1.0.1`), thêm tính năng tăng số giữa (`1.1.0`), thay đổi lớn tăng số đầu (`2.0.0`).
 - `schema.ts` được chạy trong **hộp cách ly** ở máy chủ để kiểm tra cấu hình. Vì vậy file này (và các file nó import) **không được import React** hay dùng `window`/`document`. Chỉ import từ `@opes/module-sdk/core`, `opes:assets` và các file `.ts` thuần.
 
-## 3. Form cấu hình: `fields` và `defaults`
+### B3. Form cấu hình: `fields` và `defaults`
 
 Mỗi trường trong `fields` thành một ô trong form của CMS. Giá trị nhập vào nằm ở cùng đường dẫn trong cấu hình mà `Runtime` nhận được.
 
@@ -124,7 +331,7 @@ Tùy chọn chung cho mọi trường:
 
 `defaults` phải là một cấu hình **hợp lệ** đầy đủ theo `fields`; CMS không cho phát hành nếu mặc định hoặc mẫu còn lỗi. Template cũ mở bằng phiên bản mới sẽ được bổ sung trường mới từ `defaults`.
 
-## 4. `Runtime.tsx`: phần chạy
+### B4. `Runtime.tsx`: phần chạy
 
 ```tsx
 import { useEffect, useState } from 'react';
@@ -149,7 +356,7 @@ export function Runtime({ config, host, initialScreen, muted, storageKey }: Runt
 - `host`: cổng giao tiếp với nơi chạy. Gọi `host.startPlay()` khi bắt đầu, `host.finishPlay(playId, { score, durationMs })` khi kết thúc, và `host.track(tên, dữ liệu)` để ghi sự kiện. Ở chế độ chơi thử, các hàm này trả kết quả giả ngay.
 - **Không tự gọi mạng** (`fetch`, …). Mọi dữ liệu game cần đều nằm trong `config`.
 
-## 5. Ảnh, âm thanh, font đi kèm: thư mục `assets/`
+### B5. Ảnh, âm thanh, font đi kèm: thư mục `assets/`
 
 File trong `assets/` được CMS tải lên kho media khi tải gói lên. Trong code, dùng module `opes:assets`:
 
@@ -168,7 +375,7 @@ symbol: { emoji: '', image: asset('qua/vang.webp') },
 - Giữ file `opes-assets.d.ts` (chép từ gói mẫu) để trình sửa code hiểu `opes:assets`.
 - Người dùng vẫn đổi được mọi ảnh bằng ảnh trong thư viện Media qua form; `assets/` chỉ là ảnh mặc định của game.
 
-## 6. Thư viện được dùng
+### B6. Thư viện được dùng
 
 Game chỉ được import:
 
@@ -182,7 +389,7 @@ Game chỉ được import:
 
 Import thư viện khác (ví dụ `lodash`, `phaser`) sẽ báo lỗi khi biên dịch. Cần thứ gì thì viết trong gói (thêm file `.ts`).
 
-## 7. Làm việc trong CMS
+### B7. Làm việc trong CMS
 
 1. **Tải lên game mới**: Game → **Tải lên game mới (.zip)**. CMS biên dịch, đọc key từ `schema.ts`, tải `assets/` lên kho rồi mở màn sửa game. Game mới chỉ có **bản nháp**.
 2. **Sửa và chạy thử**: sửa code từng file ngay trong CMS (hoặc sửa trên máy rồi bấm **Tải lên .zip** để thay toàn bộ). CMS biên dịch lại sau khi bạn ngừng gõ. Lỗi hiện theo `file:dòng:cột`, bấm vào để nhảy tới. Khung bên phải chạy thử game với cấu hình mặc định hoặc từng mẫu.
@@ -194,7 +401,7 @@ Import thư viện khác (ví dụ `lodash`, `phaser`) sẽ báo lỗi khi biên
 5. **Template**: template mới dùng phiên bản mới nhất. Template đã có **giữ phiên bản cũ**; ở màn chỉnh template sẽ có nút **Nâng lên bản mới**, bấm xong rồi Công bố thì link chơi thử mới đổi.
 6. **Phiên bản**: nút **Phiên bản** liệt kê các lần phát hành; có thể **tải về .zip** hoặc **lấy làm bản nháp** để sửa tiếp từ một bản cũ.
 
-## 8. Giới hạn
+### B8. Giới hạn
 
 | | Tối đa |
 |---|---|
@@ -205,12 +412,12 @@ Import thư viện khác (ví dụ `lodash`, `phaser`) sẽ báo lỗi khi biên
 | Tổng file kèm | 60MB |
 | Thời gian chạy `schema.ts` ở máy chủ mỗi lần | 2 giây, 64MB bộ nhớ |
 
-## 9. Lỗi thường gặp
+### B9. Lỗi thường gặp
 
 | Thông báo | Cách sửa |
 |---|---|
 | `Thiếu file schema.ts` | Đặt `schema.ts` và `index.ts` ở thư mục gốc của gói (không lồng thêm thư mục). |
-| `Không dùng được thư viện "…"` | Chỉ import các thư viện ở mục 6. |
+| `Không dùng được thư viện "…"` | Chỉ import các thư viện ở mục B6. |
 | `key trong schema.ts phải giữ là "…"` | Không đổi key của game đã có; muốn game khác thì tải lên dạng game mới. |
 | `Phiên bản … không lớn hơn bản mới nhất` | Tăng `version` trong `schema.ts`. |
 | `Còn … lỗi trong cấu hình mặc định hoặc mẫu` | Sửa `defaults`/`presets` cho khớp `fields` (thiếu trường, sai kiểu, vượt `min`/`max`…). |
