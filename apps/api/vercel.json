@@ -13,5 +13,11 @@
   "regions": [
     "sin1"
   ],
-  "ignoreCommand": "bash ../../scripts/vercel-ignore.sh apps/api"
+  "ignoreCommand": "bash ../../scripts/vercel-ignore.sh apps/api",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  }
 }
