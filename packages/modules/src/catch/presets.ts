@@ -1,4 +1,4 @@
-import type { ModulePreset } from '@opes/module-sdk';
+import type { ModulePreset } from '@opes/module-sdk/core';
 import { catchDefaults, type CatchConfig, type CatchItem } from './config';
 
 const item = (

@@ -24,6 +24,8 @@ const KEY_PATTERN = /^media\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.[a-z0-9]+$/;
 
 type MediaRow = typeof schema.media.$inferSelect;
 
+const KIND_LABEL = { image: 'Ảnh', audio: 'Âm thanh', font: 'Font' } as const;
+
 /** Kiểm tra loại và dung lượng file; trả về loại media và phần mở rộng. */
 function checkFile(mime: string, sizeBytes: number) {
   const kind = mediaKindOf(mime);
@@ -31,7 +33,7 @@ function checkFile(mime: string, sizeBytes: number) {
     throw new AppError(
       400,
       ErrorCode.MEDIA_TYPE,
-      'Loại file không được hỗ trợ. Ảnh: PNG, JPG, WebP, GIF, SVG. Âm thanh: MP3, M4A, OGG, WAV.',
+      'Loại file không được hỗ trợ. Ảnh: PNG, JPG, WebP, GIF, SVG. Âm thanh: MP3, M4A, OGG, WAV. Font: WOFF2, WOFF, TTF, OTF.',
     );
   }
   const rule = MEDIA_RULES[kind];
@@ -40,7 +42,7 @@ function checkFile(mime: string, sizeBytes: number) {
     throw new AppError(
       400,
       ErrorCode.MEDIA_TOO_LARGE,
-      `${kind === 'image' ? 'Ảnh' : 'Âm thanh'} tối đa ${mb}MB.`,
+      `${KIND_LABEL[kind]} tối đa ${mb}MB.`,
     );
   }
   return { kind, ext: rule.mimes[mime]! };
@@ -185,11 +187,18 @@ export function mediaRoutes(deps: AppDeps) {
       : [];
     if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy file.');
 
-    // Cấu hình template lưu id của media; tìm id này trong mọi cấu hình.
+    // Cấu hình template lưu id của media; tìm id này trong bản nháp, bản công bố và lịch sử công bố.
+    const pattern = `%${row.id}%`;
     const usedBy = await db
       .select({ id: schema.templates.id, name: schema.templates.name })
       .from(schema.templates)
-      .where(sql`${schema.templates.config}::text like ${'%' + row.id + '%'}`);
+      .where(
+        sql`(${schema.templates.config}::text like ${pattern}
+          or coalesce(${schema.templates.publishedConfig}::text, '') like ${pattern}
+          or exists (select 1 from ${schema.templateVersions}
+            where ${schema.templateVersions.templateId} = ${schema.templates.id}
+            and ${schema.templateVersions.config}::text like ${pattern}))`,
+      );
     if (usedBy.length > 0) {
       throw new AppError(
         409,

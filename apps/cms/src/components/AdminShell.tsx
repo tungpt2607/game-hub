@@ -47,7 +47,6 @@ const NAV: NavItem[] = [
     label: t('cms.nav.templates'),
     href: '/templates',
     icon: <ExtensionOutlined />,
-    availableInStep: 6,
   },
   { label: t('cms.nav.playground'), href: '/playground', icon: <ScienceOutlined /> },
   { label: t('cms.nav.media'), href: '/media', icon: <ImageOutlined /> },
@@ -110,7 +109,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               key={item.href}
               component={Link}
               href={item.href}
-              selected={pathname === item.href}
+              selected={pathname === item.href || pathname.startsWith(`${item.href}/`)}
               disabled={disabled}
               onClick={() => setMobileOpen(false)}
               sx={{ mx: 1, borderRadius: 2 }}
@@ -153,7 +152,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1 }}>
-              {NAV.find((item) => item.href === pathname)?.label ?? t('app.name')}
+              {NAV.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label ?? t('app.name')}
             </Typography>
             <IconButton
               aria-label={t('cms.account.menu')}

@@ -8,6 +8,13 @@
       "when": 1793280775592,
       "tag": "0000_rare_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793335356564,
+      "tag": "0001_confused_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { field, type EmojiOrImage, type FontValue, type MediaRef } from '@opes/module-sdk';
+import { field, type EmojiOrImage, type FontValue, type MediaRef } from '@opes/module-sdk/core';
 
 export type EndMode = 'time' | 'lives' | 'either';
 export type DifficultyMode = 'ramp' | 'levels';

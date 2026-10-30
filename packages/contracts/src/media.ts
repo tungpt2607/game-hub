@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MediaKindSchema = z.enum(['image', 'audio']);
+export const MediaKindSchema = z.enum(['image', 'audio', 'font']);
 export type MediaKind = z.infer<typeof MediaKindSchema>;
 
 /** Loại file và dung lượng tối đa được phép tải lên. */
@@ -27,6 +27,23 @@ export const MEDIA_RULES: Record<MediaKind, { maxBytes: number; mimes: Record<st
       'audio/wave': 'wav',
     },
   },
+  font: {
+    maxBytes: 2 * 1024 * 1024,
+    mimes: {
+      'font/woff2': 'woff2',
+      'font/woff': 'woff',
+      'font/ttf': 'ttf',
+      'font/otf': 'otf',
+    },
+  },
+};
+
+/** Trình duyệt thường không biết kiểu MIME của file font; đoán theo phần mở rộng. */
+export const FONT_MIME_BY_EXT: Record<string, string> = {
+  woff2: 'font/woff2',
+  woff: 'font/woff',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
 };
 
 /** Ảnh có cạnh dài hơn mức này được CMS thu nhỏ trước khi tải lên. */

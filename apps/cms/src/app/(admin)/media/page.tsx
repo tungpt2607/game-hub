@@ -26,8 +26,9 @@ import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
 import { precheck, uploadFile } from '../../../lib/media-upload';
+import { FontSample } from '../../../module-ui/MediaPickerDialog';
 
-type KindFilter = 'all' | 'image' | 'audio';
+type KindFilter = 'all' | 'image' | 'audio' | 'font';
 
 /** Ảnh luôn nằm gọn trong ô vuông (Safari tính sai max-height phần trăm trong ô aspect-ratio). */
 const FIT_IMAGE = {
@@ -38,7 +39,8 @@ const FIT_IMAGE = {
   objectFit: 'contain',
 } as const;
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav';
+const ACCEPT =
+  'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,.woff2,.woff,.ttf,.otf';
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -212,6 +214,7 @@ export default function MediaPage() {
           <ToggleButton value="all">{t('cms.media.all')}</ToggleButton>
           <ToggleButton value="image">{t('cms.media.images')}</ToggleButton>
           <ToggleButton value="audio">{t('cms.media.audio')}</ToggleButton>
+          <ToggleButton value="font">{t('cms.media.fonts')}</ToggleButton>
         </ToggleButtonGroup>
         <TextField
           id="media-search"
@@ -268,6 +271,8 @@ export default function MediaPage() {
                     loading="lazy"
                     style={FIT_IMAGE}
                   />
+                ) : item.kind === 'font' ? (
+                  <FontSample item={item} size={56} />
                 ) : (
                   <audio controls preload="none" src={item.url} style={{ width: '100%' }} />
                 )}
@@ -292,7 +297,7 @@ export default function MediaPage() {
                     <DeleteOutline fontSize="small" />
                   </IconButton>
                 </Stack>
-                {item.kind === 'audio' && <Chip size="small" label={item.mime.split('/')[1]} sx={{ mt: 0.5 }} />}
+                {item.kind !== 'image' && <Chip size="small" label={item.mime.split('/')[1]} sx={{ mt: 0.5 }} />}
               </CardContent>
             </Card>
           </Grid>

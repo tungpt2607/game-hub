@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isValidModuleKey, normalizeConfig, validateConfig } from '@opes/module-sdk';
 import { MODULES, getModule } from './index';
+import { MODULE_SCHEMAS } from './schemas';
 
 describe('danh sách module', () => {
   it('định danh không trùng và đúng dạng', () => {
@@ -29,6 +30,10 @@ describe('danh sách module', () => {
 
   it('Hứng quà có 4 mẫu', () => {
     expect(getModule('game.catch')?.presets?.map((p) => p.id)).toEqual(['tet', 'trung-thu', 'giang-sinh', 'trai-cay']);
+  });
+
+  it('danh sách lược đồ khớp với danh sách module', () => {
+    expect(MODULE_SCHEMAS.map((m) => `${m.key}@${m.version}`)).toEqual(MODULES.map((m) => `${m.key}@${m.version}`));
   });
 
   it('mỗi module có ít nhất một màn hình', () => {

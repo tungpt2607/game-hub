@@ -16,11 +16,12 @@ import { AppError } from './lib/errors';
 import { createS3Storage, s3ConfigFromEnv, type Storage } from './lib/storage';
 import { authRoutes } from './routes/auth';
 import { mediaRoutes } from './routes/media';
+import { templateRoutes } from './routes/templates';
 import { userRoutes } from './routes/users';
 
 export type { AppDeps } from './context';
 
-export const API_VERSION = '0.3.0';
+export const API_VERSION = '0.4.0';
 
 let storageCache: Storage | null | undefined;
 
@@ -84,6 +85,7 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
   app.route('/admin/auth', authRoutes(deps));
   app.route('/admin/users', userRoutes(deps));
   app.route('/admin/media', mediaRoutes(deps));
+  app.route('/admin/templates', templateRoutes(deps));
 
   app.notFound((c) => {
     const body: ApiError = {

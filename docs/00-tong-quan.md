@@ -103,6 +103,9 @@ Nguyên tắc thiết kế xuyên suốt:
 | 109 | Hạn link | Mặc định không hết hạn; sửa được |
 | 110 | Mẫu Hứng quà có sẵn | Tết, Trung thu, Giáng sinh, Trái cây / F&B (dùng emoji, không dùng ảnh có bản quyền) |
 | 111 | Chia Bước 6 | 6a game Hứng quà + mẫu; 6b Thư viện template; 6c Link chơi thử và trang /try |
+| 112 | Khôi phục lịch sử (Claude chọn) | Chép lần công bố cũ vào bản nháp; muốn link đổi thì bấm Công bố |
+| 113 | Hai người cùng sửa (Claude chọn) | Người lưu sau được báo "vừa được lưu ở nơi khác" và tải lại, không ghi đè lẫn nhau |
+| 114 | Bấm Công bố khi chưa lưu (Claude chọn) | Tự lưu nháp rồi công bố |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 

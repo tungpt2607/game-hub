@@ -6,7 +6,7 @@ Cơ sở dữ liệu PostgreSQL. Khóa chính dạng UUID. Mọi thời điểm 
 
 | Giai đoạn | Bảng |
 |---|---|
-| **1** | `users`, `admin_sessions`, `audit_logs`, `media`, `templates`, `preview_links`, `rate_limits` |
+| **1** | `users`, `admin_sessions`, `audit_logs`, `media`, `templates`, `template_versions`, `preview_links`, `rate_limits` |
 | **[GĐ2]** | `brands`, `staff_assignments`, `prizes`, `campaign_prizes`, `pacing_slots`, `campaigns`, `campaign_versions`, `player_sessions`, `players`, `plays`, `turn_ledger`, `spins`, `rewards`, `leaderboard_periods`, `leaderboard_results`, `analytics_events` |
 
 Ở giai đoạn 1: `users.role` chỉ có giá trị `admin`; `preview_links.brand_id` luôn để trống. Các cột này vẫn được tạo sẵn để giai đoạn 2 không phải đổi cấu trúc.
@@ -64,7 +64,7 @@ erDiagram
 |---|---|---|
 | id | uuid | |
 | storage_key | text | Đường dẫn trong kho S3 |
-| kind | enum | `image`, `audio` |
+| kind | enum | `image`, `audio`, `font` (WOFF2/WOFF/TTF/OTF, tối đa 2MB) |
 | mime, size_bytes, width, height, duration_ms | | |
 | uploaded_by | uuid → users | |
 
@@ -82,12 +82,28 @@ Cấu hình module lưu `media.id`; API chuyển thành URL công khai khi trả
 
 | Cột | Kiểu | Ghi chú |
 |---|---|---|
-| id, name, description | | |
+| id, name | | |
+| description | text | Ghi chú nội bộ |
+| brand_name | text | Tên nhãn hàng gõ tay, để tìm và lọc |
 | module_key | text | Ví dụ `game.catch` |
 | module_version | text | |
-| config | jsonb | Đã kiểm tra theo lược đồ module |
-| revision | int | Tăng mỗi lần lưu; dùng cho "Đồng bộ từ template" |
-| archived_at | timestamptz | |
+| config | jsonb | **Bản nháp**: chuẩn hóa theo lược đồ module, có thể còn lỗi |
+| revision | int | Tăng mỗi lần lưu nháp; lưu kèm `baseRevision` để không ghi đè thay đổi của người khác |
+| published_config, published_module_version | | **Bản công bố**; link "luôn mới nhất" đọc bản này. Trống nếu chưa công bố |
+| published_version | int | Số lần đã công bố |
+| published_revision | int | Bản nháp ở revision nào được công bố; khác `revision` = có thay đổi chưa công bố |
+| published_at, published_by | | |
+| archived_at | timestamptz | Đã lưu trữ: ẩn khỏi danh sách, link chơi thử ngừng chạy; chỉ khi đã lưu trữ mới xóa hẳn được |
+
+**`template_versions`**: lịch sử công bố
+
+| Cột | Kiểu | Ghi chú |
+|---|---|---|
+| template_id, version | | Duy nhất theo cặp |
+| module_version, config | | Cấu hình đúng như lúc công bố |
+| published_by, published_at | | |
+
+Khôi phục một lần công bố chép cấu hình đó vào **bản nháp**; muốn link đổi theo thì bấm Công bố. Media không xóa được nếu còn nằm trong bản nháp, bản công bố hoặc lịch sử.
 
 **`preview_links`**: link chơi thử của template
 
