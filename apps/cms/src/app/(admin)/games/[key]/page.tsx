@@ -11,13 +11,11 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
@@ -30,43 +28,25 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
-import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import PublishIcon from '@mui/icons-material/Publish';
-import RedoIcon from '@mui/icons-material/Redo';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
-import SearchIcon from '@mui/icons-material/Search';
-import UndoIcon from '@mui/icons-material/Undo';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
-import { GAME_PATH, compareVersions, type GameModuleDetail, type GameVersionDetail } from '@opes/contracts';
+import { compareVersions, type GameModuleDetail, type GameVersionDetail } from '@opes/contracts';
 import type { GameSource, SerializedSchema } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ConfirmDialog';
 import { uploadAssets } from '../../../../games/assets';
-import { CodeEditor, type EditorApi } from '../../../../games/CodeEditor';
 import { compileGame, type CompileResult } from '../../../../games/compiler';
-import type { GameAssets, GameFiles } from '../../../../games/types';
-import { assetMime, downloadBlob, isCodePath, readGameZip, writeGameZip } from '../../../../games/zip';
+import type { GameAssets, GameFiles, PendingAsset } from '../../../../games/types';
+import { Workspace, type WorkspaceHandle } from '../../../../games/workspace/Workspace';
+import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
 import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
-import { copyText } from '../../../../lib/clipboard';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
-const formatSize = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.ceil(bytes / 1024)}KB`);
-
-/** Thứ tự file: schema, index, config… trước, còn lại theo tên. */
-const FIRST = ['schema.ts', 'index.ts', 'config.ts', 'presets.ts', 'Runtime.tsx', 'engine.ts'];
-const sortPaths = (paths: string[]) =>
-  [...paths].sort((a, b) => {
-    const ia = FIRST.indexOf(a);
-    const ib = FIRST.indexOf(b);
-    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-    return a.localeCompare(b);
-  });
 
 type Compile = { state: 'idle' | 'compiling' } | ({ state: 'done' } & CompileResult);
 
@@ -80,7 +60,8 @@ export default function GameEditorPage() {
   const [mod, setMod] = useState<GameModuleDetail | null>(null);
   const [files, setFiles] = useState<GameFiles>({});
   const [assets, setAssets] = useState<GameAssets>({});
-  const [selected, setSelected] = useState<string>('schema.ts');
+  /** Code lúc lưu nháp gần nhất (đánh dấu ● file đã sửa). */
+  const [savedFiles, setSavedFiles] = useState<GameFiles>({});
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,26 +75,28 @@ export default function GameEditorPage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [presetId, setPresetId] = useState('');
   const [tab, setTab] = useState<'code' | 'preview'>('code');
-  const [newFileOpen, setNewFileOpen] = useState(false);
-  const [deletePath, setDeletePath] = useState<{ kind: 'file' | 'asset'; path: string } | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoreVersion, setRestoreVersion] = useState<string | null>(null);
-  const editor = useRef<EditorApi | null>(null);
+  const workspace = useRef<WorkspaceHandle>(null);
   const zipInput = useRef<HTMLInputElement>(null);
-  const assetInput = useRef<HTMLInputElement>(null);
 
   const apply = useCallback(async (next: GameModuleDetail) => {
-    setMod(next);
+    let nextFiles: GameFiles = {};
+    let nextAssets: GameAssets = {};
     if (next.draft) {
-      setFiles(next.draft.files);
-      setAssets(next.draft.assets);
+      nextFiles = next.draft.files;
+      nextAssets = next.draft.assets;
     } else if (next.latestVersion) {
       const v = await api<GameVersionDetail>(`/modules/${encodeURIComponent(next.key)}/versions/${encodeURIComponent(next.latestVersion)}`);
-      setFiles(v.files);
-      setAssets(v.assets);
+      nextFiles = v.files;
+      nextAssets = v.assets;
     }
+    setFiles(nextFiles);
+    setAssets(nextAssets);
+    setSavedFiles(nextFiles);
+    setMod(next);
     setDirty(false);
     setConflict(false);
   }, []);
@@ -165,11 +148,6 @@ export default function GameEditorPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const paths = useMemo(() => sortPaths(Object.keys(files)), [files]);
-  useEffect(() => {
-    if (paths.length && !paths.includes(selected)) setSelected(paths[0]!);
-  }, [paths, selected]);
-
   const source = useMemo<GameSource | null>(() => (runtimeJs ? { kind: 'code', code: runtimeJs, label: moduleKey } : null), [runtimeJs, moduleKey]);
   const previewConfig = useMemo(() => {
     if (!schema) return null;
@@ -210,6 +188,7 @@ export default function GameEditorPage() {
       },
     });
     setMod(res.module);
+    setSavedFiles(files);
     setDirty(false);
     return res.module;
   }
@@ -290,20 +269,6 @@ export default function GameEditorPage() {
       );
     });
 
-  const onAddAssets = (list: FileList) =>
-    run('assets', async () => {
-      const pending: Record<string, { blob: Blob; mime: string }> = {};
-      const rejected: string[] = [];
-      for (const file of Array.from(list)) {
-        const mime = assetMime(file.name);
-        if (!mime || !GAME_PATH.test(file.name)) rejected.push(file.name);
-        else pending[file.name] = { blob: file, mime };
-      }
-      const uploaded = await uploadAssets(moduleKey, pending);
-      change(files, { ...assets, ...uploaded });
-      if (rejected.length) setError(t('cms.games.assetsRejected', { list: rejected.join(', ') }));
-    });
-
   if (loadError) {
     return (
       <Stack spacing={2}>
@@ -329,13 +294,8 @@ export default function GameEditorPage() {
   const canPublish = hasDraft && compiled && !previewError && !versionProblem && busy === null;
 
   const jump = (file: string | null, line: number, column: number) => {
-    if (file && files[file] !== undefined) setSelected(file);
     setTab('code');
-    setTimeout(() => {
-      const ed = editor.current;
-      if (!ed || line <= 0) return;
-      ed.goTo(line, column);
-    }, 50);
+    setTimeout(() => workspace.current?.jump(file, line, column), 0);
   };
 
   const status = (
@@ -358,108 +318,6 @@ export default function GameEditorPage() {
         </Typography>
       )}
     </Stack>
-  );
-
-  const fileList = (
-    <Paper variant="outlined">
-      <Stack direction="row" alignItems="center" sx={{ px: 1.5, py: 1 }}>
-        <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-          {t('cms.games.codeFiles')}
-        </Typography>
-        <Tooltip title={t('cms.games.newFile')}>
-          <IconButton size="small" onClick={() => setNewFileOpen(true)} aria-label={t('cms.games.newFile')}>
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-      <Divider />
-      <List dense disablePadding sx={{ maxHeight: 280, overflow: 'auto' }}>
-        {paths.map((p) => {
-          const errCount = errors.filter((e) => e.file === p).length;
-          return (
-            <ListItem
-              key={p}
-              disablePadding
-              secondaryAction={
-                !['schema.ts', 'index.ts'].includes(p) && (
-                  <IconButton edge="end" size="small" onClick={() => setDeletePath({ kind: 'file', path: p })} aria-label={t('cms.games.deleteFile')}>
-                    <DeleteOutline fontSize="small" />
-                  </IconButton>
-                )
-              }
-            >
-              <ListItemButton selected={p === selected} onClick={() => setSelected(p)}>
-                <ListItemText
-                  primary={<code>{p}</code>}
-                  secondary={errCount ? t('cms.games.errorCount', { count: errCount }) : undefined}
-                  slotProps={{ secondary: { color: 'error' } }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
-      <Divider />
-      <Stack direction="row" alignItems="center" sx={{ px: 1.5, py: 1 }}>
-        <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-          {t('cms.games.assets', { count: Object.keys(assets).length })}
-        </Typography>
-        <Tooltip title={t('cms.games.addAssets')}>
-          <IconButton size="small" onClick={() => assetInput.current?.click()} aria-label={t('cms.games.addAssets')} disabled={busy !== null}>
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <input
-          ref={assetInput}
-          type="file"
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files?.length) void onAddAssets(e.target.files);
-            e.target.value = '';
-          }}
-        />
-      </Stack>
-      <Divider />
-      <List dense disablePadding sx={{ maxHeight: 240, overflow: 'auto' }}>
-        {Object.keys(assets).length === 0 && (
-          <ListItem>
-            <ListItemText secondary={t('cms.games.noAssets')} />
-          </ListItem>
-        )}
-        {Object.keys(assets)
-          .sort()
-          .map((p) => (
-            <ListItem
-              key={p}
-              secondaryAction={
-                <Stack direction="row">
-                  <Tooltip title={t('cms.games.copyUsage')}>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        void copyText(`asset('${p}')`).then(() => setToast(t('cms.games.copied')));
-                      }}
-                      aria-label={t('cms.games.copyUsage')}
-                    >
-                      <ContentCopyOutlined fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <IconButton size="small" onClick={() => setDeletePath({ kind: 'asset', path: p })} aria-label={t('cms.games.deleteFile')}>
-                    <DeleteOutline fontSize="small" />
-                  </IconButton>
-                </Stack>
-              }
-            >
-              <ListItemText
-                primary={<code style={{ wordBreak: 'break-all' }}>{p}</code>}
-                secondary={formatSize(assets[p]!.size)}
-                sx={{ pr: 8 }}
-              />
-            </ListItem>
-          ))}
-      </List>
-    </Paper>
   );
 
   const errorPanel =
@@ -498,41 +356,20 @@ export default function GameEditorPage() {
 
   const code = (
     <Stack spacing={1.5}>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-        <Stack direction="row" alignItems="center" sx={{ pl: 1.5, pr: 0.5, py: 0.25, bgcolor: 'action.hover' }}>
-          <Box sx={{ flexGrow: 1, minWidth: 0, fontFamily: 'monospace', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {selected}
-          </Box>
-          <Tooltip title={t('cms.games.undo')}>
-            <IconButton size="small" onClick={() => editor.current?.undo()} aria-label={t('cms.games.undo')}>
-              <UndoIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('cms.games.redo')}>
-            <IconButton size="small" onClick={() => editor.current?.redo()} aria-label={t('cms.games.redo')}>
-              <RedoIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('cms.games.search')}>
-            <IconButton size="small" onClick={() => editor.current?.toggleSearch()} aria-label={t('cms.games.search')}>
-              <SearchIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-        {files[selected] !== undefined && (
-          <CodeEditor
-            path={selected}
-            value={files[selected]!}
-            height={wide ? 'calc(100vh - 330px)' : 480}
-            onChange={(v) => {
-              if (v !== files[selected]) change({ ...files, [selected]: v });
-            }}
-            onMount={(ed) => {
-              editor.current = ed;
-            }}
-          />
-        )}
-      </Box>
+      <Workspace
+        ref={workspace}
+        files={files}
+        assets={assets}
+        savedFiles={savedFiles}
+        errors={errors}
+        height={wide ? 'calc(100vh - 300px)' : 'calc(100vh - 240px)'}
+        onChange={(f, a) => change(f, a)}
+        uploadAssets={(pending: Record<string, PendingAsset>) => uploadAssets(moduleKey, pending)}
+        onSave={() => {
+          if (dirty && busy === null) void onSave();
+        }}
+        onNotice={(message, severity) => (severity === 'error' ? setError(message) : setToast(message))}
+      />
       {errorPanel}
     </Stack>
   );
@@ -649,8 +486,7 @@ export default function GameEditorPage() {
 
       {wide ? (
         <Grid container spacing={2} alignItems="flex-start">
-          <Grid size={{ lg: 2.5 }}>{fileList}</Grid>
-          <Grid size={{ lg: 5.5 }}>{code}</Grid>
+          <Grid size={{ lg: 8 }}>{code}</Grid>
           <Grid size={{ lg: 4 }} sx={{ position: 'sticky', top: 88 }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               {preview}
@@ -663,27 +499,9 @@ export default function GameEditorPage() {
             <Tab value="code" label={t('cms.games.tabCode')} />
             <Tab value="preview" label={t('cms.games.tabPreview')} />
           </Tabs>
-          {tab === 'code' ? (
-            <Stack spacing={2}>
-              {fileList}
-              {code}
-            </Stack>
-          ) : (
-            preview
-          )}
+          {tab === 'code' ? code : preview}
         </Box>
       )}
-
-      <NewFileDialog
-        open={newFileOpen}
-        existing={files}
-        onClose={() => setNewFileOpen(false)}
-        onCreate={(path) => {
-          change({ ...files, [path]: '' });
-          setSelected(path);
-          setNewFileOpen(false);
-        }}
-      />
 
       <PublishDialog
         open={publishOpen}
@@ -751,80 +569,8 @@ export default function GameEditorPage() {
         onConfirm={() => void onDiscard()}
         onClose={() => setDiscardOpen(false)}
       />
-      <ConfirmDialog
-        open={deletePath !== null}
-        title={t('cms.games.deleteTitle', { path: deletePath?.path ?? '' })}
-        text={deletePath?.kind === 'asset' ? t('cms.games.deleteAssetText') : t('cms.games.deleteFileText')}
-        confirmLabel={t('cms.games.deleteFile')}
-        danger
-        onConfirm={() => {
-          if (!deletePath) return;
-          if (deletePath.kind === 'file') {
-            const next = { ...files };
-            delete next[deletePath.path];
-            change(next);
-          } else {
-            const next = { ...assets };
-            delete next[deletePath.path];
-            change(files, next);
-          }
-          setDeletePath(null);
-        }}
-        onClose={() => setDeletePath(null)}
-      />
       <Snackbar open={Boolean(toast)} autoHideDuration={5000} onClose={() => setToast(null)} message={toast} />
     </Stack>
-  );
-}
-
-function NewFileDialog({
-  open,
-  existing,
-  onClose,
-  onCreate,
-}: {
-  open: boolean;
-  existing: GameFiles;
-  onClose: () => void;
-  onCreate: (path: string) => void;
-}) {
-  const [path, setPath] = useState('');
-  useEffect(() => {
-    if (open) setPath('');
-  }, [open]);
-  const clean = path.trim();
-  const problem = !clean
-    ? null
-    : !GAME_PATH.test(clean) || clean.startsWith('assets/')
-      ? t('cms.games.badFileName')
-      : !isCodePath(clean)
-        ? t('cms.games.badFileExt')
-        : existing[clean] !== undefined
-          ? t('cms.games.fileExists')
-          : null;
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{t('cms.games.newFile')}</DialogTitle>
-      <DialogContent>
-        <TextField
-          autoFocus
-          fullWidth
-          margin="dense"
-          label={t('cms.games.fileName')}
-          placeholder="utils.ts"
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          error={Boolean(problem)}
-          helperText={problem ?? t('cms.games.fileNameHint')}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="contained" disabled={!clean || Boolean(problem)} onClick={() => onCreate(clean)}>
-          {t('cms.games.create')}
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }
 
