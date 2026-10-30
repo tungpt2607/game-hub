@@ -117,3 +117,16 @@ export function downloadBlob(blob: Blob, fileName: string) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
+
+/** Gói game mẫu (packages/modules/examples/game-mau) dạng .zip để tải về làm điểm bắt đầu. */
+export async function exampleZip(): Promise<{ key: string; blob: Blob }> {
+  const example = (await import('@opes/modules/example')).default as {
+    key: string;
+    files: Record<string, string>;
+    assets: Record<string, { mime: string; text: string }>;
+  };
+  const zip = new JSZip();
+  for (const [path, content] of Object.entries(example.files)) zip.file(path, content);
+  for (const [path, a] of Object.entries(example.assets)) zip.file(`assets/${path}`, a.text);
+  return { key: example.key, blob: await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }) };
+}

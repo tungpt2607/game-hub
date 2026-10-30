@@ -53,6 +53,44 @@ for (const game of GAMES) {
 }
 mkdirSync(path.join(pkg, 'bundles'), { recursive: true });
 writeFileSync(path.join(pkg, 'bundles/builtin.json'), JSON.stringify(out));
+// Gói mẫu (examples/game-mau): biên dịch thử để chắc chắn gói mẫu luôn chạy được, rồi lưu cho nút
+// "Tải gói mẫu" trong CMS.
+{
+  const exampleDir = path.join(pkg, 'examples/game-mau');
+  const files = readGame(exampleDir);
+  for (const rel of Object.keys(files)) if (rel.startsWith('assets/')) delete files[rel];
+  for (const name of readdirSync(exampleDir)) {
+    if (/\.(md|txt|json)$/.test(name)) files[name] = readFileSync(path.join(exampleDir, name), 'utf8');
+  }
+  const assetDir = path.join(exampleDir, 'assets');
+  const assets = {};
+  for (const name of readdirSync(assetDir)) {
+    if (!name.endsWith('.svg')) throw new Error(`Gói mẫu chỉ nên có ảnh SVG (để lưu dạng chữ): ${name}`);
+    assets[name] = { mime: 'image/svg+xml', text: readFileSync(path.join(assetDir, name), 'utf8') };
+  }
+  let bundles;
+  try {
+    bundles = await bundleGame(esbuild, {
+      files,
+      sdkCore,
+      assets: Object.fromEntries(Object.keys(assets).map((p) => [p, { url: `/vi-du/${p}`, sha256: '0'.repeat(64) }])),
+    });
+  } catch (e) {
+    console.error(`Lỗi biên dịch gói mẫu:\n${formatBuildErrors(e).join('\n')}`);
+    process.exit(1);
+  }
+  const sandbox = {};
+  vm.runInNewContext(bundles.schemaJs, sandbox);
+  const meta = sandbox.__opes.meta();
+  const problems = [meta.defaults, ...meta.presets.map((p) => p.config)].map((c) => sandbox.__opes.validate(c));
+  if (problems.some((p) => Object.keys(p).length)) {
+    console.error('Gói mẫu có cấu hình không hợp lệ:', JSON.stringify(problems));
+    process.exit(1);
+  }
+  writeFileSync(path.join(pkg, 'bundles/example.json'), JSON.stringify({ key: meta.key, files, assets }));
+  console.log(`  gói mẫu ${meta.key}@${meta.version}: ${Object.keys(files).length} file, ${Object.keys(assets).length} file kèm`);
+}
+
 // Lõi module-sdk dạng mã nguồn, để CMS biên dịch game ngay trong trình duyệt (Bước 7c).
 writeFileSync(path.join(pkg, 'bundles/sdk-core.json'), JSON.stringify(sdkCore));
 console.log(`Đã biên dịch ${out.length} game vào bundles/builtin.json`);
