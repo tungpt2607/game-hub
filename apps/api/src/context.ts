@@ -24,10 +24,10 @@ export interface AppDeps {
   /** Địa chỉ trang chơi, để tạo link chơi thử đầy đủ. */
   playPublicUrl: () => string;
   /**
-   * Trang chơi có chuyển tiếp /media/* tới kho media không. Bật thì API trả đường dẫn media dạng
-   * "/media/..." (cùng tên miền trang chơi), tránh mạng chặn tên miền của kho (ví dụ r2.dev).
+   * CMS và trang chơi có chuyển tiếp /media/* tới kho media không. Bật thì API trả đường dẫn media
+   * dạng "/media/..." (cùng tên miền với trang đang mở), tránh mạng chặn tên miền của kho (ví dụ r2.dev).
    */
-  playMediaProxy: () => boolean;
+  mediaProxy: () => boolean;
 }
 
 export type AppEnv = {

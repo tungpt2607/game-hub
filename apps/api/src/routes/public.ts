@@ -9,6 +9,7 @@ import { clientIp } from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { hashToken, verifyPassword } from '../lib/crypto';
 import { AppError, parseInput, readJson } from '../lib/errors';
+import { rewriteMediaUrls } from '../lib/media-urls';
 import { hitRateLimit } from '../lib/rate-limit';
 
 type LinkRow = typeof schema.previewLinks.$inferSelect;
@@ -28,18 +29,6 @@ async function findLink(db: Database, token: string) {
     .where(eq(schema.previewLinks.token, token))
     .limit(1);
   return row ?? null;
-}
-
-/** Thay địa chỉ kho media bằng đường dẫn "/media/..." trên tên miền trang chơi. */
-export function rewriteMediaUrls<T>(value: T, base: string): T {
-  if (!base) return value;
-  const walk = (v: unknown): unknown => {
-    if (typeof v === 'string') return v.startsWith(base) ? `/${v.slice(base.length)}` : v;
-    if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
-    return v;
-  };
-  return walk(value) as T;
 }
 
 function titleOf(config: Record<string, unknown> | null, fallback: string): string {
@@ -73,7 +62,7 @@ export function publicRoutes(deps: AppDeps) {
 
     let config = normalizeConfig<Record<string, unknown>>(mod.fields, raw, mod.defaults);
     const storage = deps.getStorage();
-    if (deps.playMediaProxy() && storage) config = rewriteMediaUrls(config, storage.publicUrl(''));
+    if (deps.mediaProxy() && storage) config = rewriteMediaUrls(config, storage.publicUrl(''));
 
     await db
       .update(schema.previewLinks)
