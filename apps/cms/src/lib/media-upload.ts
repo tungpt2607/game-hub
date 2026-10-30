@@ -1,4 +1,5 @@
 import {
+  FONT_MIME_BY_EXT,
   IMAGE_MAX_DIMENSION,
   MEDIA_RULES,
   type MediaItem,
@@ -6,6 +7,16 @@ import {
   mediaKindOf,
 } from '@opes/contracts';
 import { api, ApiRequestError } from './api';
+
+/**
+ * Kiểu MIME của file. Trình duyệt thường để trống (hoặc ghi chung chung) với file font,
+ * nên đoán theo phần mở rộng.
+ */
+export function fileMime(file: File): string {
+  if (mediaKindOf(file.type)) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  return FONT_MIME_BY_EXT[ext] ?? file.type;
+}
 
 /** Các định dạng ảnh được thu nhỏ/nén trước khi tải lên (GIF động và SVG giữ nguyên). */
 const OPTIMIZABLE = new Set(['image/png', 'image/jpeg', 'image/webp']);
@@ -64,7 +75,11 @@ const renameExt = (name: string, ext: string) => name.replace(/\.[^.]+$/, '') + 
  * và nén lại. PNG chuyển sang WebP để vẫn giữ nền trong suốt mà nhẹ hơn nhiều.
  */
 async function prepare(file: File): Promise<Prepared> {
-  const kind = mediaKindOf(file.type);
+  const mime = fileMime(file);
+  const kind = mediaKindOf(mime);
+  if (kind === 'font') {
+    return { blob: file, mime, fileName: file.name, width: null, height: null, durationMs: null, optimized: false };
+  }
   if (kind === 'audio') {
     return {
       blob: file,
@@ -114,7 +129,7 @@ async function prepare(file: File): Promise<Prepared> {
 
 /** Kiểm tra nhanh trên trình duyệt trước khi gọi API (API vẫn kiểm tra lại). */
 export function precheck(file: File): string | null {
-  const kind = mediaKindOf(file.type);
+  const kind = mediaKindOf(fileMime(file));
   if (!kind) return `"${file.name}": loại file không được hỗ trợ.`;
   return null;
 }

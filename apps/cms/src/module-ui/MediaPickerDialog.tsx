@@ -21,7 +21,7 @@ import AudiotrackOutlined from '@mui/icons-material/AudiotrackOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import type { MediaItem, MediaListResponse } from '@opes/contracts';
-import type { MediaRef } from '@opes/module-sdk';
+import { loadFont, type MediaRef } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { api, ApiRequestError, handleAuthError } from '../lib/api';
 import { precheck, uploadFile } from '../lib/media-upload';
@@ -29,7 +29,27 @@ import { precheck, uploadFile } from '../lib/media-upload';
 const ACCEPT = {
   image: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
   audio: 'audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav',
+  font: '.woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf',
 };
+
+const TITLE = {
+  image: 'cms.mediaPicker.titleImage',
+  audio: 'cms.mediaPicker.titleAudio',
+  font: 'cms.mediaPicker.titleFont',
+} as const;
+
+/** Chữ mẫu "Aa" vẽ bằng chính file font. */
+export function FontSample({ item, size = 36 }: { item: MediaItem; size?: number }) {
+  const family = `opes-${item.id}`;
+  useEffect(() => {
+    void loadFont({ family, media: toMediaRef(item) });
+  }, [family, item]);
+  return (
+    <Typography component="span" sx={{ fontFamily: `"${family}", sans-serif`, fontSize: size, lineHeight: 1 }}>
+      Aa
+    </Typography>
+  );
+}
 
 export const toMediaRef = (item: MediaItem): MediaRef => ({
   id: item.id,
@@ -39,7 +59,7 @@ export const toMediaRef = (item: MediaItem): MediaRef => ({
 
 interface Props {
   open: boolean;
-  kind: 'image' | 'audio';
+  kind: 'image' | 'audio' | 'font';
   onClose: () => void;
   onPick: (ref: MediaRef) => void;
 }
@@ -118,7 +138,7 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
-      <DialogTitle>{kind === 'image' ? t('cms.mediaPicker.titleImage') : t('cms.mediaPicker.titleAudio')}</DialogTitle>
+      <DialogTitle>{t(TITLE[kind])}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -207,6 +227,8 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
                           objectFit: 'contain',
                         }}
                       />
+                    ) : kind === 'font' ? (
+                      <FontSample item={item} />
                     ) : (
                       <AudiotrackOutlined color="action" fontSize="large" />
                     )}

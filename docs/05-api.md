@@ -42,7 +42,7 @@ Xác thực bằng cookie phiên CMS. Cột "Vai trò" là vai trò tối thiể
 | Media | `POST /media/upload-url` (xin link tải lên trực tiếp vào kho S3), `POST /media/:id/complete` | operator |
 | Nhãn hàng | `GET/POST /brands`, `GET/PATCH /brands/:id` | operator |
 | Module | `GET /modules` (danh mục module, lược đồ, mặc định) | operator |
-| Template | `GET/POST /templates`, `GET/PATCH /templates/:id`, `POST /templates/:id/duplicate` | operator |
+| Template | `GET /templates?status=active\|archived&q=`, `POST /templates` (nguồn: `defaults`, `preset`, `config`, `duplicate`), `GET /templates/:id`, `PUT /templates/:id` (lưu nháp, kèm `baseRevision`; 409 nếu người khác vừa lưu), `POST /templates/:id/publish` (422 nếu còn lỗi), `GET /templates/:id/versions/:n`, `POST /templates/:id/versions/:n/restore`, `POST /templates/:id/archive`, `POST /templates/:id/unarchive`, `DELETE /templates/:id` (chỉ khi đã lưu trữ) | admin (GĐ1) |
 | Link chơi thử | `GET/POST /templates/:id/preview-links`, `PATCH /preview-links/:id` (tên, mật khẩu, hạn, tắt/bật) | operator |
 | Kho quà | `GET/POST /prizes`, `PATCH /prizes/:id`, `POST /prizes/:id/adjust` | admin |
 | Chiến dịch | `GET/POST /campaigns`, `GET/PATCH /campaigns/:id` (sửa bản nháp), `POST /campaigns/:id/duplicate` | operator |

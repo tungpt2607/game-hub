@@ -16,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import { normalizeConfig, validateConfig } from '@opes/module-sdk';
 import { MODULES } from '@opes/modules';
@@ -23,23 +24,8 @@ import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { PreviewFrame } from '../../../module-ui/PreviewFrame';
 import { SchemaForm } from '../../../module-ui/SchemaForm';
-
-/** Nơi nhớ tạm cấu hình phòng thử trong trình duyệt (chỉ trên máy này). */
-const STORAGE_KEY = 'opes-playground:v1';
-
-interface Stored {
-  moduleKey?: string;
-  configs?: Record<string, unknown>;
-}
-
-function readStored(): Stored {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Stored) : {};
-  } catch {
-    return {};
-  }
-}
+import { CreateTemplateDialog } from '../../../module-ui/CreateTemplateDialog';
+import { readPlayground, writePlayground } from '../../../module-ui/playground-storage';
 
 /**
  * Phòng thử module: form cấu hình tự sinh bên trái, khung xem trước bên phải.
@@ -57,10 +43,11 @@ export default function PlaygroundPage() {
   const [pendingPreset, setPendingPreset] = useState<string | null>(null);
   const [resetCount, setResetCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Đọc cấu hình đã nhớ (sau khi trang hiện, vì máy chủ không có localStorage).
   useEffect(() => {
-    const stored = readStored();
+    const stored = readPlayground();
     const configs: Record<string, unknown> = {};
     for (const m of MODULES) {
       const raw = stored.configs?.[m.key];
@@ -75,11 +62,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (!loaded) return;
     const timer = setTimeout(() => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ moduleKey, configs } satisfies Stored));
-      } catch {
-        // Trình duyệt chặn lưu trữ: phòng thử vẫn chạy, chỉ không nhớ được.
-      }
+      writePlayground({ moduleKey, configs });
     }, 300);
     return () => clearTimeout(timer);
   }, [loaded, moduleKey, configs]);
@@ -114,7 +97,7 @@ export default function PlaygroundPage() {
           </Typography>
           <Typography color="text.secondary">{t('cms.playground.lead')}</Typography>
         </Box>
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
           <TextField
             select
             size="small"
@@ -135,6 +118,14 @@ export default function PlaygroundPage() {
             sx={{ flexShrink: 0 }}
           >
             {t('cms.playground.usePreset')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateOpen(true)}
+            sx={{ flexShrink: 0 }}
+          >
+            {t('cms.playground.createTemplate')}
           </Button>
           <Menu anchorEl={presetMenu} open={Boolean(presetMenu)} onClose={() => setPresetMenu(null)}>
             {(mod.presets ?? []).map((p) => (
@@ -183,6 +174,11 @@ export default function PlaygroundPage() {
         </Box>
       )}
 
+      <CreateTemplateDialog
+        open={createOpen}
+        mode={{ type: 'config', moduleKey: mod.key, config: config as Record<string, unknown> }}
+        onClose={() => setCreateOpen(false)}
+      />
       <ConfirmDialog
         open={pendingPreset !== null}
         title={t('cms.playground.presetTitle', {
