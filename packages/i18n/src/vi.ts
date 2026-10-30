@@ -307,6 +307,8 @@ export const vi = {
       heading: 'Game',
       lead: 'Code các game lưu trong cơ sở dữ liệu. Sửa code, chạy thử bản nháp, rồi phát hành phiên bản mới.',
       uploadNew: 'Tải lên game mới (.zip)',
+      guide: 'Hướng dẫn viết game',
+      downloadExample: 'Tải gói mẫu (.zip)',
       readingZip: 'Đang đọc file .zip…',
       creating: 'Đang tạo game…',
       uploadingTitle: 'Đang tải game lên',

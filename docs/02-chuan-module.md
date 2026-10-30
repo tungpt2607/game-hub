@@ -1,5 +1,7 @@
 # 02. Chuẩn module
 
+> Từ Bước 7, game được lưu trong cơ sở dữ liệu và sửa ngay trong CMS (mục **Game**). Cách viết và tải lên một game: xem [Hướng dẫn viết game](huong-dan/viet-game.md).
+
 Mọi template (game, xếp hạng, phần thưởng) đều là một **module** viết theo cùng một chuẩn. Nền tảng không biết chi tiết bên trong module; nó chỉ biết module khai báo gì và phát ra sự kiện gì.
 
 ## Thành phần của một module

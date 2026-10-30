@@ -46,6 +46,7 @@
     "bundle": {
       "inputs": [
         "src/**",
+        "examples/**",
         "scripts/**",
         "$TURBO_ROOT$/packages/module-sdk/src/**",
         "$TURBO_ROOT$/packages/module-bundler/src/**"

@@ -13,4 +13,6 @@ Trạng thái: **Bản nháp chờ duyệt**. Chưa có code nào được viế
 | 06 | [Bảo mật và chống gian lận](06-bao-mat.md) | Phân quyền, phiên người chơi, kiểm tra điểm, giới hạn truy cập |
 | 07 | [Lộ trình](07-lo-trinh.md) | Các bước thực hiện, mỗi bước là một pull request để duyệt |
 
+Hướng dẫn: [Neon](huong-dan/neon.md) · [R2](huong-dan/r2.md) · [Vercel](huong-dan/vercel.md) · [**Viết game**](huong-dan/viet-game.md) (cấu trúc gói, form cấu hình, file kèm, phát hành trong CMS; gói mẫu ở `packages/modules/examples/game-mau`).
+
 Cách góp ý: bình luận trực tiếp vào dòng cần sửa trong pull request.

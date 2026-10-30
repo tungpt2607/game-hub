@@ -18,11 +18,16 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
+import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import type { GameModuleDetail, GameModuleListResponse, GameModuleSummary } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { CompileFailed, prepareNewGame } from '../../../games/import';
-import { readGameZip } from '../../../games/zip';
+import { downloadBlob, exampleZip, readGameZip } from '../../../games/zip';
+
+/** Hướng dẫn viết game (repo công khai). */
+const GUIDE_URL = 'https://github.com/tungpt2607/game-hub/blob/main/docs/huong-dan/viet-game.md';
 import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
@@ -83,7 +88,18 @@ export default function GamesPage() {
           </Typography>
           <Typography color="text.secondary">{t('cms.games.lead')}</Typography>
         </Box>
-        <Box sx={{ flexShrink: 0 }}>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0, alignItems: 'flex-start' }}>
+          <Button startIcon={<MenuBookOutlined />} href={GUIDE_URL} target="_blank" rel="noopener noreferrer">
+            {t('cms.games.guide')}
+          </Button>
+          <Button
+            startIcon={<DownloadOutlined />}
+            onClick={() => {
+              void exampleZip().then(({ key, blob }) => downloadBlob(blob, `${key}.zip`));
+            }}
+          >
+            {t('cms.games.downloadExample')}
+          </Button>
           <Button variant="contained" startIcon={<UploadFileOutlined />} onClick={() => input.current?.click()} disabled={step !== null}>
             {t('cms.games.uploadNew')}
           </Button>
@@ -98,7 +114,7 @@ export default function GamesPage() {
               if (file) void onZip(file);
             }}
           />
-        </Box>
+        </Stack>
       </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
