@@ -49,5 +49,5 @@ for (const name of readdirSync(sdkDir)) {
 const target = path.join(process.cwd(), 'public/ts-libs.json');
 mkdirSync(path.dirname(target), { recursive: true });
 writeFileSync(target, JSON.stringify(out));
-const kb = Math.round(Buffer.byteLength(JSON.stringify(out)) / 1024);
+const kb = Math.round(new TextEncoder().encode(JSON.stringify(out)).length / 1024);
 console.log(`Đã gom ${Object.keys(out).length} file khai báo kiểu vào public/ts-libs.json (${kb}KB)`);
