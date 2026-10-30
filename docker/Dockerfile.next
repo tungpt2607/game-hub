@@ -10,7 +10,9 @@ ARG APP
 ARG API_INTERNAL_URL=http://api:4000
 # Trang chơi: địa chỉ kho media để chuyển tiếp /media/* (để trống = không chuyển tiếp).
 ARG MEDIA_PROXY_ORIGIN=
-ENV NEXT_OUTPUT=standalone NEXT_TELEMETRY_DISABLED=1 API_INTERNAL_URL=${API_INTERNAL_URL} MEDIA_PROXY_ORIGIN=${MEDIA_PROXY_ORIGIN}
+# Địa chỉ CMS được nhúng khung xem trước /embed của trang chơi (Bước 7b).
+ARG CMS_PUBLIC_URL=
+ENV NEXT_OUTPUT=standalone NEXT_TELEMETRY_DISABLED=1 API_INTERNAL_URL=${API_INTERNAL_URL} MEDIA_PROXY_ORIGIN=${MEDIA_PROXY_ORIGIN} CMS_PUBLIC_URL=${CMS_PUBLIC_URL}
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=@opes/${APP}

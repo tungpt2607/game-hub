@@ -15,7 +15,9 @@ const srcDir = path.join(pkg, 'src');
 const sdkDir = path.join(pkg, '../module-sdk/src');
 /** Thứ tự hiển thị trong CMS. */
 const GAMES = ['catch', 'catch-quiz', 'sample'];
-const SDK_CORE_FILES = ['core.ts', 'fields.ts', 'validation.ts', 'meta.ts'];
+/** Lõi module-sdk: core.ts và các file nó xuất lại (export * from './x'). */
+const coreSource = readFileSync(path.join(sdkDir, 'core.ts'), 'utf8');
+const SDK_CORE_FILES = ['core.ts', ...[...coreSource.matchAll(/from '\.\/([\w-]+)'/g)].map((m) => `${m[1]}.ts`)];
 
 function readGame(dir) {
   const files = {};

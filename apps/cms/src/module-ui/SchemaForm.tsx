@@ -21,7 +21,6 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-  isFieldVisible,
   type ConfigErrors,
   type EmojiOrImage,
   type Field,
@@ -47,6 +46,10 @@ import { getIn, pathKey, setIn, type Path } from './path';
 interface FormCtx {
   root: unknown;
   errors: ConfigErrors;
+  /** Đường dẫn trường đang ẩn (game tính trong khung chạy game). */
+  hidden: Set<string>;
+  /** Tên từng phần tử danh sách theo đường dẫn danh sách. */
+  labels: Record<string, string[]>;
   set: (path: Path, next: unknown) => void;
 }
 
@@ -62,7 +65,7 @@ function FieldsView({ fields, path, ctx }: { fields: Fields; path: Path; ctx: Fo
   return (
     <Stack spacing={2.5}>
       {Object.entries(fields).map(([key, f]) =>
-        isFieldVisible(f, ctx.root) ? <FieldView key={key} field={f} path={[...path, key]} ctx={ctx} /> : null,
+        ctx.hidden.has(pathKey([...path, key])) ? null : <FieldView key={key} field={f} path={[...path, key]} ctx={ctx} />,
       )}
     </Stack>
   );
@@ -184,7 +187,8 @@ function ListView({ field: f, path, ctx }: { field: ListField; path: Path; ctx: 
         {items.map((item, i) => {
           const itemPath = [...path, i];
           const itemErrors = countErrorsUnder(ctx.errors, itemPath);
-          const label = f.itemLabel ? f.itemLabel(item as never, i) : `${f.label} ${i + 1}`;
+          const label =
+            ctx.labels[pathKey(path)]?.[i] ?? (f.itemLabel ? f.itemLabel(item as never, i) : `${f.label} ${i + 1}`);
           const expanded = open === i;
           return (
             <Paper key={i} variant="outlined" sx={{ borderColor: itemErrors ? 'error.main' : undefined }}>
@@ -280,14 +284,32 @@ interface SchemaFormProps<Config> {
   fields: Fields;
   value: Config;
   errors: ConfigErrors;
+  /** Trường đang ẩn và tên phần tử danh sách (kết quả kiểm tra từ khung chạy game). */
+  hidden?: string[];
+  labels?: Record<string, string[]>;
   onChange: (next: Config) => void;
   /** Hiện bảng tóm tắt lỗi phía trên form. */
   showSummary?: boolean;
 }
 
 /** Form tự sinh từ lược đồ trường của module. Nhóm cấp đầu là các mục gập/mở. */
-export function SchemaForm<Config>({ fields, value, errors, onChange, showSummary = true }: SchemaFormProps<Config>) {
-  const ctx: FormCtx = { root: value, errors, set: (path, next) => onChange(setIn(value, path, next)) };
+export function SchemaForm<Config>({
+  fields,
+  value,
+  errors,
+  hidden = [],
+  labels = {},
+  onChange,
+  showSummary = true,
+}: SchemaFormProps<Config>) {
+  const hiddenSet = new Set(hidden);
+  const ctx: FormCtx = {
+    root: value,
+    errors,
+    hidden: hiddenSet,
+    labels,
+    set: (path, next) => onChange(setIn(value, path, next)),
+  };
   const errorKeys = Object.keys(errors);
 
   const focusError = (key: string) => {
@@ -318,7 +340,7 @@ export function SchemaForm<Config>({ fields, value, errors, onChange, showSummar
       )}
       <Box>
         {Object.entries(fields).map(([key, f]) => {
-          if (!isFieldVisible(f, value)) return null;
+          if (hiddenSet.has(key)) return null;
           if (f.type === 'group') return <GroupView key={key} field={f} path={[key]} ctx={ctx} />;
           // Trường lẻ ở cấp đầu: đặt trong khung riêng cho thống nhất với các nhóm.
           return (

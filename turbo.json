@@ -11,6 +11,7 @@
       ],
       "env": [
         "API_INTERNAL_URL",
+        "CMS_PUBLIC_URL",
         "MEDIA_PROXY_ORIGIN",
         "NEXT_OUTPUT",
         "NEXT_PUBLIC_*"

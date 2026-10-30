@@ -84,6 +84,24 @@ export function publicRoutes(deps: AppDeps) {
     });
   });
 
+  /**
+   * Gói chạy của một phiên bản game (trang chơi và khung xem trước tải về rồi chạy).
+   * Phiên bản đã phát hành thì không đổi nên được lưu đệm lâu.
+   */
+  app.get('/modules/:key/:version/runtime.js', async (c) => {
+    const key = c.req.param('key');
+    const version = c.req.param('version');
+    if (!/^[a-z][a-z0-9.-]{0,63}$/.test(key) || !/^[0-9A-Za-z.+-]{1,40}$/.test(version)) {
+      throw new AppError(404, ErrorCode.MODULE_NOT_FOUND, 'Không tìm thấy game.');
+    }
+    const mod = await getModuleVersion(c.get('db'), key, version).catch(() => null);
+    if (!mod) throw new AppError(404, ErrorCode.MODULE_NOT_FOUND, 'Không tìm thấy game.');
+    c.header('Content-Type', 'text/javascript; charset=utf-8');
+    c.header('Cache-Control', 'public, max-age=31536000, immutable');
+    c.header('X-Content-Type-Options', 'nosniff');
+    return c.body(mod.runtimeJs);
+  });
+
   /** Nhập mật khẩu của link; đúng thì đặt cookie mở khóa 30 ngày. */
   app.post('/try/:token/unlock', async (c) => {
     const db = c.get('db');

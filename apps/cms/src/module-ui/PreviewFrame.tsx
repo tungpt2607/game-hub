@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -14,8 +14,10 @@ import Tooltip from '@mui/material/Tooltip';
 import ReplayIcon from '@mui/icons-material/Replay';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import { createSandboxHost, type ModuleDefinition } from '@opes/module-sdk';
+import LinearProgress from '@mui/material/LinearProgress';
+import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
+import { FRAME_ALLOW, FRAME_SANDBOX, useGameFrame } from './useGame';
 
 export const DEVICES = [
   { id: 'small', label: '360 × 640', width: 360, height: 640 },
@@ -25,38 +27,25 @@ export const DEVICES = [
 
 type DeviceId = (typeof DEVICES)[number]['id'];
 
-/** Bắt lỗi khi module chạy, để lỗi trong game không làm hỏng cả trang CMS. */
-class RuntimeBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state = { error: null as Error | null };
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <Box sx={{ position: 'absolute', inset: 0, p: 2, bgcolor: 'background.paper' }}>
-          <Alert severity="error">{t('cms.preview.crashed', { message: this.state.error.message })}</Alert>
-        </Box>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-interface Props<Config> {
-  module: ModuleDefinition<Config>;
-  config: Config;
+interface Props {
+  /** Game cần chạy (phiên bản đã phát hành, hoặc code bản nháp). */
+  source: GameSource;
+  config: unknown;
   /** Chiều cao tối đa của khung (px); mặc định vừa màn hình. */
   maxHeight?: number;
 }
 
 /**
  * Khung xem trước dạng điện thoại: chọn kích thước máy, nhảy tới từng màn hình, bật/tắt tiếng,
- * chơi lại. Module chạy với SandboxHost nên không gọi mạng; cấu hình thay đổi được áp dụng ngay.
+ * chơi lại. Game chạy trong iframe trên tên miền trang chơi (tách khỏi CMS), với SandboxHost nên không
+ * gọi mạng; cấu hình thay đổi được áp dụng ngay.
  */
-export function PreviewFrame<Config>({ module, config, maxHeight }: Props<Config>) {
+export function PreviewFrame({ source, config, maxHeight }: Props) {
   const [deviceId, setDeviceId] = useState<DeviceId>('medium');
-  const [screen, setScreen] = useState(module.screens[0]?.id ?? '');
+  const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
+  const { schema, error, client } = useGameFrame(frame, source);
+  const screens = schema?.screens ?? [];
+  const [screen, setScreen] = useState('');
   const [muted, setMuted] = useState(true);
   const [run, setRun] = useState(0);
   const area = useRef<HTMLDivElement>(null);
@@ -64,12 +53,17 @@ export function PreviewFrame<Config>({ module, config, maxHeight }: Props<Config
   const [viewportHeight, setViewportHeight] = useState(0);
 
   const device = DEVICES.find((d) => d.id === deviceId) ?? DEVICES[1];
-  const host = useMemo(() => createSandboxHost(), []);
-  const Runtime = module.Runtime;
+  const firstScreen = schema?.screens[0]?.id ?? '';
 
   useEffect(() => {
-    setScreen(module.screens[0]?.id ?? '');
-  }, [module]);
+    setScreen(firstScreen);
+  }, [schema, firstScreen]);
+
+  // Gửi cấu hình và trạng thái hiện tại sang khung mỗi khi đổi.
+  useEffect(() => {
+    if (!client || !schema || config === null || config === undefined) return;
+    client.render({ config, screen: screen || undefined, muted, run });
+  }, [client, schema, config, screen, muted, run]);
 
   useEffect(() => {
     const el = area.current;
@@ -122,7 +116,7 @@ export function PreviewFrame<Config>({ module, config, maxHeight }: Props<Config
             setRun((n) => n + 1);
           }}
         >
-          {module.screens.map((s) => (
+          {screens.map((s) => (
             <ToggleButton key={s.id} value={s.id} sx={{ px: 1.25 }}>
               {s.label}
             </ToggleButton>
@@ -137,7 +131,7 @@ export function PreviewFrame<Config>({ module, config, maxHeight }: Props<Config
         <Tooltip title={t('cms.preview.restart')}>
           <IconButton
             onClick={() => {
-              setScreen(module.screens[0]?.id ?? '');
+              setScreen(firstScreen);
               setRun((n) => n + 1);
             }}
             aria-label={t('cms.preview.restart')}
@@ -177,14 +171,25 @@ export function PreviewFrame<Config>({ module, config, maxHeight }: Props<Config
                 borderRadius: '26px',
                 overflow: 'hidden',
                 bgcolor: '#000',
-                // Cô lập phần chạy module khỏi CSS của CMS.
-                isolation: 'isolate',
-                contain: 'strict',
               }}
             >
-              <RuntimeBoundary key={`${module.key}-${run}`}>
-                <Runtime config={config} host={host} initialScreen={screen} muted={muted} />
-              </RuntimeBoundary>
+              <iframe
+                ref={setFrame}
+                title={t('cms.preview.frameTitle')}
+                sandbox={FRAME_SANDBOX}
+                allow={FRAME_ALLOW}
+                style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+              />
+              {!schema && !error && (
+                <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+                  <LinearProgress />
+                </Box>
+              )}
+              {error && (
+                <Box sx={{ position: 'absolute', inset: 0, p: 2, bgcolor: 'background.paper' }}>
+                  <Alert severity="error">{t('cms.preview.loadFailed', { message: error })}</Alert>
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>
