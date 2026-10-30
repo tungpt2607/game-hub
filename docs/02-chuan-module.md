@@ -180,6 +180,19 @@ Mẫu có sẵn: Tết, Trung thu, Giáng sinh, Trái cây / F&B.
 
 Kiểm tra điểm: `maxScore` = số vật phẩm tối đa có thể xuất hiện trong khoảng thời gian (tính từ tần suất và độ khó) × điểm cao nhất.
 
+### `game.catch-quiz`: Hứng quà + câu hỏi
+
+Dựa trên game OME Catch của OPES (`packages/modules/src/catch-quiz`). Mọi kích thước tính theo khung 1080 × 1920 px, khi chơi thu phóng vừa màn hình.
+
+- **Nhân vật hứng**: hình thường / khi đau / khi kết thúc (emoji hoặc ảnh, kể cả ảnh động), kích thước, vị trí, vùng hứng.
+- **Nhóm vật phẩm** (danh sách): tên, nhiều hình, điểm, tỉ lệ %, màu viền sáng, nhịp phóng to; khi hứng: cộng điểm / dừng game hiện câu hỏi / mất mạng. Game chọn nhóm bằng "túi" 20 ô theo tỉ lệ nên tỉ lệ thực tế sát cấu hình.
+- **Luật**: thời gian, số mạng, số làn, kích thước vật phẩm, đếm ngược và chữ sau đếm ngược; **giai đoạn độ khó** (tới giây thứ mấy, tốc độ, nhịp thả, số vật mỗi đợt).
+- **Câu hỏi**: danh sách câu hỏi (2–6 đáp án, đúng một đáp án đúng), xáo đáp án, khung câu hỏi, thời gian nhân vật đau, thưởng khi đúng, phạt khi sai (mất mạng / trừ điểm / không), nút "Tiếp tục" có đếm 3-2-1.
+- **Giao diện**: nền, font chữ, font số, màu nút, khung đồng hồ/điểm, biểu tượng đồng hồ, biểu tượng mạng, màu cảnh báo.
+- **Màn bắt đầu, màn kết thúc** (nút kêu gọi có thể gắn `?score=`), **âm thanh**.
+
+Mẫu "OME Catch" dùng ảnh trong `packages/modules/assets/catch-quiz/ome/`; khi build, `scripts/copy-module-assets.mjs` chép thư mục này vào `public/module-assets/` của CMS và trang chơi. Mã vào chơi của game gốc được thay bằng mật khẩu của link chơi thử.
+
 ### `leaderboard.podium`: Bảng xếp hạng [GĐ2]
 
 - **Hiển thị**: bục top 3 (bật/tắt), số dòng danh sách, thứ hạng của tôi (bật/tắt), quà theo hạng (bật/tắt), đếm ngược kết thúc kỳ (bật/tắt).

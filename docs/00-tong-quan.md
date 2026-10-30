@@ -110,6 +110,8 @@ Nguyên tắc thiết kế xuyên suốt:
 | 117 | Quản lý link (Claude chọn) | Nút "Link chơi thử" trong màn chỉnh template: tạo, sao chép, mở, QR (tải ảnh), sửa tên/mật khẩu/hạn, bật/tắt, xóa |
 | 118 | Mật khẩu link (Claude chọn) | Tối thiểu 4 ký tự; nhập đúng thì máy đó nhớ 30 ngày; đổi mật khẩu thì phải nhập lại |
 | 119 | Bản chụp từ bản nháp (Claude chọn) | Chỉ chụp được khi bản nháp không còn lỗi |
+| 130 | Game OME Catch | Làm thành module mới `game.catch-quiz` (Hứng quà + câu hỏi), giữ nguyên Hứng quà cũ |
+| 131–132 | Tùy chỉnh của Hứng quà + câu hỏi | "Cái gì cấu hình được thì cấu hình hết"; có mẫu OME Catch dùng ảnh và 6 câu hỏi gốc; mã vào chơi thay bằng mật khẩu link |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 

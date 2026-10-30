@@ -17,7 +17,8 @@
       "outputs": [
         "dist/**",
         ".next/**",
-        "!.next/cache/**"
+        "!.next/cache/**",
+        "public/module-assets/**"
       ]
     },
     "typecheck": {
