@@ -325,7 +325,7 @@ export const vi = {
       draftSavedAt: 'Lưu nháp {date} · {name}',
       codeFiles: 'File code',
       undo: 'Hoàn tác (Ctrl+Z)',
-      redo: 'Làm lại (Ctrl+Shift+Z)',
+      redo: 'Huỷ hoàn tác (Ctrl+Shift+Z)',
       search: 'Tìm và thay (Ctrl+F)',
       newFile: 'Thêm file code',
       deleteFile: 'Xóa',

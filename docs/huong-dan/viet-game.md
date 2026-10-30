@@ -177,7 +177,7 @@ và thêm ngay bên dưới:
    - Nếu hiện lỗi màu đỏ, bấm vào chỗ ghi `tên-file:dòng:cột` để nhảy tới chỗ sai.
 6. Bấm **Lưu nháp**. Bản nháp được lưu lại; đồng nghiệp mở game này cũng thấy.
 
-Phím tắt trong khung code: **Ctrl+F** để tìm và thay, **Ctrl+Z** để hoàn tác, **Ctrl+Shift+Z** để làm lại. Trên điện thoại không có phím tắt: dùng 3 nút **↶ Hoàn tác**, **↷ Làm lại** và **🔍 Tìm** ở thanh tên file phía trên khung code.
+Phím tắt trong khung code: **Ctrl+F** để tìm và thay, **Ctrl+Z** để hoàn tác, **Ctrl+Shift+Z** để huỷ hoàn tác. Trên điện thoại không có phím tắt: dùng 3 nút **↶ Hoàn tác**, **↷ Huỷ hoàn tác** và **🔍 Tìm** ở thanh tên file phía trên khung code.
 
 Muốn thêm hay đổi ảnh ngay trong CMS: ở mục **File kèm** bên trái bấm **+** để tải ảnh lên. Nút chép bên cạnh mỗi ảnh chép sẵn đoạn `asset('…')` để dán vào code.
 
