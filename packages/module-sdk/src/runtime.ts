@@ -30,11 +30,21 @@ export interface RuntimeProps<Config> {
   /** Màn hình mở đầu (dùng cho nút "nhảy tới màn hình" trong khung xem trước). */
   initialScreen?: string;
   muted: boolean;
+  /** Khóa để module lưu dữ liệu riêng trên máy người chơi (ví dụ điểm cao nhất), khác nhau theo từng link. */
+  storageKey?: string;
 }
 
 export interface ModuleScreen {
   id: string;
   label: string;
+}
+
+/** Bộ cấu hình mẫu có sẵn của module (ví dụ giao diện Tết, Trung thu). */
+export interface ModulePreset<Config> {
+  id: string;
+  name: string;
+  description?: string;
+  config: Config;
 }
 
 export interface ModuleDefinition<Config> {
@@ -51,6 +61,8 @@ export interface ModuleDefinition<Config> {
   /** Các màn hình để nhảy tới khi xem trước; màn hình đầu tiên là màn hình mở đầu. */
   screens: ModuleScreen[];
   Runtime: ComponentType<RuntimeProps<Config>>;
+  /** Các mẫu có sẵn để tạo template nhanh. */
+  presets?: ModulePreset<Config>[];
   /** Mô tả cách tính điểm (module game). */
   scoring?: { unit: string; higherIsBetter: boolean };
 }

@@ -16,9 +16,9 @@ const STEPS: { step: number; title: string; state: StepState }[] = [
   { step: 1, title: 'Tài liệu thiết kế', state: 'done' },
   { step: 2, title: 'Khung dự án', state: 'done' },
   { step: 3, title: 'Cơ sở dữ liệu', state: 'done' },
-  { step: 4, title: 'Đăng nhập CMS, tài khoản, tải media', state: 'inProgress' },
-  { step: 5, title: 'Chuẩn module, form tự sinh, chế độ chơi thử', state: 'inProgress' },
-  { step: 6, title: 'Game Hứng quà, thư viện template, link chơi thử', state: 'upcoming' },
+  { step: 4, title: 'Đăng nhập CMS, tài khoản, tải media', state: 'done' },
+  { step: 5, title: 'Chuẩn module, form tự sinh, chế độ chơi thử', state: 'done' },
+  { step: 6, title: 'Game Hứng quà, thư viện template, link chơi thử', state: 'inProgress' },
 ];
 
 const CHIP: Record<StepState, { label: string; color: 'success' | 'primary' | 'default' }> = {

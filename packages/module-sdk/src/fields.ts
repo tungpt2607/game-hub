@@ -37,6 +37,8 @@ export interface TextField extends FieldBase {
   maxLength?: number;
   multiline?: boolean;
   placeholder?: string;
+  /** Kiểm tra thêm định dạng: `url` = link bắt đầu bằng http:// hoặc https://. */
+  format?: 'url';
 }
 export interface NumberField extends FieldBase {
   type: 'number';

@@ -137,11 +137,11 @@ Phần phác thảo ở trên là hướng tổng thể. Giai đoạn 1 làm ph�
 | Kiểm tra cấu hình | `validation.ts` | `validateConfig(fields, config)` trả lỗi theo đường dẫn (`items.0.points`), câu tiếng Việt; trường đang ẩn không bị kiểm tra. Viết tay thay cho Zod để dùng chung ở CMS và API mà không cần chuyển đổi |
 | Chuẩn hóa | `validation.ts` | `normalizeConfig(fields, raw, defaults)`: điền trường mới thêm từ mặc định, bỏ khóa thừa (thay cho `migrate` khi chỉ tăng phiên bản phụ) |
 | Định nghĩa module | `runtime.ts` | `defineModule({ key, kind, version, name, description, fields, defaults, screens, Runtime, scoring })`. `screens` là các màn hình để khung xem trước nhảy tới |
-| Phần chạy | | `RuntimeProps = { config, host, initialScreen, muted }`. `HostApi` giai đoạn 1 có `mode`, `startPlay`, `finishPlay`, `track` |
+| Phần chạy | | `RuntimeProps = { config, host, initialScreen, muted, storageKey }` (`storageKey` để lưu dữ liệu riêng theo link, ví dụ kỷ lục). `HostApi` giai đoạn 1 có `mode`, `startPlay`, `finishPlay`, `track` |
 | Chế độ chơi thử | `sandbox.ts` | `createSandboxHost()`: không gọi mạng, mọi lượt chơi được chấp nhận |
 | Font | `fonts.ts`, `react.ts` | 18 font Google có tiếng Việt; `useFont()` tải font và trả `font-family`. Font riêng tải lên làm ở Bước 6 |
 | Âm thanh | `react.ts` | `useSound(ref, { muted, loop })` tôn trọng nút tắt tiếng |
-| Danh sách module | `packages/modules` | Bước 5 có module mẫu `game.sample` ("Chạm quà") dùng đủ mọi loại trường; `game.catch` thêm ở Bước 6 |
+| Danh sách module | `packages/modules` | `game.catch` (Hứng quà, Bước 6a) và module mẫu `game.sample` ("Chạm quà", dùng đủ mọi loại trường). Module có thể khai báo `presets` (mẫu có sẵn) |
 | Form tự sinh, khung xem trước | `apps/cms/src/module-ui` | Đặt trong CMS (không tách package) vì chỉ CMS dùng. Khung xem trước có 3 cỡ máy 360×640, 390×844, 430×932 |
 
 Module mới chỉ cần khai báo `fields`, `defaults`, `screens` và viết `Runtime`; form, kiểm tra lỗi và khung xem trước có sẵn.
@@ -160,17 +160,23 @@ Giai đoạn 1 chỉ có `game.catch`. Hai module còn lại là **[GĐ2]**, mô
 
 ### `game.catch`: Hứng quà rơi
 
+Đã làm ở Bước 6a (`packages/modules/src/catch`). Lõi game (`engine.ts`) tách khỏi giao diện để test được.
+
 Các nhóm cấu hình:
 
-- **Nội dung**: tiêu đề, lời giới thiệu, ảnh/emoji giỏ hứng.
-- **Vật phẩm cộng điểm** (danh sách): ảnh hoặc emoji, điểm, tần suất xuất hiện.
-- **Vật cản** (danh sách): ảnh hoặc emoji, điểm trừ, có mất mạng không.
-- **Luật**: thời gian chơi; bật/tắt mạng sống và số mạng; game kết thúc khi hết giờ hoặc hết mạng.
-- **Độ khó**: tốc độ rơi ban đầu, mức tăng tốc theo thời gian, tần suất xuất hiện, tỉ lệ vật cản tăng dần.
-- **Âm thanh**: nhạc nền, tiếng hứng trúng, tiếng trúng vật cản, tiếng kết thúc.
-- **Màn hướng dẫn**: bật/tắt, các trang hướng dẫn (ảnh + chữ).
-- **Thương hiệu và giao diện**: logo, tên nhãn hàng hiển thị, màu chính/nền/chữ, font, ảnh nền, màu thanh điểm. Giai đoạn 1 nhập thẳng ở đây; giai đoạn 2 mặc định lấy từ hồ sơ nhãn hàng.
-- **Màn kết thúc**: tiêu đề, lời nhắn, nút chơi lại.
+- **Màn mở đầu**: tiêu đề, lời giới thiệu, chữ nút bắt đầu, logo.
+- **Màn hướng dẫn**: bật/tắt; tự liệt kê vật phẩm và điểm; lời dẫn, ảnh minh họa, chữ nút chơi.
+- **Giao diện**: màu nền, ảnh nền, màu chữ, màu nút, màu chữ trên nút, font.
+- **Giỏ hứng**: emoji hoặc ảnh, kích thước nhỏ/vừa/lớn.
+- **Luật chơi**: kết thúc khi hết giờ / hết mạng / cái nào đến trước; thời gian; số mạng; đếm ngược 3-2-1.
+- **Độ khó**: tăng dần theo thời gian hoặc theo màn; thời gian rơi và số vật phẩm mỗi giây lúc đầu và lúc khó nhất; sau bao lâu thì khó nhất, hoặc số điểm để lên màn và màn khó nhất.
+- **Vật phẩm rơi** (danh sách, 1–10): emoji hoặc ảnh, điểm (âm = vật cần tránh), tần suất, hứng phải thì mất mạng, để rơi thì mất mạng.
+- **Âm thanh**: nhạc nền, tiếng hứng được, tiếng mất mạng/vật xấu, tiếng kết thúc.
+- **Màn kết thúc**: tiêu đề, lời nhắn theo mức điểm, điểm cao nhất trên máy, nút chơi lại, nút kêu gọi có link, nút chia sẻ.
+
+Hiệu ứng: số điểm bay lên, rung khi mất mạng, "Màn N" khi lên màn, pháo giấy ở màn kết thúc (tắt khi máy đặt giảm chuyển động).
+
+Mẫu có sẵn: Tết, Trung thu, Giáng sinh, Trái cây / F&B.
 
 Kiểm tra điểm: `maxScore` = số vật phẩm tối đa có thể xuất hiện trong khoảng thời gian (tính từ tần suất và độ khó) × điểm cao nhất.
 
