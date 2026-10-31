@@ -22,3 +22,16 @@ packages/modules/bundles/
 
 # Multi-agent
 .agents/state/tool_log.jsonl
+# Multi-agent: dữ liệu vận hành không lên repo public
+.agents/state/
+.agents/requests/*
+!.agents/requests/.gitkeep
+.agents/tasks/*
+!.agents/tasks/.gitkeep
+.agents/decisions/*
+!.agents/decisions/.gitkeep
+.agents/artifacts/*
+!.agents/artifacts/.gitkeep
+.agents/ledger/*
+!.agents/ledger/.gitkeep
+__pycache__/
