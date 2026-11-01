@@ -31,7 +31,8 @@ Tài liệu thiết kế trong `docs/`.
 
 **Không được làm để cho qua kiểm tra**
 
-- Không thêm file vào `OVERSIZED_FILES` hay nâng trần số dòng trong `eslint.config.mjs`. File chạm trần thì tách nhỏ.
+- Không thêm file vào `OVERSIZED_FILES` trong `eslint.config.mjs` (danh sách đang trống). File sắp vượt 400 dòng thì tách nhỏ
+  ngay: logic ra custom hook, giao diện ra component, hàm thuần ra `*-utils.ts` kèm kiểm thử.
 - Không tắt luật ESLint, không dùng `eslint-disable` khi chưa có lý do thật; nếu bắt buộc phải tắt thì ghi lý do
   ngay trên dòng đó (`-- <lý do>`).
 - Không dùng `any`, `@ts-ignore`, `@ts-expect-error` để né lỗi kiểu.

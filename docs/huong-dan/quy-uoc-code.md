@@ -41,10 +41,10 @@ Kiểm thử với PostgreSQL thật (CI luôn chạy): đặt `TEST_DATABASE_UR
 
 ### File đang dài hơn 400 dòng
 
-Danh sách `OVERSIZED_FILES` trong `eslint.config.mjs` ghi các file cũ đang quá dài, mỗi file có trần bằng kích thước hiện tại.
+Hiện không còn file nào dài hơn 400 dòng: danh sách `OVERSIZED_FILES` trong `eslint.config.mjs` để trống.
 
-- File trong danh sách **chỉ được ngắn đi**. Khi tách nhỏ thì hạ trần; xuống dưới 400 dòng thì xóa khỏi danh sách.
-- **Không thêm file mới vào danh sách, không nâng trần.** Sửa một file đã chạm trần thì tách bớt phần liên quan ra file khác trong cùng thay đổi.
+- **Không thêm file vào danh sách.** File mới, hoặc file đang sửa sắp vượt 400 dòng, thì tách ngay trong cùng thay đổi:
+  logic trạng thái ra custom hook, hộp thoại / khối giao diện ra component, hàm thuần ra file `*-utils.ts` kèm kiểm thử.
 
 ## 3. Quy ước người review kiểm tra
 
@@ -75,11 +75,13 @@ Thứ tự ưu tiên khi phải đánh đổi: **đúng → an toàn → perform
 
 - Trước khi viết component mới, tìm trong nơi chứa component dùng chung:
   - `apps/cms/src/components/ui/`: component giao diện tổng quát, không nghiệp vụ (ESLint kiểm tra): `ConfirmDialog`,
-    `PageHeader`, `SearchField`, `Toast`.
+    `PageHeader`, `SearchField`, `Toast`, `EditorHeader` (đầu trang sửa), `ListDialog<T>` (hộp danh sách),
+    `SplitView` (2 cột / 2 tab), `LoadErrorView` (báo lỗi tải trang).
   - `apps/cms/src/components/`: phần khung chung của CMS có gắn nghiệp vụ (khung trang quản trị, đăng nhập, cảnh báo rời trang…).
   - `apps/cms/src/lib/`: hook và hàm dùng chung (`useDebouncedValue`, `formatDateTime`, `errorMessage`…).
   - `apps/cms/src/module-ui/`: giao diện liên quan game/template (form cấu hình, xem trước, chọn media…).
-  - `@opes/module-sdk/react`: hook/thành phần dùng chung giữa các game (`useFont`, `useSound`…).
+  - `@opes/module-sdk/react`: hook/thành phần dùng chung giữa các game (`useFont`, `useSound`, `EmojiOrImageView`,
+    `EMOJI_FONT`, `prefersReducedMotion`, `vibrate`, `usePreloadImages`).
 - Một đoạn giao diện xuất hiện ở **chỗ thứ hai** thì tách thành component dùng chung, đặt vào thư mục ở trên; không chép thêm bản thứ ba.
 - Một component làm một việc. Tách khi component vừa lấy dữ liệu vừa hiển thị phức tạp, hoặc có phần tự nhiên đứng riêng được (hộp thoại, một hàng trong danh sách, một bước trong luồng).
 - Tách phần lấy dữ liệu / trạng thái ra custom hook (`useXxx`), component chỉ nhận props và hiển thị. Component hiển thị không gọi `api()` trực tiếp.
