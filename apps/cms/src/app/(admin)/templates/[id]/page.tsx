@@ -39,7 +39,7 @@ import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
 import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
-import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
+import { PreviewLinksDialog } from '../../../../module-ui/preview-links/PreviewLinksDialog';
 import { SchemaForm } from '../../../../module-ui/SchemaForm';
 import { StatusChip } from '../../../../module-ui/StatusChip';
 import { useGameForm } from '../../../../module-ui/useGame';

@@ -20,8 +20,6 @@ const OVERSIZED_FILES = {
   'apps/cms/src/app/\\(admin\\)/games/\\[key\\]/page.tsx': 670,
   'apps/cms/src/app/\\(admin\\)/templates/\\[id\\]/page.tsx': 600,
   'apps/cms/src/games/workspace/Workspace.tsx': 860,
-  'apps/cms/src/module-ui/PreviewLinksDialog.tsx': 690,
-  'apps/cms/src/module-ui/inputs.tsx': 550,
 };
 
 /** Import bị cấm ở mã chạy trên trình duyệt (CMS, trang chơi) vì làm gói tải về lớn. */
