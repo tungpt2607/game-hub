@@ -8,8 +8,7 @@ import type { AppDeps, AppEnv } from '../context';
 import { hashToken, verifyPassword } from '../lib/crypto';
 import { AppError, parseInput, readJson } from '../lib/errors';
 import { rewriteMediaUrls } from '../lib/media-urls';
-import { sandbox } from '../lib/module-sandbox';
-import { getModuleVersion } from '../lib/modules';
+import { getModuleVersion, normalizeConfig } from '../lib/modules';
 import { hitRateLimit } from '../lib/rate-limit';
 
 type LinkRow = typeof schema.previewLinks.$inferSelect;
@@ -66,7 +65,7 @@ export function publicRoutes(deps: AppDeps) {
       : null;
     if (!raw || !mod) return respond(c, { status: 'not_published' }, 404);
 
-    let config = await sandbox.normalize(mod.schemaJs, raw);
+    let config = await normalizeConfig(mod, raw);
     const storage = deps.getStorage();
     if (deps.mediaProxy() && storage) config = rewriteMediaUrls(config, storage.publicUrl(''));
 

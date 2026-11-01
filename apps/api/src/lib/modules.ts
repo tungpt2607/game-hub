@@ -1,8 +1,11 @@
+import { createHash } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import builtin from '@opes/modules/bundles';
 import { ErrorCode } from '@opes/contracts';
 import { schema, type Database, type GameModuleMeta } from '@opes/db';
 import { AppError } from './errors';
+import { LruCache } from './lru';
+import { sandbox } from './module-sandbox';
 
 /**
  * Danh sách game lấy từ cơ sở dữ liệu (Bước 7). Game có sẵn trong code được nạp vào lần đầu
@@ -26,7 +29,12 @@ interface BuiltinBundle {
 }
 
 /** Gói đã biên dịch không đổi sau khi phát hành, nên giữ trong bộ nhớ theo khóa key@version. */
-const cache = new Map<string, ModuleVersion>();
+const cache = new LruCache<string, ModuleVersion>(50);
+/**
+ * Cấu hình đã chuẩn hóa theo key@version + bản băm cấu hình gốc. Chuẩn hóa chạy code game trong
+ * sandbox (tốn vài ms đến vài chục ms), nên trang chơi không phải chạy lại cho mỗi lượt xem.
+ */
+const normalized = new LruCache<string, Record<string, unknown>>(500);
 let seeded: Promise<void> | null = null;
 
 /** Nạp các game có sẵn còn thiếu; chạy một lần cho mỗi tiến trình. */
@@ -70,6 +78,22 @@ export function ensureBuiltinModules(db: Database): Promise<void> {
 export function resetModuleRegistry() {
   seeded = null;
   cache.clear();
+  normalized.clear();
+}
+
+/**
+ * Chuẩn hóa cấu hình theo game, có lưu đệm. Kết quả chỉ phụ thuộc vào phiên bản game (không đổi sau khi
+ * phát hành) và nội dung cấu hình, nên khóa đệm là key@version + sha256 của cấu hình.
+ * Không được sửa đối tượng trả về (dùng chung giữa các request).
+ */
+export async function normalizeConfig(mod: ModuleVersion, config: unknown): Promise<Record<string, unknown>> {
+  const digest = createHash('sha256').update(JSON.stringify(config ?? null)).digest('base64url');
+  const cacheKey = `${mod.key}@${mod.version}:${digest}`;
+  const hit = normalized.get(cacheKey);
+  if (hit) return hit;
+  const result = await sandbox.normalize(mod.schemaJs, config);
+  normalized.set(cacheKey, result);
+  return result;
 }
 
 /** Phiên bản của game: `version` cụ thể, hoặc bản phát hành mới nhất. */

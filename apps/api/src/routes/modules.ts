@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import {
   compareVersions,
@@ -149,26 +149,28 @@ export function moduleRoutes(deps: AppDeps) {
   }
 
   async function detail(db: Database, row: ModuleRow): Promise<GameModuleDetail> {
-    const versions = await db
-      .select({
-        version: schema.gameModuleVersions.version,
-        notes: schema.gameModuleVersions.notes,
-        publishedAt: schema.gameModuleVersions.publishedAt,
-        publishedByName: schema.users.name,
-      })
-      .from(schema.gameModuleVersions)
-      .leftJoin(schema.users, eq(schema.users.id, schema.gameModuleVersions.publishedBy))
-      .where(eq(schema.gameModuleVersions.moduleKey, row.key))
-      .orderBy(desc(schema.gameModuleVersions.publishedAt));
-    const [templates] = await db
-      .select({ n: count() })
-      .from(schema.templates)
-      .where(eq(schema.templates.moduleKey, row.key));
-    let updatedByName: string | null = null;
-    if (row.draftUpdatedBy) {
-      const [u] = await db.select({ name: schema.users.name }).from(schema.users).where(eq(schema.users.id, row.draftUpdatedBy));
-      updatedByName = u?.name ?? null;
-    }
+    // Ba truy vấn độc lập: chạy song song.
+    const [versions, [templates], updatedByName] = await Promise.all([
+      db
+        .select({
+          version: schema.gameModuleVersions.version,
+          notes: schema.gameModuleVersions.notes,
+          publishedAt: schema.gameModuleVersions.publishedAt,
+          publishedByName: schema.users.name,
+        })
+        .from(schema.gameModuleVersions)
+        .leftJoin(schema.users, eq(schema.users.id, schema.gameModuleVersions.publishedBy))
+        .where(eq(schema.gameModuleVersions.moduleKey, row.key))
+        .orderBy(desc(schema.gameModuleVersions.publishedAt)),
+      db.select({ n: count() }).from(schema.templates).where(eq(schema.templates.moduleKey, row.key)),
+      row.draftUpdatedBy
+        ? db
+            .select({ name: schema.users.name })
+            .from(schema.users)
+            .where(eq(schema.users.id, row.draftUpdatedBy))
+            .then(([u]) => u?.name ?? null)
+        : Promise.resolve(null),
+    ]);
     return {
       key: row.key,
       kind: row.kind,
@@ -199,39 +201,65 @@ export function moduleRoutes(deps: AppDeps) {
   app.get('/', async (c) => {
     const db = c.get('db');
     await ensureBuiltinModules(db);
-    const modules = await db.select().from(schema.gameModules).orderBy(asc(schema.gameModules.createdAt), asc(schema.gameModules.key));
-    const versions = await db
-      .select({
-        moduleKey: schema.gameModuleVersions.moduleKey,
-        version: schema.gameModuleVersions.version,
-        publishedAt: schema.gameModuleVersions.publishedAt,
-        notes: schema.gameModuleVersions.notes,
-        meta: schema.gameModuleVersions.meta,
-      })
-      .from(schema.gameModuleVersions)
-      .orderBy(desc(schema.gameModuleVersions.publishedAt));
-    const body: GameModuleListResponse = {
-      items: modules.map((m) => {
-        const own = versions.filter((v) => v.moduleKey === m.key);
-        const latest = own.find((v) => v.version === m.latestVersion);
-        return {
+    const v = schema.gameModuleVersions;
+    const m = schema.gameModules;
+    // Chỉ lấy cột cần cho danh sách: bỏ qua code nháp (lớn) và mô tả của các phiên bản cũ.
+    const [modules, versions, latestMetas] = await Promise.all([
+      db
+        .select({
           key: m.key,
           kind: m.kind,
           name: m.name,
           description: m.description,
           latestVersion: m.latestVersion,
           builtin: m.builtin,
-          versions: own.map((v) => ({ version: v.version, publishedAt: v.publishedAt.toISOString(), notes: v.notes })),
-          defaults: latest?.meta.defaults ?? {},
-          presets: (latest?.meta.presets ?? []).map((p) => ({
+          hasDraft: sql<boolean>`${m.draftFiles} is not null and ${m.draftUpdatedAt} is not null`,
+          draftUpdatedAt: m.draftUpdatedAt,
+          updatedAt: m.updatedAt,
+        })
+        .from(m)
+        .orderBy(asc(m.createdAt), asc(m.key)),
+      db
+        .select({ moduleKey: v.moduleKey, version: v.version, publishedAt: v.publishedAt, notes: v.notes })
+        .from(v)
+        .orderBy(desc(v.publishedAt)),
+      db
+        .select({ moduleKey: v.moduleKey, meta: v.meta })
+        .from(v)
+        .innerJoin(m, and(eq(m.key, v.moduleKey), eq(m.latestVersion, v.version))),
+    ]);
+    const versionsByModule = new Map<string, typeof versions>();
+    for (const row of versions) {
+      const list = versionsByModule.get(row.moduleKey);
+      if (list) list.push(row);
+      else versionsByModule.set(row.moduleKey, [row]);
+    }
+    const metaByModule = new Map(latestMetas.map((r) => [r.moduleKey, r.meta]));
+    const body: GameModuleListResponse = {
+      items: modules.map((mod) => {
+        const meta = metaByModule.get(mod.key);
+        return {
+          key: mod.key,
+          kind: mod.kind,
+          name: mod.name,
+          description: mod.description,
+          latestVersion: mod.latestVersion,
+          builtin: mod.builtin,
+          versions: (versionsByModule.get(mod.key) ?? []).map((ver) => ({
+            version: ver.version,
+            publishedAt: ver.publishedAt.toISOString(),
+            notes: ver.notes,
+          })),
+          defaults: meta?.defaults ?? {},
+          presets: (meta?.presets ?? []).map((p) => ({
             id: p.id,
             name: p.name,
             description: p.description,
             config: p.config,
           })),
-          hasDraft: m.draftFiles !== null && m.draftUpdatedAt !== null,
-          draftUpdatedAt: iso(m.draftUpdatedAt),
-          updatedAt: m.updatedAt.toISOString(),
+          hasDraft: mod.hasDraft,
+          draftUpdatedAt: iso(mod.draftUpdatedAt),
+          updatedAt: mod.updatedAt.toISOString(),
         };
       }),
     };

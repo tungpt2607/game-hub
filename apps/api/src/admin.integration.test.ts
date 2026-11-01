@@ -5,6 +5,7 @@ import { createDb, runMigrations, schema, type Database } from '@opes/db';
 import { createApp } from './app';
 import builtin from '@opes/modules/bundles';
 import { resetModuleRegistry } from './lib/modules';
+import { hitRateLimit } from './lib/rate-limit';
 import type { Storage } from './lib/storage';
 
 /**
@@ -179,6 +180,22 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       const cookie = await setupAdmin();
       expect((await call('POST', '/auth/logout', undefined, cookie)).status).toBe(204);
       expect((await call('GET', '/auth/me', undefined, cookie)).status).toBe(401);
+    });
+  });
+
+  describe('giới hạn số lần gọi', () => {
+    it('đếm theo khung và thỉnh thoảng dọn các khung đã quá 1 ngày', async () => {
+      const never = () => 1;
+      const old = new Date('2026-10-30T03:00:00Z');
+      expect(await hitRateLimit(db, 'k:cu', 1, 900, old, never)).toBe(true);
+      expect(await hitRateLimit(db, 'k:moi', 1, 900, clock, never)).toBe(true);
+      expect(await hitRateLimit(db, 'k:moi', 1, 900, clock, never)).toBe(false);
+      expect(await db.select().from(schema.rateLimits)).toHaveLength(2);
+      // Lượt gọi trúng tỉ lệ dọn: xóa khung cũ, giữ khung đang dùng.
+      await hitRateLimit(db, 'k:moi', 1, 900, clock, () => 0);
+      const left = await db.select().from(schema.rateLimits);
+      expect(left.map((r) => r.key)).toEqual(['k:moi']);
+      expect(left[0]!.count).toBe(3);
     });
   });
 
