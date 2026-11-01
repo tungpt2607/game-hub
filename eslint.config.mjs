@@ -23,9 +23,7 @@ const OVERSIZED_FILES = {
   'apps/cms/src/module-ui/PreviewLinksDialog.tsx': 690,
   'apps/cms/src/module-ui/inputs.tsx': 550,
   'packages/modules/src/catch/Runtime.tsx': 800,
-  'packages/modules/src/catch/config.ts': 420,
   'packages/modules/src/catch-quiz/Runtime.tsx': 890,
-  'packages/modules/src/catch-quiz/config.ts': 590,
 };
 
 /** Import bị cấm ở mã chạy trên trình duyệt (CMS, trang chơi) vì làm gói tải về lớn. */
