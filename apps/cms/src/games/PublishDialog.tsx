@@ -36,7 +36,18 @@ interface Props {
 }
 
 /** Hộp phát hành: ghi chú thay đổi và danh sách file khác với bản đang chạy (xem khác biệt từng dòng). */
-export function PublishDialog({ open, moduleKey, version, latest, templateCount, files, assets, busy, onClose, onPublish }: Props) {
+export function PublishDialog({
+  open,
+  moduleKey,
+  version,
+  latest,
+  templateCount,
+  files,
+  assets,
+  busy,
+  onClose,
+  onPublish,
+}: Props) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [notes, setNotes] = useState('');
@@ -53,7 +64,9 @@ export function PublishDialog({ open, moduleKey, version, latest, templateCount,
     }
     let alive = true;
     setCurrent(null);
-    api<GameVersionDetail>(`/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(latest)}`).then(
+    api<GameVersionDetail>(
+      `/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(latest)}`,
+    ).then(
       (v) => alive && setCurrent({ files: v.files, assets: v.assets }),
       (e: unknown) => alive && setLoadError(e instanceof Error ? e.message : String(e)),
     );
@@ -62,15 +75,26 @@ export function PublishDialog({ open, moduleKey, version, latest, templateCount,
     };
   }, [open, moduleKey, latest]);
 
-  const changes = useMemo(() => (current ? diffPackages(current, { files, assets }) : null), [current, files, assets]);
+  const changes = useMemo(
+    () => (current ? diffPackages(current, { files, assets }) : null),
+    [current, files, assets],
+  );
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
+    <Dialog
+      open={open}
+      onClose={busy ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={fullScreen}
+    >
       <DialogTitle>{t('cms.games.publishTitle', { version: version ?? '' })}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           <Typography variant="body2">
-            {latest ? t('cms.games.publishTextUpdate', { latest }) : t('cms.games.publishTextFirst')}
+            {latest
+              ? t('cms.games.publishTextUpdate', { latest })
+              : t('cms.games.publishTextFirst')}
           </Typography>
           {templateCount > 0 && (
             <Typography variant="body2" color="text.secondary">
@@ -90,7 +114,9 @@ export function PublishDialog({ open, moduleKey, version, latest, templateCount,
               ? t('cms.diff.titleVsLatest', { version: latest, count: changes?.length ?? 0 })
               : t('cms.diff.titleFirst', { count: changes?.length ?? 0 })}
           </Typography>
-          {loadError && <Alert severity="warning">{t('cms.diff.loadFailed', { message: loadError })}</Alert>}
+          {loadError && (
+            <Alert severity="warning">{t('cms.diff.loadFailed', { message: loadError })}</Alert>
+          )}
           {!changes && !loadError && <LinearProgress />}
           {changes && <ChangeList changes={changes} />}
         </Stack>

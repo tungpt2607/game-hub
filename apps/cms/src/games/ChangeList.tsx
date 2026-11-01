@@ -41,13 +41,26 @@ function ChangeRow({ change }: { change: FileChange }) {
             setOpen((o) => !o);
           }
         }}
-        sx={{ px: 1, py: 0.75, cursor: canExpand ? 'pointer' : 'default', '&:hover': canExpand ? { bgcolor: 'action.hover' } : undefined }}
+        sx={{
+          px: 1,
+          py: 0.75,
+          cursor: canExpand ? 'pointer' : 'default',
+          '&:hover': canExpand ? { bgcolor: 'action.hover' } : undefined,
+        }}
       >
         <Box sx={{ width: 18, display: 'flex', color: 'text.secondary' }}>
-          {canExpand && (open ? <ExpandMoreIcon sx={{ fontSize: 18 }} /> : <ChevronRightIcon sx={{ fontSize: 18 }} />)}
+          {canExpand &&
+            (open ? (
+              <ExpandMoreIcon sx={{ fontSize: 18 }} />
+            ) : (
+              <ChevronRightIcon sx={{ fontSize: 18 }} />
+            ))}
         </Box>
         <FileIcon path={change.path} />
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', flexGrow: 1, minWidth: 0, wordBreak: 'break-all' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontFamily: 'monospace', flexGrow: 1, minWidth: 0, wordBreak: 'break-all' }}
+        >
           {change.path}
         </Typography>
         {stats && (
@@ -60,7 +73,12 @@ function ChangeRow({ change }: { change: FileChange }) {
             </Box>
           </Typography>
         )}
-        <Chip size="small" variant="outlined" color={KIND_COLOR[change.kind]} label={t(`cms.diff.${change.kind}`)} />
+        <Chip
+          size="small"
+          variant="outlined"
+          color={KIND_COLOR[change.kind]}
+          label={t(`cms.diff.${change.kind}`)}
+        />
       </Stack>
       {canExpand && (
         <Collapse in={open} unmountOnExit>

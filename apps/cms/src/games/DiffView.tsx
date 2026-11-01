@@ -27,20 +27,52 @@ export function DiffView({ before, after }: { before: string; after: string }) {
     );
   }
   return (
-    <Box sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: 12, overflowX: 'auto' }}>
+    <Box
+      sx={{
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+        fontSize: 12,
+        overflowX: 'auto',
+      }}
+    >
       {hunks.map((hunk, h) => (
         <Box key={h} sx={{ borderTop: h ? '1px dashed' : 'none', borderColor: 'divider' }}>
           {hunk.lines.map((line, i) => {
             const c = COLORS[line.type];
             return (
-              <Box key={i} sx={{ display: 'flex', bgcolor: c.bg, whiteSpace: 'pre', minWidth: 'fit-content' }}>
-                <Box component="span" sx={{ width: 40, flexShrink: 0, textAlign: 'right', pr: 1, color: 'text.disabled', userSelect: 'none' }}>
+              <Box
+                key={i}
+                sx={{ display: 'flex', bgcolor: c.bg, whiteSpace: 'pre', minWidth: 'fit-content' }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    width: 40,
+                    flexShrink: 0,
+                    textAlign: 'right',
+                    pr: 1,
+                    color: 'text.disabled',
+                    userSelect: 'none',
+                  }}
+                >
                   {line.oldNo ?? ''}
                 </Box>
-                <Box component="span" sx={{ width: 40, flexShrink: 0, textAlign: 'right', pr: 1, color: 'text.disabled', userSelect: 'none' }}>
+                <Box
+                  component="span"
+                  sx={{
+                    width: 40,
+                    flexShrink: 0,
+                    textAlign: 'right',
+                    pr: 1,
+                    color: 'text.disabled',
+                    userSelect: 'none',
+                  }}
+                >
                   {line.newNo ?? ''}
                 </Box>
-                <Box component="span" sx={{ width: 16, flexShrink: 0, color: c.color, userSelect: 'none' }}>
+                <Box
+                  component="span"
+                  sx={{ width: 16, flexShrink: 0, color: c.color, userSelect: 'none' }}
+                >
                   {c.sign}
                 </Box>
                 <Box component="span" sx={{ pr: 2 }}>

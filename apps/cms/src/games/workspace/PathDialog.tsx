@@ -26,7 +26,18 @@ interface Props {
 }
 
 /** Hộp nhập một đường dẫn (tạo file, tạo thư mục, đổi tên, di chuyển). */
-export function PathDialog({ open, title, label, initial, selection, hint, confirmLabel, validate, onConfirm, onClose }: Props) {
+export function PathDialog({
+  open,
+  title,
+  label,
+  initial,
+  selection,
+  hint,
+  confirmLabel,
+  validate,
+  onConfirm,
+  onClose,
+}: Props) {
   const [value, setValue] = useState(initial);
   useEffect(() => {
     if (open) setValue(initial);
@@ -57,7 +68,14 @@ export function PathDialog({ open, title, label, initial, selection, hint, confi
             }}
             error={Boolean(problem)}
             helperText={problem ?? hint ?? ' '}
-            slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', style: { fontFamily: 'monospace' } } }}
+            slotProps={{
+              htmlInput: {
+                spellCheck: false,
+                autoCapitalize: 'off',
+                autoCorrect: 'off',
+                style: { fontFamily: 'monospace' },
+              },
+            }}
           />
         </DialogContent>
         <DialogActions>

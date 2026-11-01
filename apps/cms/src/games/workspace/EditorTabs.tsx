@@ -21,7 +21,15 @@ interface Props {
 }
 
 /** Hàng tab các file đang mở, giống VS Code; vuốt/cuộn ngang khi nhiều tab. */
-export function EditorTabs({ tabs, active, isDirty, errorCount, onActivate, onPin, onClose }: Props) {
+export function EditorTabs({
+  tabs,
+  active,
+  isDirty,
+  errorCount,
+  onActivate,
+  onPin,
+  onClose,
+}: Props) {
   if (tabs.length === 0) return null;
   return (
     <Box
@@ -81,7 +89,10 @@ export function EditorTabs({ tabs, active, isDirty, errorCount, onActivate, onPi
             }}
           >
             <FileIcon path={tab.path} sx={{ fontSize: 16 }} />
-            <Box component="span" sx={{ fontStyle: tab.preview ? 'italic' : 'normal', whiteSpace: 'nowrap' }}>
+            <Box
+              component="span"
+              sx={{ fontStyle: tab.preview ? 'italic' : 'normal', whiteSpace: 'nowrap' }}
+            >
               {baseName(tab.path)}
             </Box>
             <IconButton
@@ -105,7 +116,10 @@ export function EditorTabs({ tabs, active, isDirty, errorCount, onActivate, onPi
                 '&:hover .x': { display: 'block' },
               }}
             >
-              <Box className="dot" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'currentColor' }} />
+              <Box
+                className="dot"
+                sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'currentColor' }}
+              />
               <CloseIcon className="x" sx={{ fontSize: 15 }} />
             </IconButton>
           </Box>

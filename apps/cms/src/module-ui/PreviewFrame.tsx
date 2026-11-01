@@ -63,7 +63,7 @@ export function PreviewFrame({ source, config, maxHeight, onSchema }: Props) {
 
   useEffect(() => {
     onSchema?.(schema, error);
-    // Chỉ báo khi kết quả tải đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ báo khi kết quả tải đổi, không báo lại khi trang cha tạo hàm onSchema mới.
   }, [schema, error]);
 
   // Gửi cấu hình và trạng thái hiện tại sang khung mỗi khi đổi.
@@ -92,7 +92,8 @@ export function PreviewFrame({ source, config, maxHeight, onSchema }: Props) {
   const outerW = device.width + bezel * 2;
   const outerH = device.height + bezel * 2;
   // Vừa chiều ngang khung và chiều cao màn hình (trừ thanh trên + thanh công cụ).
-  const availableHeight = maxHeight ?? (viewportHeight > 0 ? Math.max(360, viewportHeight - 210) : outerH);
+  const availableHeight =
+    maxHeight ?? (viewportHeight > 0 ? Math.max(360, viewportHeight - 210) : outerH);
   const scale = areaWidth > 0 ? Math.min(1, areaWidth / outerW, availableHeight / outerH) : 0;
 
   return (
@@ -131,7 +132,10 @@ export function PreviewFrame({ source, config, maxHeight, onSchema }: Props) {
         </ToggleButtonGroup>
         <Box sx={{ flexGrow: 1 }} />
         <Tooltip title={muted ? t('cms.preview.unmute') : t('cms.preview.mute')}>
-          <IconButton onClick={() => setMuted((m) => !m)} aria-label={muted ? t('cms.preview.unmute') : t('cms.preview.mute')}>
+          <IconButton
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? t('cms.preview.unmute') : t('cms.preview.mute')}
+          >
             {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
           </IconButton>
         </Tooltip>

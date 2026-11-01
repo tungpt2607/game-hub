@@ -30,7 +30,8 @@ export function gameHostUrl(): Promise<string> {
 }
 
 /** Quyền của iframe: chạy script, gọi API cùng tên miền trang chơi, mở link ở thẻ mới; không điều hướng trang CMS. */
-export const FRAME_SANDBOX = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+export const FRAME_SANDBOX =
+  'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
 export const FRAME_ALLOW = 'autoplay; fullscreen';
 
 const READY_TIMEOUT_MS = 20_000;
@@ -38,14 +39,19 @@ const REQUEST_TIMEOUT_MS = 30_000;
 
 /** Khóa so sánh nguồn game (đổi khóa = tải lại game). */
 export const sourceKey = (source: GameSource) =>
-  source.kind === 'version' ? `v:${source.key}@${source.version}` : `c:${source.code.length}:${source.code}`;
+  source.kind === 'version'
+    ? `v:${source.key}@${source.version}`
+    : `c:${source.code.length}:${source.code}`;
 
 export class GameClient {
   private readonly origin: string;
   private readonly ready: Promise<void>;
   private markReady!: () => void;
   private nextId = 1;
-  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: number }>();
+  private pending = new Map<
+    number,
+    { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: number }
+  >();
   private closed = false;
 
   constructor(
@@ -56,7 +62,10 @@ export class GameClient {
     window.addEventListener('message', this.onMessage);
     this.ready = new Promise<void>((resolve, reject) => {
       this.markReady = resolve;
-      window.setTimeout(() => reject(new Error('Không mở được khung chạy game (trang chơi không phản hồi).')), READY_TIMEOUT_MS);
+      window.setTimeout(
+        () => reject(new Error('Không mở được khung chạy game (trang chơi không phản hồi).')),
+        READY_TIMEOUT_MS,
+      );
     });
     // Tránh cảnh báo "lỗi không được xử lý" khi chưa ai chờ.
     this.ready.catch(() => {});
@@ -64,7 +73,12 @@ export class GameClient {
   }
 
   private onMessage = (event: MessageEvent) => {
-    if (event.origin !== this.origin || event.source !== this.frame.contentWindow || !isHostMessage(event.data)) return;
+    if (
+      event.origin !== this.origin ||
+      event.source !== this.frame.contentWindow ||
+      !isHostMessage(event.data)
+    )
+      return;
     const msg = event.data as HostReply;
     if (msg.type === 'ready') {
       this.markReady();
@@ -106,11 +120,19 @@ export class GameClient {
   }
 
   normalize(config: unknown) {
-    return this.request<Record<string, unknown>>((id) => ({ opes: 1, type: 'normalize', id, config }));
+    return this.request<Record<string, unknown>>((id) => ({
+      opes: 1,
+      type: 'normalize',
+      id,
+      config,
+    }));
   }
 
   render(state: RenderState) {
-    void this.ready.then(() => this.post({ opes: 1, type: 'render', state }), () => {});
+    void this.ready.then(
+      () => this.post({ opes: 1, type: 'render', state }),
+      () => {},
+    );
   }
 
   destroy() {
@@ -130,7 +152,15 @@ export async function inspectGame(source: GameSource): Promise<SerializedSchema>
   const frame = document.createElement('iframe');
   frame.setAttribute('sandbox', FRAME_SANDBOX);
   frame.setAttribute('aria-hidden', 'true');
-  Object.assign(frame.style, { position: 'fixed', width: '1px', height: '1px', left: '-10px', top: '-10px', border: '0', opacity: '0' });
+  Object.assign(frame.style, {
+    position: 'fixed',
+    width: '1px',
+    height: '1px',
+    left: '-10px',
+    top: '-10px',
+    border: '0',
+    opacity: '0',
+  });
   document.body.appendChild(frame);
   const client = new GameClient(frame, url);
   try {

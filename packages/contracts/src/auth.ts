@@ -10,11 +10,7 @@ const email = z
   .email('Email không hợp lệ.')
   .max(254, 'Email quá dài.');
 
-const name = z
-  .string()
-  .trim()
-  .min(1, 'Hãy nhập tên.')
-  .max(100, 'Tên tối đa 100 ký tự.');
+const name = z.string().trim().min(1, 'Hãy nhập tên.').max(100, 'Tên tối đa 100 ký tự.');
 
 export const PasswordSchema = z
   .string()

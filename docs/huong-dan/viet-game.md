@@ -213,10 +213,14 @@ Logic của game nằm trong `Runtime.tsx`. Trước khi sửa, xem file này g�
 
 #### 9a. Sửa nhanh: cho vật phẩm hiện dày hơn
 
-1. Ở cây thư mục, bấm `Runtime.tsx`. Tìm dòng:
+1. Ở cây thư mục, bấm `Runtime.tsx`. Tìm đoạn:
 
 ```ts
-const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = { easy: 700, normal: 550, hard: 420 };
+const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = {
+  easy: 700,
+  normal: 550,
+  hard: 420,
+};
 ```
 
 2. Giảm các con số, ví dụ đổi `normal: 550` thành `normal: 350`. Số càng nhỏ, vật phẩm hiện càng dày.

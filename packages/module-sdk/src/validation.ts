@@ -37,13 +37,23 @@ export function isFieldVisible(f: Field, root: unknown): boolean {
  * Kiểm tra cấu hình theo lược đồ. Trả về object rỗng nếu hợp lệ.
  * Trường đang bị ẩn (visibleWhen = false) không bị kiểm tra.
  */
-export function validateConfig(fields: Fields, value: unknown, root: unknown = value): ConfigErrors {
+export function validateConfig(
+  fields: Fields,
+  value: unknown,
+  root: unknown = value,
+): ConfigErrors {
   const errors: ConfigErrors = {};
   walkObject(fields, value, root, '', errors);
   return errors;
 }
 
-function walkObject(fields: Fields, value: unknown, root: unknown, path: string, errors: ConfigErrors) {
+function walkObject(
+  fields: Fields,
+  value: unknown,
+  root: unknown,
+  path: string,
+  errors: ConfigErrors,
+) {
   const obj = isObj(value) ? value : {};
   for (const [key, f] of Object.entries(fields)) {
     if (!isFieldVisible(f, root)) continue;
@@ -70,7 +80,8 @@ function checkField(f: Field, v: unknown, root: unknown, path: string, errors: C
     case 'text': {
       if (typeof v !== 'string') return fail('Cần nhập chữ');
       if (f.required && v.trim() === '') return fail('Không được để trống');
-      if (f.maxLength !== undefined && v.length > f.maxLength) return fail(`Tối đa ${f.maxLength} ký tự`);
+      if (f.maxLength !== undefined && v.length > f.maxLength)
+        return fail(`Tối đa ${f.maxLength} ký tự`);
       if (f.format === 'url' && v.trim() !== '' && !/^https?:\/\/\S+$/i.test(v.trim()))
         return fail('Cần là link bắt đầu bằng https://');
       return;
@@ -109,8 +120,10 @@ function checkField(f: Field, v: unknown, root: unknown, path: string, errors: C
       return;
     }
     case 'font': {
-      if (!isObj(v) || typeof v.family !== 'string' || v.family.trim() === '') return fail('Hãy chọn font');
-      if (v.media !== null && v.media !== undefined && !isMediaRef(v.media)) fail('File font không hợp lệ');
+      if (!isObj(v) || typeof v.family !== 'string' || v.family.trim() === '')
+        return fail('Hãy chọn font');
+      if (v.media !== null && v.media !== undefined && !isMediaRef(v.media))
+        fail('File font không hợp lệ');
       return;
     }
     case 'list': {
@@ -215,9 +228,12 @@ export function collectMediaIds(fields: Fields, value: unknown): string[] {
     const obj = isObj(v) ? v : {};
     for (const [key, f] of Object.entries(fs)) {
       const x = obj[key];
-      if ((f.type === 'image' || f.type === 'audio') && isMediaRef(x)) ids.add((x as Obj).id as string);
-      if (f.type === 'emojiOrImage' && isObj(x) && isMediaRef(x.image)) ids.add((x.image as Obj).id as string);
-      if (f.type === 'font' && isObj(x) && isMediaRef(x.media)) ids.add((x.media as Obj).id as string);
+      if ((f.type === 'image' || f.type === 'audio') && isMediaRef(x))
+        ids.add((x as Obj).id as string);
+      if (f.type === 'emojiOrImage' && isObj(x) && isMediaRef(x.image))
+        ids.add((x.image as Obj).id as string);
+      if (f.type === 'font' && isObj(x) && isMediaRef(x.media))
+        ids.add((x.media as Obj).id as string);
       if (f.type === 'group') visit(f.fields, x);
       if (f.type === 'list' && Array.isArray(x)) x.forEach((item) => visit(f.item, item));
     }

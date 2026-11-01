@@ -10,12 +10,19 @@ import {
   type Workspace,
 } from './vfs';
 
-const asset = (n: string) => ({ url: `/media/${n}`, size: 10, mime: 'image/png', sha256: n.padEnd(64, '0').slice(0, 64) });
+const asset = (n: string) => ({
+  url: `/media/${n}`,
+  size: 10,
+  mime: 'image/png',
+  sha256: n.padEnd(64, '0').slice(0, 64),
+});
 
 const ws: Workspace = {
   files: {
-    'schema.ts': "import { presets } from './presets';\nimport { x } from './lib/util';\nexport default {};",
-    'presets.ts': "import { asset } from 'opes:assets';\nexport const presets = [asset('hoa-mai.png', 'Hoa'), asset(\"tet/nen.png\")];",
+    'schema.ts':
+      "import { presets } from './presets';\nimport { x } from './lib/util';\nexport default {};",
+    'presets.ts':
+      "import { asset } from 'opes:assets';\nexport const presets = [asset('hoa-mai.png', 'Hoa'), asset(\"tet/nen.png\")];",
     'index.ts': "import s from './schema';\nexport default s;",
     'lib/util.ts': "import { presets } from '../presets';\nexport const x = 1;",
     'Runtime.tsx': '',
@@ -27,10 +34,19 @@ const ws: Workspace = {
 describe('buildTree', () => {
   it('thư mục trước, file chính trước, luôn có assets/', () => {
     const tree = buildTree(ws);
-    expect(tree.map((n) => n.name)).toEqual(['assets', 'lib', 'schema.ts', 'index.ts', 'presets.ts', 'Runtime.tsx']);
+    expect(tree.map((n) => n.name)).toEqual([
+      'assets',
+      'lib',
+      'schema.ts',
+      'index.ts',
+      'presets.ts',
+      'Runtime.tsx',
+    ]);
     const assets = tree[0]!;
     expect(assets.children.map((n) => n.path)).toEqual(['assets/tet', 'assets/hoa-mai.png']);
-    expect(buildTree({ files: {}, assets: {}, folders: ['components/ui'] }).map((n) => n.path)).toEqual(['assets', 'components']);
+    expect(
+      buildTree({ files: {}, assets: {}, folders: ['components/ui'] }).map((n) => n.path),
+    ).toEqual(['assets', 'components']);
   });
 });
 

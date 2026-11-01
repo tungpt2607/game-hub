@@ -23,23 +23,34 @@ describe('danh sách module', () => {
       expect(new Set(presets.map((p) => p.id)).size, m.key).toBe(presets.length);
       for (const p of presets) {
         expect(validateConfig(m.fields, p.config), `${m.key}/${p.id}`).toEqual({});
-        expect(normalizeConfig(m.fields, p.config, m.defaults), `${m.key}/${p.id}`).toEqual(p.config);
+        expect(normalizeConfig(m.fields, p.config, m.defaults), `${m.key}/${p.id}`).toEqual(
+          p.config,
+        );
       }
     }
   });
 
   it('Hứng quà có 4 mẫu', () => {
-    expect(getModule('game.catch')?.presets?.map((p) => p.id)).toEqual(['tet', 'trung-thu', 'giang-sinh', 'trai-cay']);
+    expect(getModule('game.catch')?.presets?.map((p) => p.id)).toEqual([
+      'tet',
+      'trung-thu',
+      'giang-sinh',
+      'trai-cay',
+    ]);
   });
 
   it('danh sách lược đồ khớp với danh sách module', () => {
-    expect(MODULE_SCHEMAS.map((m) => `${m.key}@${m.version}`)).toEqual(MODULES.map((m) => `${m.key}@${m.version}`));
+    expect(MODULE_SCHEMAS.map((m) => `${m.key}@${m.version}`)).toEqual(
+      MODULES.map((m) => `${m.key}@${m.version}`),
+    );
   });
 
   it('Hứng quà + câu hỏi có mẫu OME Catch với 6 câu hỏi và ảnh đi kèm', () => {
     const preset = getModule('game.catch-quiz')?.presets?.find((p) => p.id === 'ome-catch');
     expect(preset?.config.quiz.questions).toHaveLength(6);
-    expect(preset?.config.look.backgroundImage.url).toBe('/module-assets/catch-quiz/ome/background.webp');
+    expect(preset?.config.look.backgroundImage.url).toBe(
+      '/module-assets/catch-quiz/ome/background.webp',
+    );
   });
 
   it('mỗi module có ít nhất một màn hình', () => {

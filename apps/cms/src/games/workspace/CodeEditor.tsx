@@ -67,7 +67,12 @@ export function CodeEditor({
   const reportCursor = (state: EditorState) => {
     const pos = state.selection.main.head;
     const line = state.doc.lineAt(pos);
-    onCursorRef.current?.({ path: currentPath.current, pos, line: line.number, column: pos - line.from });
+    onCursorRef.current?.({
+      path: currentPath.current,
+      pos,
+      line: line.number,
+      column: pos - line.from,
+    });
   };
 
   const makeState = (forPath: string, doc: string) =>
@@ -78,7 +83,8 @@ export function CodeEditor({
         fileExtensions(forPath, forPath.startsWith('lib:')),
         shared,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged && !update.state.readOnly) onChangeRef.current(update.state.doc.toString());
+          if (update.docChanged && !update.state.readOnly)
+            onChangeRef.current(update.state.doc.toString());
           if (update.docChanged || update.selectionSet) reportCursor(update.state);
         }),
       ],
@@ -95,7 +101,10 @@ export function CodeEditor({
       const len = v.state.doc.length;
       const anchor = Math.max(0, Math.min(from, len));
       const head = Math.max(0, Math.min(to, len));
-      v.dispatch({ selection: { anchor, head }, effects: EditorView.scrollIntoView(anchor, { y: 'center' }) });
+      v.dispatch({
+        selection: { anchor, head },
+        effects: EditorView.scrollIntoView(anchor, { y: 'center' }),
+      });
       v.focus();
     };
     onMount?.({
@@ -110,7 +119,10 @@ export function CodeEditor({
         const current = v.state.doc.toString();
         if (current === text) return;
         const head = Math.min(v.state.selection.main.head, text.length);
-        v.dispatch({ changes: { from: 0, to: current.length, insert: text }, selection: { anchor: head } });
+        v.dispatch({
+          changes: { from: 0, to: current.length, insert: text },
+          selection: { anchor: head },
+        });
       },
       focus: () => v.focus(),
       undo: () => {
@@ -132,7 +144,7 @@ export function CodeEditor({
       view.current = null;
       saved.clear();
     };
-    // Chỉ tạo khi gắn vào trang; đổi file và nội dung xử lý ở các effect bên dưới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ tạo khi gắn vào trang; đổi file và nội dung xử lý ở các effect bên dưới.
   }, []);
 
   // Đổi file: lưu trạng thái file cũ, mở trạng thái file mới (hoặc tạo mới).
@@ -144,6 +156,7 @@ export function CodeEditor({
     currentPath.current = path;
     v.setState(saved && saved.doc.toString() === value ? saved : makeState(path, value));
     reportCursor(v.state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi đổi file; nội dung đổi từ bên ngoài xử lý ở effect bên dưới.
   }, [path]);
 
   // Nội dung đổi từ bên ngoài (tải .zip, đổi tên ký hiệu, tìm và thay trong cả game…): thay nội dung, giữ lịch sử hoàn tác.

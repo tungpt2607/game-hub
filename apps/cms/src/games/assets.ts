@@ -26,11 +26,18 @@ export async function uploadAssets(
     for (let next = queue.shift(); next; next = queue.shift()) {
       const [path, a] = next;
       const hash = await sha256(a.blob);
-      const signed = await api<GameAssetUploadResponse>(`/modules/${encodeURIComponent(moduleKey)}/assets/upload-url`, {
-        method: 'POST',
-        body: { path, mime: a.mime, size: a.blob.size, sha256: hash },
-      });
-      const put = await fetch(signed.uploadUrl, { method: 'PUT', headers: signed.headers, body: a.blob }).catch(() => null);
+      const signed = await api<GameAssetUploadResponse>(
+        `/modules/${encodeURIComponent(moduleKey)}/assets/upload-url`,
+        {
+          method: 'POST',
+          body: { path, mime: a.mime, size: a.blob.size, sha256: hash },
+        },
+      );
+      const put = await fetch(signed.uploadUrl, {
+        method: 'PUT',
+        headers: signed.headers,
+        body: a.blob,
+      }).catch(() => null);
       if (!put || !put.ok) {
         throw new ApiRequestError(
           502,
@@ -48,10 +55,17 @@ export async function uploadAssets(
 }
 
 /** Địa chỉ tạm (chưa tải lên) để biên dịch thử, ví dụ khi chưa biết key của game. */
-export async function placeholderAssets(pending: Record<string, PendingAsset>): Promise<GameAssets> {
+export async function placeholderAssets(
+  pending: Record<string, PendingAsset>,
+): Promise<GameAssets> {
   const out: GameAssets = {};
   for (const [path, a] of Object.entries(pending)) {
-    out[path] = { url: `/__chua-tai-len__/${path}`, size: a.blob.size, mime: a.mime, sha256: await sha256(a.blob) };
+    out[path] = {
+      url: `/__chua-tai-len__/${path}`,
+      size: a.blob.size,
+      mime: a.mime,
+      sha256: await sha256(a.blob),
+    };
   }
   return out;
 }

@@ -59,8 +59,13 @@ export function FileIcon({
 }: { path: string; folder?: boolean; open?: boolean } & SvgIconProps) {
   const sx = { fontSize: 18, ...props.sx };
   if (folder) {
-    if (path === ASSETS_DIR) return <FolderSpecialOutlined {...props} sx={{ ...sx, color: '#B7791F' }} />;
-    return open ? <FolderOpenOutlined {...props} sx={{ ...sx, color: '#B7791F' }} /> : <FolderOutlined {...props} sx={{ ...sx, color: '#B7791F' }} />;
+    if (path === ASSETS_DIR)
+      return <FolderSpecialOutlined {...props} sx={{ ...sx, color: '#B7791F' }} />;
+    return open ? (
+      <FolderOpenOutlined {...props} sx={{ ...sx, color: '#B7791F' }} />
+    ) : (
+      <FolderOutlined {...props} sx={{ ...sx, color: '#B7791F' }} />
+    );
   }
   const color = COLOR[extOf(path)];
   switch (categoryOf(path)) {

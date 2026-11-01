@@ -29,8 +29,10 @@ const ASSETS_DTS = `${GAME}__opes_assets.d.ts`;
 const LIB_PREFIX = 'lib:';
 
 /** Đường dẫn trong trình sửa ↔ đường dẫn ảo. */
-export const toVirtual = (path: string) => (path.startsWith(LIB_PREFIX) ? path.slice(LIB_PREFIX.length) : GAME + path);
-export const fromVirtual = (file: string) => (file.startsWith(GAME) ? file.slice(GAME.length) : LIB_PREFIX + file);
+export const toVirtual = (path: string) =>
+  path.startsWith(LIB_PREFIX) ? path.slice(LIB_PREFIX.length) : GAME + path;
+export const fromVirtual = (file: string) =>
+  file.startsWith(GAME) ? file.slice(GAME.length) : LIB_PREFIX + file;
 
 /** Game tự khai báo `opes:assets` (file opes-assets.d.ts trong gói mẫu) thì bỏ qua file đó, dùng bản sinh tự động. */
 const DECLARES_ASSETS = /declare\s+module\s+['"]opes:assets['"]/;
@@ -59,7 +61,8 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
   let gameFiles: string[] = [];
   const directories = new Set<string>();
   const addDirs = (file: string) => {
-    for (let d = file.slice(0, file.lastIndexOf('/')); d; d = d.slice(0, d.lastIndexOf('/'))) directories.add(d);
+    for (let d = file.slice(0, file.lastIndexOf('/')); d; d = d.slice(0, d.lastIndexOf('/')))
+      directories.add(d);
     directories.add('/');
   };
   for (const name of files.keys()) addDirs(name);
@@ -124,10 +127,12 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
     for (const [path, text] of Object.entries(next)) {
       const name = toVirtual(path);
       setFile(name, text);
-      if (!/\.(md|txt)$/.test(path) && !(path.endsWith('.d.ts') && DECLARES_ASSETS.test(text))) wanted.add(name);
+      if (!/\.(md|txt)$/.test(path) && !(path.endsWith('.d.ts') && DECLARES_ASSETS.test(text)))
+        wanted.add(name);
     }
     for (const name of [...files.keys()]) {
-      if (name.startsWith(GAME) && name !== ASSETS_DTS && next[fromVirtual(name)] === undefined) files.delete(name);
+      if (name.startsWith(GAME) && name !== ASSETS_DTS && next[fromVirtual(name)] === undefined)
+        files.delete(name);
     }
     setFile(ASSETS_DTS, assetsDeclaration([...assets].sort()));
     wanted.add(ASSETS_DTS);
@@ -143,7 +148,8 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
 
   // ---------- Tiện ích ----------
 
-  const text = (parts: readonly TS.SymbolDisplayPart[] | undefined) => (parts ?? []).map((p) => p.text).join('');
+  const text = (parts: readonly TS.SymbolDisplayPart[] | undefined) =>
+    (parts ?? []).map((p) => p.text).join('');
 
   function lineInfo(name: string, pos: number): { line: number; lineText: string } {
     const src = files.get(name)?.text ?? '';
@@ -166,7 +172,11 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
       from,
       to: from + (d.length ?? 0),
       severity:
-        d.category === ts.DiagnosticCategory.Error ? 'error' : d.category === ts.DiagnosticCategory.Warning ? 'warning' : 'info',
+        d.category === ts.DiagnosticCategory.Error
+          ? 'error'
+          : d.category === ts.DiagnosticCategory.Warning
+            ? 'warning'
+            : 'info',
       message: ts.flattenDiagnosticMessageText(d.messageText, '\n'),
       code: d.code,
     };
@@ -174,7 +184,12 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
 
   const changesToEdits = (changes: readonly TS.FileTextChanges[]): TsTextEdit[] =>
     changes.flatMap((c) =>
-      c.textChanges.map((t) => ({ path: fromVirtual(c.fileName), from: t.span.start, to: t.span.start + t.span.length, insert: t.newText })),
+      c.textChanges.map((t) => ({
+        path: fromVirtual(c.fileName),
+        from: t.span.start,
+        to: t.span.start + t.span.length,
+        insert: t.newText,
+      })),
     );
 
   const userPreferences: TS.UserPreferences = {
@@ -196,14 +211,20 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
     diagnostics(path: string, src: string): TsDiagnostic[] {
       const name = touch(path, src);
       if (!name.startsWith(GAME) || /\.(md|txt|json)$/.test(path)) return [];
-      return [...service.getSyntacticDiagnostics(name), ...service.getSemanticDiagnostics(name)].map(toDiagnostic);
+      return [
+        ...service.getSyntacticDiagnostics(name),
+        ...service.getSemanticDiagnostics(name),
+      ].map(toDiagnostic);
     },
 
     allDiagnostics(): Record<string, TsDiagnostic[]> {
       const out: Record<string, TsDiagnostic[]> = {};
       for (const name of gameFiles) {
         if (name === ASSETS_DTS || /\.json$/.test(name)) continue;
-        const list = [...service.getSyntacticDiagnostics(name), ...service.getSemanticDiagnostics(name)].map(toDiagnostic);
+        const list = [
+          ...service.getSyntacticDiagnostics(name),
+          ...service.getSemanticDiagnostics(name),
+        ].map(toDiagnostic);
         if (list.length) out[fromVirtual(name)] = list;
       }
       return out;
@@ -213,7 +234,9 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
       const name = touch(path, src);
       const result = service.getCompletionsAtPosition(name, pos, {
         ...userPreferences,
-        triggerKind: explicit ? ts.CompletionTriggerKind.Invoked : ts.CompletionTriggerKind.TriggerCharacter,
+        triggerKind: explicit
+          ? ts.CompletionTriggerKind.Invoked
+          : ts.CompletionTriggerKind.TriggerCharacter,
       });
       if (!result) return null;
       const word = /[\w$]*$/.exec(src.slice(0, pos))![0];
@@ -230,21 +253,29 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
         }
         return true;
       };
-      const entries: TsCompletionEntry[] = result.entries.filter((e) => matches(e.name)).slice(0, 1500).map((e) => ({
-        name: e.name,
-        kind: e.kind,
-        kindModifiers: e.kindModifiers,
-        sortText: e.sortText,
-        insertText: e.insertText,
-        hasAction: e.hasAction,
-        source: e.source,
-        data: e.data,
-        isRecommended: e.isRecommended,
-      }));
+      const entries: TsCompletionEntry[] = result.entries
+        .filter((e) => matches(e.name))
+        .slice(0, 1500)
+        .map((e) => ({
+          name: e.name,
+          kind: e.kind,
+          kindModifiers: e.kindModifiers,
+          sortText: e.sortText,
+          insertText: e.insertText,
+          hasAction: e.hasAction,
+          source: e.source,
+          data: e.data,
+          isRecommended: e.isRecommended,
+        }));
       return { from, entries };
     },
 
-    completionDetails(path: string, src: string, pos: number, entry: TsCompletionEntry): TsCompletionDetails | null {
+    completionDetails(
+      path: string,
+      src: string,
+      pos: number,
+      entry: TsCompletionEntry,
+    ): TsCompletionDetails | null {
       const name = touch(path, src);
       const d = service.getCompletionEntryDetails(
         name,
@@ -285,10 +316,16 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
     references(path: string, src: string, pos: number): TsLocation[] {
       const name = touch(path, src);
       const refs = service.getReferencesAtPosition(name, pos) ?? [];
-      return refs.filter((r) => r.fileName !== ASSETS_DTS).map((r) => location(r.fileName, r.textSpan));
+      return refs
+        .filter((r) => r.fileName !== ASSETS_DTS)
+        .map((r) => location(r.fileName, r.textSpan));
     },
 
-    renameInfo(path: string, src: string, pos: number): { ok: boolean; name: string; message?: string } {
+    renameInfo(
+      path: string,
+      src: string,
+      pos: number,
+    ): { ok: boolean; name: string; message?: string } {
       const name = touch(path, src);
       const info = service.getRenameInfo(name, pos, userPreferences);
       if (!info.canRename) return { ok: false, name: '', message: info.localizedErrorMessage };
@@ -301,7 +338,11 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
       if (!info.canRename) return { ok: false, message: info.localizedErrorMessage, edits: [] };
       const locations = service.findRenameLocations(name, pos, false, false, userPreferences) ?? [];
       if (locations.some((l) => !l.fileName.startsWith(GAME) || l.fileName === ASSETS_DTS)) {
-        return { ok: false, message: 'Tên này được khai báo trong thư viện, không đổi được.', edits: [] };
+        return {
+          ok: false,
+          message: 'Tên này được khai báo trong thư viện, không đổi được.',
+          edits: [],
+        };
       }
       return {
         ok: true,
@@ -328,9 +369,19 @@ export function createTsService(ts: typeof TS, libs: Record<string, string>) {
         for (const child of node.childItems ?? []) {
           // Bỏ import và hàm không tên (callback).
           if (child.kind === ts.ScriptElementKind.alias || child.text.startsWith('<')) continue;
-          if (child.kind === ts.ScriptElementKind.memberVariableElement && !propertyParents.has(node.kind)) continue;
+          if (
+            child.kind === ts.ScriptElementKind.memberVariableElement &&
+            !propertyParents.has(node.kind)
+          )
+            continue;
           const span = child.spans[0]!;
-          out.push({ name: child.text, kind: child.kind, from: span.start, to: span.start + span.length, depth });
+          out.push({
+            name: child.text,
+            kind: child.kind,
+            from: span.start,
+            to: span.start + span.length,
+            depth,
+          });
           walk(child, depth + 1);
         }
       };

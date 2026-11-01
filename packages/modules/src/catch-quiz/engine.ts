@@ -15,7 +15,15 @@ export interface FallingItem {
 }
 
 export type QuizEngineEvent =
-  | { type: 'catch'; group: number; effect: GroupEffect; points: number; x: number; y: number; lostLife: boolean }
+  | {
+      type: 'catch';
+      group: number;
+      effect: GroupEffect;
+      points: number;
+      x: number;
+      y: number;
+      lostLife: boolean;
+    }
   | { type: 'question' }
   | { type: 'end'; reason: 'time' | 'lives' };
 
@@ -120,7 +128,11 @@ export class CatchQuizEngine {
   }
 
   private pickGroup(): number {
-    if (this.bag.length === 0) this.bag = buildBag(this.opts.groups.map((g) => g.ratio), this.rng);
+    if (this.bag.length === 0)
+      this.bag = buildBag(
+        this.opts.groups.map((g) => g.ratio),
+        this.rng,
+      );
     return this.bag.shift() ?? 0;
   }
 
@@ -197,7 +209,8 @@ export class CatchQuizEngine {
         continue;
       }
       it.y += speed * dt;
-      const caught = it.y + size > r.top && it.y < r.bottom && it.x + size > r.left && it.x < r.right;
+      const caught =
+        it.y + size > r.top && it.y < r.bottom && it.x + size > r.left && it.x < r.right;
       if (caught) {
         const g = this.opts.groups[it.group]!;
         this.caught += 1;
@@ -205,7 +218,15 @@ export class CatchQuizEngine {
           this.score += g.points;
           this.paused = true;
           this.questionsAsked += 1;
-          events.push({ type: 'catch', group: it.group, effect: 'question', points: g.points, x: it.x, y: it.y, lostLife: false });
+          events.push({
+            type: 'catch',
+            group: it.group,
+            effect: 'question',
+            points: g.points,
+            x: it.x,
+            y: it.y,
+            lostLife: false,
+          });
           events.push({ type: 'question' });
           stop = true; // giữ nguyên các vật phẩm còn lại cho tới khi chơi tiếp
           continue;
@@ -213,7 +234,15 @@ export class CatchQuizEngine {
         const lostLife = g.effect === 'life' || g.effect === 'question';
         this.score += g.points;
         if (lostLife) this.lives -= 1;
-        events.push({ type: 'catch', group: it.group, effect: g.effect, points: g.points, x: it.x, y: it.y, lostLife });
+        events.push({
+          type: 'catch',
+          group: it.group,
+          effect: g.effect,
+          points: g.points,
+          x: it.x,
+          y: it.y,
+          lostLife,
+        });
         continue;
       }
       if (it.y > DESIGN_H + 10) continue;
@@ -252,7 +281,11 @@ export class CatchQuizEngine {
 }
 
 /** Chọn câu hỏi ngẫu nhiên, không lặp lại cho tới khi đã hỏi hết. */
-export function pickQuestionIndex(total: number, used: number[], rng: () => number = Math.random): number {
+export function pickQuestionIndex(
+  total: number,
+  used: number[],
+  rng: () => number = Math.random,
+): number {
   const pool = [...Array(total).keys()].filter((i) => !used.includes(i));
   const candidates = pool.length ? pool : [...Array(total).keys()];
   return candidates[Math.floor(rng() * candidates.length)] ?? 0;

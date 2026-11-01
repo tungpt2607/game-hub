@@ -1,12 +1,19 @@
+import { createHash } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import builtin from '@opes/modules/bundles';
 import { ErrorCode } from '@opes/contracts';
 import { schema, type Database, type GameModuleMeta } from '@opes/db';
 import { AppError } from './errors';
+import { LruCache } from './lru';
+import { sandbox } from './module-sandbox';
 
 /**
- * Danh sách game lấy từ cơ sở dữ liệu (Bước 7). Game có sẵn trong code được nạp vào lần đầu
- * (chỉ khi chưa có trong cơ sở dữ liệu; sửa trong CMS thì không bị ghi đè).
+ * Danh sách game lấy từ cơ sở dữ liệu (Bước 7): trang chơi và CMS luôn chạy code game lưu ở đây.
+ *
+ * Game có sẵn trong repo (packages/modules/src) chỉ là bản nạp ban đầu cho cơ sở dữ liệu mới: mỗi game
+ * được nạp đúng một lần, khi key chưa có. Sau đó sửa mã nguồn trong repo (kể cả tăng version) không
+ * cập nhật cơ sở dữ liệu đã có; muốn đổi game đang chạy thì sửa và phát hành trong CMS (mục Game).
+ * Ngược lại, sửa game trong CMS cũng không ghi ngược về repo.
  */
 
 export interface ModuleVersion {
@@ -17,22 +24,19 @@ export interface ModuleVersion {
   runtimeJs: string;
 }
 
-interface BuiltinBundle {
-  folder: string;
-  meta: GameModuleMeta;
-  files: Record<string, string>;
-  schemaJs: string;
-  runtimeJs: string;
-}
-
 /** Gói đã biên dịch không đổi sau khi phát hành, nên giữ trong bộ nhớ theo khóa key@version. */
-const cache = new Map<string, ModuleVersion>();
+const cache = new LruCache<string, ModuleVersion>(50);
+/**
+ * Cấu hình đã chuẩn hóa theo key@version + bản băm cấu hình gốc. Chuẩn hóa chạy code game trong
+ * sandbox (tốn vài ms đến vài chục ms), nên trang chơi không phải chạy lại cho mỗi lượt xem.
+ */
+const normalized = new LruCache<string, Record<string, unknown>>(500);
 let seeded: Promise<void> | null = null;
 
 /** Nạp các game có sẵn còn thiếu; chạy một lần cho mỗi tiến trình. */
 export function ensureBuiltinModules(db: Database): Promise<void> {
   seeded ??= (async () => {
-    for (const b of builtin as BuiltinBundle[]) {
+    for (const b of builtin) {
       const inserted = await db
         .insert(schema.gameModules)
         .values({
@@ -70,10 +74,35 @@ export function ensureBuiltinModules(db: Database): Promise<void> {
 export function resetModuleRegistry() {
   seeded = null;
   cache.clear();
+  normalized.clear();
+}
+
+/**
+ * Chuẩn hóa cấu hình theo game, có lưu đệm. Kết quả chỉ phụ thuộc vào phiên bản game (không đổi sau khi
+ * phát hành) và nội dung cấu hình, nên khóa đệm là key@version + sha256 của cấu hình.
+ * Không được sửa đối tượng trả về (dùng chung giữa các request).
+ */
+export async function normalizeConfig(
+  mod: ModuleVersion,
+  config: unknown,
+): Promise<Record<string, unknown>> {
+  const digest = createHash('sha256')
+    .update(JSON.stringify(config ?? null))
+    .digest('base64url');
+  const cacheKey = `${mod.key}@${mod.version}:${digest}`;
+  const hit = normalized.get(cacheKey);
+  if (hit) return hit;
+  const result = await sandbox.normalize(mod.schemaJs, config);
+  normalized.set(cacheKey, result);
+  return result;
 }
 
 /** Phiên bản của game: `version` cụ thể, hoặc bản phát hành mới nhất. */
-export async function getModuleVersion(db: Database, key: string, version?: string | null): Promise<ModuleVersion> {
+export async function getModuleVersion(
+  db: Database,
+  key: string,
+  version?: string | null,
+): Promise<ModuleVersion> {
   await ensureBuiltinModules(db);
   let wanted = version ?? null;
   if (!wanted) {
@@ -91,10 +120,26 @@ export async function getModuleVersion(db: Database, key: string, version?: stri
   const [row] = await db
     .select()
     .from(schema.gameModuleVersions)
-    .where(and(eq(schema.gameModuleVersions.moduleKey, key), eq(schema.gameModuleVersions.version, wanted)))
+    .where(
+      and(
+        eq(schema.gameModuleVersions.moduleKey, key),
+        eq(schema.gameModuleVersions.version, wanted),
+      ),
+    )
     .limit(1);
-  if (!row) throw new AppError(400, ErrorCode.MODULE_NOT_FOUND, `Không có loại game "${key}" phiên bản ${wanted}.`);
-  const found: ModuleVersion = { key, version: row.version, meta: row.meta, schemaJs: row.schemaJs, runtimeJs: row.runtimeJs };
+  if (!row)
+    throw new AppError(
+      400,
+      ErrorCode.MODULE_NOT_FOUND,
+      `Không có loại game "${key}" phiên bản ${wanted}.`,
+    );
+  const found: ModuleVersion = {
+    key,
+    version: row.version,
+    meta: row.meta,
+    schemaJs: row.schemaJs,
+    runtimeJs: row.runtimeJs,
+  };
   cache.set(cacheKey, found);
   return found;
 }
@@ -102,6 +147,8 @@ export async function getModuleVersion(db: Database, key: string, version?: stri
 /** Tên hiển thị của các game (để hiện trong danh sách template). */
 export async function moduleNames(db: Database): Promise<Map<string, string>> {
   await ensureBuiltinModules(db);
-  const rows = await db.select({ key: schema.gameModules.key, name: schema.gameModules.name }).from(schema.gameModules);
+  const rows = await db
+    .select({ key: schema.gameModules.key, name: schema.gameModules.name })
+    .from(schema.gameModules);
   return new Map(rows.map((r) => [r.key, r.name]));
 }

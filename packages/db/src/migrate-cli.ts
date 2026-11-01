@@ -9,7 +9,7 @@ if (!url) {
 
 runMigrations(url)
   .then(() => {
-    console.log('Đã chạy xong migration.');
+    console.info('Đã chạy xong migration.');
   })
   .catch((error: unknown) => {
     // Chỉ in thông báo lỗi, không in chuỗi kết nối.

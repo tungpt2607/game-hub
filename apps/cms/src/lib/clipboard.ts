@@ -3,7 +3,10 @@
  * Safari iPhone), chọn chữ trong ô `input` được truyền vào rồi dùng lệnh copy cũ.
  * Trả về `true` nếu sao chép được.
  */
-export async function copyText(text: string, input?: HTMLInputElement | HTMLTextAreaElement | null): Promise<boolean> {
+export async function copyText(
+  text: string,
+  input?: HTMLInputElement | HTMLTextAreaElement | null,
+): Promise<boolean> {
   if (input && legacyCopy(input)) return true;
   try {
     if (navigator.clipboard?.writeText) {

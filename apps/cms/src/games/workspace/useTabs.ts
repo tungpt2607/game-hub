@@ -29,7 +29,10 @@ export function useTabs(initial: string | null) {
     setState((s) => {
       const existing = s.tabs.find((t) => t.path === path);
       if (existing) {
-        const tabs = pin && existing.preview ? s.tabs.map((t) => (t.path === path ? { ...t, preview: false } : t)) : s.tabs;
+        const tabs =
+          pin && existing.preview
+            ? s.tabs.map((t) => (t.path === path ? { ...t, preview: false } : t))
+            : s.tabs;
         return { tabs, active: path };
       }
       const previewIndex = pin ? -1 : s.tabs.findIndex((t) => t.preview);
@@ -61,7 +64,8 @@ export function useTabs(initial: string | null) {
       const index = s.tabs.findIndex((t) => t.path === path);
       if (index < 0) return s;
       const tabs = s.tabs.filter((t) => t.path !== path);
-      const active = s.active === path ? (tabs[Math.min(index, tabs.length - 1)]?.path ?? null) : s.active;
+      const active =
+        s.active === path ? (tabs[Math.min(index, tabs.length - 1)]?.path ?? null) : s.active;
       return { tabs, active };
     });
   }, []);
@@ -83,7 +87,8 @@ export function useTabs(initial: string | null) {
     setState((s) => {
       const tabs = s.tabs.filter((t) => exists(t.path));
       if (tabs.length === s.tabs.length) return s;
-      const active = s.active && exists(s.active) ? s.active : (tabs[tabs.length - 1]?.path ?? null);
+      const active =
+        s.active && exists(s.active) ? s.active : (tabs[tabs.length - 1]?.path ?? null);
       return { tabs, active };
     });
   }, []);

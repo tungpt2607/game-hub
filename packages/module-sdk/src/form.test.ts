@@ -4,21 +4,31 @@ import { describeForm, serializeSchema } from './form';
 
 const fields: Fields = {
   showCta: field.boolean({ label: 'Nút' }),
-  ctaUrl: field.text({ label: 'Link', visibleWhen: field.when<{ showCta: boolean }>((c) => c.showCta) }),
+  ctaUrl: field.text({
+    label: 'Link',
+    visibleWhen: field.when<{ showCta: boolean }>((c) => c.showCta),
+  }),
   items: field.list({
     label: 'Vật phẩm',
     newItem: { name: '', points: 1 },
     itemLabel: (it, i) => it.name || `Mục ${i + 1}`,
     item: {
       name: field.text({ label: 'Tên' }),
-      points: field.number({ label: 'Điểm', visibleWhen: field.when<{ showCta: boolean }>((c) => !c.showCta) }),
+      points: field.number({
+        label: 'Điểm',
+        visibleWhen: field.when<{ showCta: boolean }>((c) => !c.showCta),
+      }),
     },
   }),
 };
 
 describe('describeForm', () => {
   it('liệt kê trường bị ẩn (cả trong danh sách) và tên từng phần tử', () => {
-    const state = describeForm(fields, { showCta: true, ctaUrl: '', items: [{ name: 'Vàng' }, { name: '' }] });
+    const state = describeForm(fields, {
+      showCta: true,
+      ctaUrl: '',
+      items: [{ name: 'Vàng' }, { name: '' }],
+    });
     expect(state.hidden).toEqual(['items.0.points', 'items.1.points']);
     expect(state.labels).toEqual({ items: ['Vàng', 'Mục 2'] });
     expect(describeForm(fields, { showCta: false, items: [] }).hidden).toEqual(['ctaUrl']);

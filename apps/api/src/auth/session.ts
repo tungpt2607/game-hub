@@ -57,7 +57,12 @@ export async function endSession(c: Context, deps: AppDeps, db: Database) {
 }
 
 /** Thu hồi mọi phiên của một tài khoản (khi đổi/đặt lại mật khẩu hoặc vô hiệu hóa). */
-export async function revokeAllSessions(db: Database, userId: string, now: Date, exceptSessionId?: string) {
+export async function revokeAllSessions(
+  db: Database,
+  userId: string,
+  now: Date,
+  exceptSessionId?: string,
+) {
   const rows = await db
     .select({ id: schema.adminSessions.id })
     .from(schema.adminSessions)
@@ -98,7 +103,11 @@ export function requireAuth(deps: AppDeps, options: { allowWhenMustChange?: bool
 
     if (!row || row.user.status !== 'active') {
       deleteCookie(c, SESSION_COOKIE, { path: '/' });
-      throw new AppError(401, ErrorCode.UNAUTHENTICATED, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      throw new AppError(
+        401,
+        ErrorCode.UNAUTHENTICATED,
+        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      );
     }
 
     const newExpiry = new Date(now.getTime() + SESSION_TTL_MS);

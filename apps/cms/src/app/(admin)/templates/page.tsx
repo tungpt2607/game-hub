@@ -3,41 +3,38 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import SearchIcon from '@mui/icons-material/Search';
 import type { TemplateListResponse, TemplateStatus, TemplateSummary } from '@opes/contracts';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { api, handleAuthError, errorMessage } from '../../../lib/api';
+import { formatDateTime } from '../../../lib/format';
 import { CreateTemplateDialog, type CreateMode } from '../../../module-ui/CreateTemplateDialog';
 import { StatusChip } from '../../../module-ui/StatusChip';
 import { TemplateThumb } from '../../../module-ui/TemplateThumb';
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { SearchField } from '../../../components/ui/SearchField';
+import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { Toast } from '../../../components/ui/Toast';
 
 export default function TemplatesPage() {
   const [status, setStatus] = useState<TemplateStatus>('active');
   const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebouncedValue(query.trim());
   const [items, setItems] = useState<TemplateSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [create, setCreate] = useState<CreateMode | null>(null);
@@ -46,14 +43,9 @@ export default function TemplatesPage() {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   }, []);
 
   const load = useCallback(async () => {
@@ -101,19 +93,21 @@ export default function TemplatesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.templates.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.templates.lead')}</Typography>
-        </Box>
-        <Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreate({ type: 'new' })}>
-            {t('cms.templates.create')}
-          </Button>
-        </Box>
-      </Stack>
+      <PageHeader
+        title={t('cms.templates.heading')}
+        description={t('cms.templates.lead')}
+        actions={
+          <>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreate({ type: 'new' })}
+            >
+              {t('cms.templates.create')}
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
@@ -126,22 +120,11 @@ export default function TemplatesPage() {
           <Tab value="active" label={t('cms.templates.tabActive')} />
           <Tab value="archived" label={t('cms.templates.tabArchived')} />
         </Tabs>
-        <TextField
-          size="small"
-          placeholder={t('cms.templates.search')}
+        <SearchField
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
+          placeholder={t('cms.templates.search')}
           sx={{ maxWidth: { sm: 320 } }}
-          fullWidth
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
         />
       </Stack>
 
@@ -159,8 +142,20 @@ export default function TemplatesPage() {
       <Grid container spacing={2}>
         {items?.map((item) => (
           <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              <CardActionArea component={Link} href={`/templates/${item.id}`} sx={{ flexGrow: 1, alignItems: 'stretch' }}>
+            <Card
+              variant="outlined"
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+              }}
+            >
+              <CardActionArea
+                component={Link}
+                href={`/templates/${item.id}`}
+                sx={{ flexGrow: 1, alignItems: 'stretch' }}
+              >
                 <TemplateThumb config={item.config} height={150} />
                 <CardContent sx={{ pb: 1.5 }}>
                   <Typography fontWeight={700} noWrap sx={{ pr: 3 }}>
@@ -172,7 +167,7 @@ export default function TemplatesPage() {
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                     <StatusChip template={item} />
                     <Typography variant="caption" color="text.secondary" noWrap>
-                      {formatDate(item.updatedAt)}
+                      {formatDateTime(item.updatedAt)}
                     </Typography>
                   </Stack>
                 </CardContent>
@@ -191,38 +186,62 @@ export default function TemplatesPage() {
       </Grid>
 
       <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
-        {menu && menu.item.status === 'active' && [
-          <MenuItem
-            key="dup"
-            onClick={() => {
-              setCreate({ type: 'duplicate', template: menu.item });
-              setMenu(null);
-            }}
-          >
-            {t('cms.templates.duplicate')}
-          </MenuItem>,
-          <MenuItem key="archive" onClick={() => void action(menu.item, 'archive', t('cms.templates.archivedToast', { name: menu.item.name }))}>
-            {t('cms.templates.archive')}
-          </MenuItem>,
-        ]}
-        {menu && menu.item.status === 'archived' && [
-          <MenuItem key="restore" onClick={() => void action(menu.item, 'unarchive', t('cms.templates.unarchivedToast', { name: menu.item.name }))}>
-            {t('cms.templates.unarchive')}
-          </MenuItem>,
-          <MenuItem
-            key="delete"
-            sx={{ color: 'error.main' }}
-            onClick={() => {
-              setToDelete(menu.item);
-              setMenu(null);
-            }}
-          >
-            {t('cms.templates.delete')}
-          </MenuItem>,
-        ]}
+        {menu &&
+          menu.item.status === 'active' && [
+            <MenuItem
+              key="dup"
+              onClick={() => {
+                setCreate({ type: 'duplicate', template: menu.item });
+                setMenu(null);
+              }}
+            >
+              {t('cms.templates.duplicate')}
+            </MenuItem>,
+            <MenuItem
+              key="archive"
+              onClick={() =>
+                void action(
+                  menu.item,
+                  'archive',
+                  t('cms.templates.archivedToast', { name: menu.item.name }),
+                )
+              }
+            >
+              {t('cms.templates.archive')}
+            </MenuItem>,
+          ]}
+        {menu &&
+          menu.item.status === 'archived' && [
+            <MenuItem
+              key="restore"
+              onClick={() =>
+                void action(
+                  menu.item,
+                  'unarchive',
+                  t('cms.templates.unarchivedToast', { name: menu.item.name }),
+                )
+              }
+            >
+              {t('cms.templates.unarchive')}
+            </MenuItem>,
+            <MenuItem
+              key="delete"
+              sx={{ color: 'error.main' }}
+              onClick={() => {
+                setToDelete(menu.item);
+                setMenu(null);
+              }}
+            >
+              {t('cms.templates.delete')}
+            </MenuItem>,
+          ]}
       </Menu>
 
-      <CreateTemplateDialog open={create !== null} mode={create ?? { type: 'new' }} onClose={() => setCreate(null)} />
+      <CreateTemplateDialog
+        open={create !== null}
+        mode={create ?? { type: 'new' }}
+        onClose={() => setCreate(null)}
+      />
       <ConfirmDialog
         open={Boolean(toDelete)}
         title={t('cms.templates.deleteTitle')}
@@ -233,7 +252,7 @@ export default function TemplatesPage() {
         onConfirm={confirmDelete}
         onClose={() => setToDelete(null)}
       />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast(null)} message={toast} />
+      <Toast message={toast} onClose={() => setToast(null)} />
     </Stack>
   );
 }

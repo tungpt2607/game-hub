@@ -5,6 +5,7 @@ import { createDb, runMigrations, schema, type Database } from '@opes/db';
 import { createApp } from './app';
 import builtin from '@opes/modules/bundles';
 import { resetModuleRegistry } from './lib/modules';
+import { hitRateLimit } from './lib/rate-limit';
 import type { Storage } from './lib/storage';
 
 /**
@@ -112,13 +113,24 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     });
 
     it('hai yêu cầu thiết lập đồng thời chỉ một cái thành công', async () => {
-      const body = (n: number) => ({ name: `A${n}`, email: `a${n}@opes.vn`, password: 'mat-khau-dai-du' });
-      const results = await Promise.all([call('POST', '/auth/setup', body(1)), call('POST', '/auth/setup', body(2))]);
+      const body = (n: number) => ({
+        name: `A${n}`,
+        email: `a${n}@opes.vn`,
+        password: 'mat-khau-dai-du',
+      });
+      const results = await Promise.all([
+        call('POST', '/auth/setup', body(1)),
+        call('POST', '/auth/setup', body(2)),
+      ]);
       expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
     });
 
     it('từ chối mật khẩu ngắn hơn 10 ký tự', async () => {
-      const res = await call('POST', '/auth/setup', { name: 'A', email: 'a@opes.vn', password: 'ngan' });
+      const res = await call('POST', '/auth/setup', {
+        name: 'A',
+        email: 'a@opes.vn',
+        password: 'ngan',
+      });
       expect(res.status).toBe(400);
       expect(res.json.error.fields.password).toBeTruthy();
     });
@@ -127,7 +139,10 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
   describe('đăng nhập và phiên', () => {
     it('đăng nhập đúng thì vào được; email không phân biệt hoa thường', async () => {
       await setupAdmin();
-      const login = await call('POST', '/auth/login', { email: 'ADMIN@opes.vn', password: 'mat-khau-dai-du' });
+      const login = await call('POST', '/auth/login', {
+        email: 'ADMIN@opes.vn',
+        password: 'mat-khau-dai-du',
+      });
       expect(login.status).toBe(200);
       expect(login.json.user.email).toBe('admin@opes.vn');
       const me = await call('GET', '/auth/me', undefined, login.cookie);
@@ -144,22 +159,37 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     it('sai 5 lần thì khóa 15 phút, kể cả khi nhập đúng; hết 15 phút thì mở', async () => {
       await setupAdmin();
       for (let i = 0; i < 4; i++) {
-        const res = await call('POST', '/auth/login', { email: 'admin@opes.vn', password: 'sai-mat-khau' });
+        const res = await call('POST', '/auth/login', {
+          email: 'admin@opes.vn',
+          password: 'sai-mat-khau',
+        });
         expect(res.status).toBe(401);
       }
-      const fifth = await call('POST', '/auth/login', { email: 'admin@opes.vn', password: 'sai-mat-khau' });
+      const fifth = await call('POST', '/auth/login', {
+        email: 'admin@opes.vn',
+        password: 'sai-mat-khau',
+      });
       expect(fifth.status).toBe(423);
-      const correct = await call('POST', '/auth/login', { email: 'admin@opes.vn', password: 'mat-khau-dai-du' });
+      const correct = await call('POST', '/auth/login', {
+        email: 'admin@opes.vn',
+        password: 'mat-khau-dai-du',
+      });
       expect(correct.status).toBe(423);
 
       clock = new Date(clock.getTime() + 16 * 60 * 1000);
-      const later = await call('POST', '/auth/login', { email: 'admin@opes.vn', password: 'mat-khau-dai-du' });
+      const later = await call('POST', '/auth/login', {
+        email: 'admin@opes.vn',
+        password: 'mat-khau-dai-du',
+      });
       expect(later.status).toBe(200);
     });
 
     it('email không tồn tại trả về cùng thông báo với sai mật khẩu', async () => {
       await setupAdmin();
-      const res = await call('POST', '/auth/login', { email: 'khong-co@opes.vn', password: 'bat-ky-gi-do' });
+      const res = await call('POST', '/auth/login', {
+        email: 'khong-co@opes.vn',
+        password: 'bat-ky-gi-do',
+      });
       expect(res.status).toBe(401);
       expect(res.json.error.code).toBe('INVALID_CREDENTIALS');
     });
@@ -179,6 +209,22 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       const cookie = await setupAdmin();
       expect((await call('POST', '/auth/logout', undefined, cookie)).status).toBe(204);
       expect((await call('GET', '/auth/me', undefined, cookie)).status).toBe(401);
+    });
+  });
+
+  describe('giới hạn số lần gọi', () => {
+    it('đếm theo khung và thỉnh thoảng dọn các khung đã quá 1 ngày', async () => {
+      const never = () => 1;
+      const old = new Date('2026-10-30T03:00:00Z');
+      expect(await hitRateLimit(db, 'k:cu', 1, 900, old, never)).toBe(true);
+      expect(await hitRateLimit(db, 'k:moi', 1, 900, clock, never)).toBe(true);
+      expect(await hitRateLimit(db, 'k:moi', 1, 900, clock, never)).toBe(false);
+      expect(await db.select().from(schema.rateLimits)).toHaveLength(2);
+      // Lượt gọi trúng tỉ lệ dọn: xóa khung cũ, giữ khung đang dùng.
+      await hitRateLimit(db, 'k:moi', 1, 900, clock, () => 0);
+      const left = await db.select().from(schema.rateLimits);
+      expect(left.map((r) => r.key)).toEqual(['k:moi']);
+      expect(left[0]!.count).toBe(3);
     });
   });
 
@@ -228,7 +274,12 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         email: 'minh@opes.vn',
         password: created.json.temporaryPassword,
       });
-      const disabled = await call('PATCH', `/users/${created.json.user.id}`, { status: 'disabled' }, admin);
+      const disabled = await call(
+        'PATCH',
+        `/users/${created.json.user.id}`,
+        { status: 'disabled' },
+        admin,
+      );
       expect(disabled.status).toBe(200);
       expect((await call('GET', '/auth/me', undefined, login.cookie)).status).toBe(401);
       const again = await call('POST', '/auth/login', {
@@ -241,7 +292,12 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     it('đặt lại mật khẩu: mật khẩu cũ hết tác dụng, mật khẩu tạm dùng được', async () => {
       const admin = await setupAdmin();
       const created = await call('POST', '/users', { name: 'Hoa', email: 'hoa@opes.vn' }, admin);
-      const reset = await call('POST', `/users/${created.json.user.id}/reset-password`, undefined, admin);
+      const reset = await call(
+        'POST',
+        `/users/${created.json.user.id}/reset-password`,
+        undefined,
+        admin,
+      );
       expect(reset.status).toBe(200);
       const oldLogin = await call('POST', '/auth/login', {
         email: 'hoa@opes.vn',
@@ -258,13 +314,25 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
   describe('media', () => {
     async function upload(cookie: string, name: string, mime: string, size: number) {
-      const signed = await call('POST', '/media/upload-url', { fileName: name, mime, sizeBytes: size }, cookie);
+      const signed = await call(
+        'POST',
+        '/media/upload-url',
+        { fileName: name, mime, sizeBytes: size },
+        cookie,
+      );
       expect(signed.status).toBe(200);
       files.set(signed.json.storageKey, { size, contentType: mime });
       return call(
         'POST',
         '/media/complete',
-        { storageKey: signed.json.storageKey, fileName: name, mime, sizeBytes: size, width: 400, height: 300 },
+        {
+          storageKey: signed.json.storageKey,
+          fileName: name,
+          mime,
+          sizeBytes: size,
+          width: 400,
+          height: 300,
+        },
         cookie,
       );
     }
@@ -279,7 +347,9 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(all.json.items[0].url).toMatch(/^https:\/\/media\.example\/media\//);
 
       const images = await call('GET', '/media?kind=image', undefined, admin);
-      expect(images.json.items.map((i: { originalName: string }) => i.originalName)).toEqual(['sen.png']);
+      expect(images.json.items.map((i: { originalName: string }) => i.originalName)).toEqual([
+        'sen.png',
+      ]);
       const search = await call('GET', `/media?q=${encodeURIComponent('nhạc')}`, undefined, admin);
       expect(search.json.items).toHaveLength(0);
       const search2 = await call('GET', '/media?q=nhac', undefined, admin);
@@ -288,16 +358,36 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
     it('từ chối loại file lạ, file quá lớn, và file chưa thật sự tải lên', async () => {
       const admin = await setupAdmin();
-      const exe = await call('POST', '/media/upload-url', { fileName: 'x.exe', mime: 'application/x-msdownload', sizeBytes: 10 }, admin);
+      const exe = await call(
+        'POST',
+        '/media/upload-url',
+        { fileName: 'x.exe', mime: 'application/x-msdownload', sizeBytes: 10 },
+        admin,
+      );
       expect(exe.json.error.code).toBe('MEDIA_TYPE_NOT_ALLOWED');
-      const big = await call('POST', '/media/upload-url', { fileName: 'to.png', mime: 'image/png', sizeBytes: 6 * 1024 * 1024 }, admin);
+      const big = await call(
+        'POST',
+        '/media/upload-url',
+        { fileName: 'to.png', mime: 'image/png', sizeBytes: 6 * 1024 * 1024 },
+        admin,
+      );
       expect(big.json.error.code).toBe('MEDIA_TOO_LARGE');
 
-      const signed = await call('POST', '/media/upload-url', { fileName: 'a.png', mime: 'image/png', sizeBytes: 100 }, admin);
+      const signed = await call(
+        'POST',
+        '/media/upload-url',
+        { fileName: 'a.png', mime: 'image/png', sizeBytes: 100 },
+        admin,
+      );
       const notUploaded = await call(
         'POST',
         '/media/complete',
-        { storageKey: signed.json.storageKey, fileName: 'a.png', mime: 'image/png', sizeBytes: 100 },
+        {
+          storageKey: signed.json.storageKey,
+          fileName: 'a.png',
+          mime: 'image/png',
+          sizeBytes: 100,
+        },
         admin,
       );
       expect(notUploaded.json.error.code).toBe('MEDIA_NOT_UPLOADED');
@@ -331,7 +421,11 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
     it('tạo từ mặc định, mẫu có sẵn, cấu hình gửi lên và nhân bản', async () => {
       const admin = await setupAdmin();
-      const a = await create(admin, { name: 'Mặc định', moduleKey: 'game.catch', source: { type: 'defaults' } });
+      const a = await create(admin, {
+        name: 'Mặc định',
+        moduleKey: 'game.catch',
+        source: { type: 'defaults' },
+      });
       expect(a.status).toBe(201);
       expect(a.json.template.moduleName).toBe('Hứng quà');
       expect(a.json.template.publishedVersion).toBe(0);
@@ -356,11 +450,18 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(partial.json.template.config.rules.lives).toBe(3);
       expect(partial.json.template.config).not.toHaveProperty('khongCo');
 
-      const copy = await create(admin, { name: 'Bản sao', source: { type: 'duplicate', templateId: tet.json.template.id } });
+      const copy = await create(admin, {
+        name: 'Bản sao',
+        source: { type: 'duplicate', templateId: tet.json.template.id },
+      });
       expect(copy.json.template.config.content.title).toBe('Hứng lộc đầu xuân');
       expect(copy.json.template.moduleKey).toBe('game.catch');
 
-      const bad = await create(admin, { name: 'X', moduleKey: 'game.khong-co', source: { type: 'defaults' } });
+      const bad = await create(admin, {
+        name: 'X',
+        moduleKey: 'game.khong-co',
+        source: { type: 'defaults' },
+      });
       expect(bad.json.error.code).toBe('MODULE_NOT_FOUND');
 
       const list = await call('GET', '/templates?q=sen', undefined, admin);
@@ -369,7 +470,9 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
     it('lưu nháp được cả khi còn lỗi, nhưng công bố bị chặn cho tới khi sửa xong', async () => {
       const admin = await setupAdmin();
-      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
+      const t = (
+        await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })
+      ).json.template;
       const broken = structuredClone(t.config);
       broken.content.title = '';
       const saved = await call(
@@ -381,7 +484,12 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(saved.status).toBe(200);
       expect(saved.json.template.errors['content.title']).toBe('Không được để trống');
 
-      const blocked = await call('POST', `/templates/${t.id}/publish`, { baseRevision: saved.json.template.revision }, admin);
+      const blocked = await call(
+        'POST',
+        `/templates/${t.id}/publish`,
+        { baseRevision: saved.json.template.revision },
+        admin,
+      );
       expect(blocked.status).toBe(422);
       expect(blocked.json.error.fields['content.title']).toBeTruthy();
 
@@ -392,7 +500,12 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         { name: 'Game', config: broken, baseRevision: saved.json.template.revision },
         admin,
       );
-      const published = await call('POST', `/templates/${t.id}/publish`, { baseRevision: fixed.json.template.revision }, admin);
+      const published = await call(
+        'POST',
+        `/templates/${t.id}/publish`,
+        { baseRevision: fixed.json.template.revision },
+        admin,
+      );
       expect(published.status).toBe(200);
       expect(published.json.template.publishedVersion).toBe(1);
       expect(published.json.template.hasUnpublishedChanges).toBe(false);
@@ -402,22 +515,42 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
     it('lưu nháp không đổi bản đã công bố; khôi phục lịch sử vào bản nháp', async () => {
       const admin = await setupAdmin();
-      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
-      const v1 = (await call('POST', `/templates/${t.id}/publish`, { baseRevision: t.revision }, admin)).json.template;
+      const t = (
+        await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })
+      ).json.template;
+      const v1 = (
+        await call('POST', `/templates/${t.id}/publish`, { baseRevision: t.revision }, admin)
+      ).json.template;
 
       const draft = structuredClone(v1.config);
       draft.content.title = 'Bản nháp mới';
-      const saved = (await call('PUT', `/templates/${t.id}`, { name: 'Game', config: draft, baseRevision: v1.revision }, admin)).json.template;
+      const saved = (
+        await call(
+          'PUT',
+          `/templates/${t.id}`,
+          { name: 'Game', config: draft, baseRevision: v1.revision },
+          admin,
+        )
+      ).json.template;
       expect(saved.hasUnpublishedChanges).toBe(true);
       expect(saved.publishedConfig.content.title).toBe('Hứng quà rinh điểm');
 
-      const v2 = (await call('POST', `/templates/${t.id}/publish`, { baseRevision: saved.revision }, admin)).json.template;
+      const v2 = (
+        await call('POST', `/templates/${t.id}/publish`, { baseRevision: saved.revision }, admin)
+      ).json.template;
       expect(v2.versions.map((v: any) => v.version)).toEqual([2, 1]);
 
       const old = await call('GET', `/templates/${t.id}/versions/1`, undefined, admin);
       expect(old.json.config.content.title).toBe('Hứng quà rinh điểm');
 
-      const restored = (await call('POST', `/templates/${t.id}/versions/1/restore`, { baseRevision: v2.revision }, admin)).json.template;
+      const restored = (
+        await call(
+          'POST',
+          `/templates/${t.id}/versions/1/restore`,
+          { baseRevision: v2.revision },
+          admin,
+        )
+      ).json.template;
       expect(restored.config.content.title).toBe('Hứng quà rinh điểm');
       expect(restored.publishedConfig.content.title).toBe('Bản nháp mới');
       expect(restored.hasUnpublishedChanges).toBe(true);
@@ -425,23 +558,46 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
     it('hai người cùng sửa: người lưu sau được báo xung đột thay vì ghi đè', async () => {
       const admin = await setupAdmin();
-      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
-      const first = await call('PUT', `/templates/${t.id}`, { name: 'A', config: t.config, baseRevision: t.revision }, admin);
+      const t = (
+        await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })
+      ).json.template;
+      const first = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'A', config: t.config, baseRevision: t.revision },
+        admin,
+      );
       expect(first.status).toBe(200);
-      const second = await call('PUT', `/templates/${t.id}`, { name: 'B', config: t.config, baseRevision: t.revision }, admin);
+      const second = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'B', config: t.config, baseRevision: t.revision },
+        admin,
+      );
       expect(second.status).toBe(409);
       expect(second.json.error.code).toBe('TEMPLATE_CONFLICT');
     });
 
     it('lưu trữ, khôi phục, và chỉ xóa hẳn được khi đã lưu trữ', async () => {
       const admin = await setupAdmin();
-      const t = (await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })).json.template;
-      expect((await call('DELETE', `/templates/${t.id}`, undefined, admin)).json.error.code).toBe('TEMPLATE_NOT_ARCHIVED');
+      const t = (
+        await create(admin, { name: 'Game', moduleKey: 'game.catch', source: { type: 'defaults' } })
+      ).json.template;
+      expect((await call('DELETE', `/templates/${t.id}`, undefined, admin)).json.error.code).toBe(
+        'TEMPLATE_NOT_ARCHIVED',
+      );
 
       await call('POST', `/templates/${t.id}/archive`, undefined, admin);
       expect((await call('GET', '/templates', undefined, admin)).json.items).toHaveLength(0);
-      expect((await call('GET', '/templates?status=archived', undefined, admin)).json.items).toHaveLength(1);
-      const edit = await call('PUT', `/templates/${t.id}`, { name: 'X', config: t.config, baseRevision: t.revision }, admin);
+      expect(
+        (await call('GET', '/templates?status=archived', undefined, admin)).json.items,
+      ).toHaveLength(1);
+      const edit = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'X', config: t.config, baseRevision: t.revision },
+        admin,
+      );
       expect(edit.json.error.code).toBe('TEMPLATE_ARCHIVED');
 
       await call('POST', `/templates/${t.id}/unarchive`, undefined, admin);
@@ -455,12 +611,27 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
 
   describe('link chơi thử', () => {
     async function publishedTemplate(cookie: string) {
-      const t = (await call('POST', '/templates', { name: 'Tết', moduleKey: 'game.catch', source: { type: 'preset', presetId: 'tet' } }, cookie)).json.template;
-      const p = await call('POST', `/templates/${t.id}/publish`, { baseRevision: t.revision }, cookie);
+      const t = (
+        await call(
+          'POST',
+          '/templates',
+          { name: 'Tết', moduleKey: 'game.catch', source: { type: 'preset', presetId: 'tet' } },
+          cookie,
+        )
+      ).json.template;
+      const p = await call(
+        'POST',
+        `/templates/${t.id}/publish`,
+        { baseRevision: t.revision },
+        cookie,
+      );
       return p.json.template;
     }
     /** Gọi API công khai của trang chơi. */
-    async function play(path: string, init: { method?: string; body?: unknown; cookie?: string } = {}) {
+    async function play(
+      path: string,
+      init: { method?: string; body?: unknown; cookie?: string } = {},
+    ) {
       const headers: Record<string, string> = { 'x-forwarded-for': '198.51.100.9' };
       if (init.body !== undefined) headers['content-type'] = 'application/json';
       if (init.cookie) headers.cookie = init.cookie;
@@ -469,13 +640,22 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         headers,
         body: init.body === undefined ? undefined : JSON.stringify(init.body),
       });
-      return { status: res.status, json: (await res.json()) as Record<string, any>, cookie: res.headers.get('set-cookie')?.split(';')[0] };
+      return {
+        status: res.status,
+        json: (await res.json()) as Record<string, any>,
+        cookie: res.headers.get('set-cookie')?.split(';')[0],
+      };
     }
 
     it('link "luôn mới nhất" đọc bản công bố mới nhất và đếm lượt mở', async () => {
       const admin = await setupAdmin();
       const tpl = await publishedTemplate(admin);
-      const created = await call('POST', `/preview-links?templateId=${tpl.id}`, { label: 'Gửi chị Lan', mode: 'live' }, admin);
+      const created = await call(
+        'POST',
+        `/preview-links?templateId=${tpl.id}`,
+        { label: 'Gửi chị Lan', mode: 'live' },
+        admin,
+      );
       expect(created.status).toBe(201);
       const link = created.json.link;
       expect(link.token).toHaveLength(22);
@@ -491,7 +671,14 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       const detail = (await call('GET', `/templates/${tpl.id}`, undefined, admin)).json.template;
       const draft = structuredClone(detail.config);
       draft.content.title = 'Tiêu đề mới';
-      const saved = (await call('PUT', `/templates/${tpl.id}`, { name: 'Tết', config: draft, baseRevision: detail.revision }, admin)).json.template;
+      const saved = (
+        await call(
+          'PUT',
+          `/templates/${tpl.id}`,
+          { name: 'Tết', config: draft, baseRevision: detail.revision },
+          admin,
+        )
+      ).json.template;
       expect((await play(`/try/${link.token}`)).json.title).toBe('Hứng lộc đầu xuân');
       await call('POST', `/templates/${tpl.id}/publish`, { baseRevision: saved.revision }, admin);
       expect((await play(`/try/${link.token}`)).json.title).toBe('Tiêu đề mới');
@@ -504,63 +691,133 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     it('bản chụp giữ nguyên khi template đổi; chụp từ nháp được khi nháp không lỗi', async () => {
       const admin = await setupAdmin();
       const tpl = await publishedTemplate(admin);
-      const snap = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'published' }, admin)).json.link;
+      const snap = (
+        await call(
+          'POST',
+          `/preview-links?templateId=${tpl.id}`,
+          { mode: 'snapshot', snapshotSource: 'published' },
+          admin,
+        )
+      ).json.link;
       expect(snap.snapshotVersion).toBe(1);
 
       const draft = structuredClone(tpl.config);
       draft.content.title = 'Bản nháp';
-      const saved = (await call('PUT', `/templates/${tpl.id}`, { name: 'Tết', config: draft, baseRevision: tpl.revision }, admin)).json.template;
+      const saved = (
+        await call(
+          'PUT',
+          `/templates/${tpl.id}`,
+          { name: 'Tết', config: draft, baseRevision: tpl.revision },
+          admin,
+        )
+      ).json.template;
       await call('POST', `/templates/${tpl.id}/publish`, { baseRevision: saved.revision }, admin);
       expect((await play(`/try/${snap.token}`)).json.title).toBe('Hứng lộc đầu xuân');
 
-      const fromDraft = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'draft' }, admin)).json.link;
+      const fromDraft = (
+        await call(
+          'POST',
+          `/preview-links?templateId=${tpl.id}`,
+          { mode: 'snapshot', snapshotSource: 'draft' },
+          admin,
+        )
+      ).json.link;
       expect(fromDraft.snapshotVersion).toBeNull();
       expect((await play(`/try/${fromDraft.token}`)).json.title).toBe('Bản nháp');
     });
 
     it('chưa công bố thì link "luôn mới nhất" báo chưa sẵn sàng', async () => {
       const admin = await setupAdmin();
-      const tpl = (await call('POST', '/templates', { name: 'Mới', moduleKey: 'game.catch', source: { type: 'defaults' } }, admin)).json.template;
-      const link = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live' }, admin)).json.link;
+      const tpl = (
+        await call(
+          'POST',
+          '/templates',
+          { name: 'Mới', moduleKey: 'game.catch', source: { type: 'defaults' } },
+          admin,
+        )
+      ).json.template;
+      const link = (
+        await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live' }, admin)
+      ).json.link;
       expect((await play(`/try/${link.token}`)).json.status).toBe('not_published');
-      const bad = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'snapshot', snapshotSource: 'published' }, admin);
+      const bad = await call(
+        'POST',
+        `/preview-links?templateId=${tpl.id}`,
+        { mode: 'snapshot', snapshotSource: 'published' },
+        admin,
+      );
       expect(bad.status).toBe(400);
     });
 
     it('mật khẩu: phải nhập đúng mới chơi được; đổi mật khẩu thì phải nhập lại', async () => {
       const admin = await setupAdmin();
       const tpl = await publishedTemplate(admin);
-      const link = (await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', password: 'sen2027' }, admin)).json.link;
+      const link = (
+        await call(
+          'POST',
+          `/preview-links?templateId=${tpl.id}`,
+          { mode: 'live', password: 'sen2027' },
+          admin,
+        )
+      ).json.link;
       expect(link.hasPassword).toBe(true);
 
       const locked = await play(`/try/${link.token}`);
       expect(locked.status).toBe(401);
       expect(locked.json).toEqual({ status: 'password_required', title: 'Hứng lộc đầu xuân' });
 
-      const wrong = await play(`/try/${link.token}/unlock`, { method: 'POST', body: { password: 'sai' } });
+      const wrong = await play(`/try/${link.token}/unlock`, {
+        method: 'POST',
+        body: { password: 'sai' },
+      });
       expect(wrong.json.error.code).toBe('WRONG_PASSWORD');
-      const right = await play(`/try/${link.token}/unlock`, { method: 'POST', body: { password: 'sen2027' } });
+      const right = await play(`/try/${link.token}/unlock`, {
+        method: 'POST',
+        body: { password: 'sen2027' },
+      });
       expect(right.status).toBe(200);
       expect((await play(`/try/${link.token}`, { cookie: right.cookie })).json.status).toBe('ok');
 
       await call('PATCH', `/preview-links/${link.id}`, { password: 'mat-khau-moi' }, admin);
-      expect((await play(`/try/${link.token}`, { cookie: right.cookie })).json.status).toBe('password_required');
+      expect((await play(`/try/${link.token}`, { cookie: right.cookie })).json.status).toBe(
+        'password_required',
+      );
     });
 
     it('tắt, hết hạn, lưu trữ template, mã tự đặt và mã không tồn tại', async () => {
       const admin = await setupAdmin();
       const tpl = await publishedTemplate(admin);
-      const custom = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'Tet-2027-Sen' }, admin);
+      const custom = await call(
+        'POST',
+        `/preview-links?templateId=${tpl.id}`,
+        { mode: 'live', slug: 'Tet-2027-Sen' },
+        admin,
+      );
       expect(custom.json.link.token).toBe('tet-2027-sen');
-      const dup = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'tet-2027-sen' }, admin);
+      const dup = await call(
+        'POST',
+        `/preview-links?templateId=${tpl.id}`,
+        { mode: 'live', slug: 'tet-2027-sen' },
+        admin,
+      );
       expect(dup.json.error.code).toBe('SLUG_TAKEN');
-      const reserved = await call('POST', `/preview-links?templateId=${tpl.id}`, { mode: 'live', slug: 'media' }, admin);
+      const reserved = await call(
+        'POST',
+        `/preview-links?templateId=${tpl.id}`,
+        { mode: 'live', slug: 'media' },
+        admin,
+      );
       expect(reserved.json.error.code).toBe('SLUG_TAKEN'); // trùng đường dẫn có sẵn của trang chơi
 
       const link = custom.json.link;
       await call('PATCH', `/preview-links/${link.id}`, { disabled: true }, admin);
       expect((await play(`/try/${link.token}`)).json.status).toBe('disabled');
-      await call('PATCH', `/preview-links/${link.id}`, { disabled: false, expiresAt: '2026-10-31T00:00:00Z' }, admin);
+      await call(
+        'PATCH',
+        `/preview-links/${link.id}`,
+        { disabled: false, expiresAt: '2026-10-31T00:00:00Z' },
+        admin,
+      );
       expect((await play(`/try/${link.token}`)).json.status).toBe('expired');
       await call('PATCH', `/preview-links/${link.id}`, { expiresAt: null }, admin);
       expect((await play(`/try/${link.token}`)).json.status).toBe('ok');
@@ -578,7 +835,9 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       const res = await call('GET', '/modules', undefined, admin);
       expect(res.status).toBe(200);
       const keys = res.json.items.map((m: any) => m.key);
-      expect(keys).toEqual(expect.arrayContaining(['game.catch', 'game.catch-quiz', 'game.sample']));
+      expect(keys).toEqual(
+        expect.arrayContaining(['game.catch', 'game.catch-quiz', 'game.sample']),
+      );
       const quiz = res.json.items.find((m: any) => m.key === 'game.catch-quiz');
       expect(quiz.builtin).toBe(true);
       expect(quiz.latestVersion).toBe('1.0.0');
@@ -587,21 +846,39 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       resetModuleRegistry();
       const again = await call('GET', '/modules', undefined, admin);
       expect(again.json.items).toHaveLength(res.json.items.length);
-      expect(again.json.items.find((m: any) => m.key === 'game.catch-quiz').versions).toHaveLength(1);
+      expect(again.json.items.find((m: any) => m.key === 'game.catch-quiz').versions).toHaveLength(
+        1,
+      );
     });
 
     it('kiểm tra cấu hình chạy trong hộp cách ly, kể cả kiểm tra riêng của game', async () => {
       const admin = await setupAdmin();
       const t = (
-        await call('POST', '/templates', { name: 'OME', moduleKey: 'game.catch-quiz', source: { type: 'preset', presetId: 'ome-catch' } }, admin)
+        await call(
+          'POST',
+          '/templates',
+          {
+            name: 'OME',
+            moduleKey: 'game.catch-quiz',
+            source: { type: 'preset', presetId: 'ome-catch' },
+          },
+          admin,
+        )
       ).json.template;
       expect(t.errors).toEqual({});
       expect(t.config.quiz.questions).toHaveLength(6);
       const broken = structuredClone(t.config);
       broken.quiz.questions[0].answers.forEach((a: any) => (a.correct = true));
       broken.rules.lives = 99;
-      const saved = await call('PUT', `/templates/${t.id}`, { name: 'OME', config: broken, baseRevision: t.revision }, admin);
-      expect(saved.json.template.errors['quiz.questions.0.answers']).toBe('Đánh dấu đúng một đáp án đúng');
+      const saved = await call(
+        'PUT',
+        `/templates/${t.id}`,
+        { name: 'OME', config: broken, baseRevision: t.revision },
+        admin,
+      );
+      expect(saved.json.template.errors['quiz.questions.0.answers']).toBe(
+        'Đánh dấu đúng một đáp án đúng',
+      );
       expect(saved.json.template.errors['rules.lives']).toBe('Tối đa là 10');
     });
 
@@ -612,7 +889,9 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       expect(ok.headers.get('content-type')).toContain('text/javascript');
       expect(ok.headers.get('cache-control')).toContain('immutable');
       expect(await ok.text()).toContain('require("react")');
-      expect((await app.request('/api/public/modules/game.catch-quiz/9.9.9/runtime.js')).status).toBe(404);
+      expect(
+        (await app.request('/api/public/modules/game.catch-quiz/9.9.9/runtime.js')).status,
+      ).toBe(404);
       expect((await app.request('/api/public/modules/..%2Fx/1.0.0/runtime.js')).status).toBe(404);
     });
 
@@ -627,7 +906,16 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
     it('template giữ phiên bản game cũ cho tới khi "Nâng lên bản mới"', async () => {
       const admin = await setupAdmin();
       const t = (
-        await call('POST', '/templates', { name: 'OME', moduleKey: 'game.catch-quiz', source: { type: 'preset', presetId: 'ome-catch' } }, admin)
+        await call(
+          'POST',
+          '/templates',
+          {
+            name: 'OME',
+            moduleKey: 'game.catch-quiz',
+            source: { type: 'preset', presetId: 'ome-catch' },
+          },
+          admin,
+        )
       ).json.template;
       expect(t.moduleVersion).toBe('1.0.0');
       expect(t.latestModuleVersion).toBe('1.0.0');
@@ -637,15 +925,27 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         insert into ${schema.gameModuleVersions} (module_key, version, files, schema_js, runtime_js, meta)
         select module_key, '1.1.0', files, schema_js, runtime_js, jsonb_set(meta, '{version}', '"1.1.0"')
         from ${schema.gameModuleVersions} where module_key = 'game.catch-quiz' and version = '1.0.0'`);
-      await db.execute(sql`update ${schema.gameModules} set latest_version = '1.1.0' where key = 'game.catch-quiz'`);
+      await db.execute(
+        sql`update ${schema.gameModules} set latest_version = '1.1.0' where key = 'game.catch-quiz'`,
+      );
 
       const before = (await call('GET', `/templates/${t.id}`, undefined, admin)).json.template;
       expect(before.moduleVersion).toBe('1.0.0');
       expect(before.latestModuleVersion).toBe('1.1.0');
 
-      const stale = await call('POST', `/templates/${t.id}/upgrade`, { baseRevision: t.revision - 1 }, admin);
+      const stale = await call(
+        'POST',
+        `/templates/${t.id}/upgrade`,
+        { baseRevision: t.revision - 1 },
+        admin,
+      );
       expect(stale.status).toBe(409);
-      const up = await call('POST', `/templates/${t.id}/upgrade`, { baseRevision: t.revision }, admin);
+      const up = await call(
+        'POST',
+        `/templates/${t.id}/upgrade`,
+        { baseRevision: t.revision },
+        admin,
+      );
       expect(up.status).toBe(200);
       expect(up.json.template.moduleVersion).toBe('1.1.0');
       expect(up.json.template.revision).toBe(t.revision + 1);
@@ -656,8 +956,16 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       /** Gói của game mẫu, đổi key thành game mới (thay cho biên dịch trong trình duyệt). */
       function samplePackage(key = 'game.thu-nghiem', version = '0.1.0') {
         const b = (builtin as any[]).find((x) => x.meta.key === 'game.sample');
-        const swap = (js: string) => js.replaceAll('"game.sample"', JSON.stringify(key)).replaceAll('"0.1.0"', JSON.stringify(version));
-        return { files: { ...b.files }, assets: {}, schemaJs: swap(b.schemaJs), runtimeJs: swap(b.runtimeJs) };
+        const swap = (js: string) =>
+          js
+            .replaceAll('"game.sample"', JSON.stringify(key))
+            .replaceAll('"0.1.0"', JSON.stringify(version));
+        return {
+          files: { ...b.files },
+          assets: {},
+          schemaJs: swap(b.schemaJs),
+          runtimeJs: swap(b.runtimeJs),
+        };
       }
 
       it('tạo game mới, phát hành, rồi template dùng được', async () => {
@@ -671,18 +979,46 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         expect((await call('POST', '/modules', samplePackage(), admin)).status).toBe(409);
 
         // Chưa phát hành thì chưa tạo template được.
-        expect((await call('POST', '/templates', { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } }, admin)).status).toBe(400);
+        expect(
+          (
+            await call(
+              'POST',
+              '/templates',
+              { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } },
+              admin,
+            )
+          ).status,
+        ).toBe(400);
 
-        const published = await call('POST', '/modules/game.thu-nghiem/publish', { notes: 'Bản đầu', baseUpdatedAt: mod.draft.updatedAt }, admin);
+        const published = await call(
+          'POST',
+          '/modules/game.thu-nghiem/publish',
+          { notes: 'Bản đầu', baseUpdatedAt: mod.draft.updatedAt },
+          admin,
+        );
         expect(published.status).toBe(200);
         expect(published.json.module.latestVersion).toBe('0.1.0');
         expect(published.json.module.draft).toBeNull();
-        expect(published.json.module.versions[0]).toMatchObject({ version: '0.1.0', notes: 'Bản đầu', publishedByName: 'Quản trị 1' });
+        expect(published.json.module.versions[0]).toMatchObject({
+          version: '0.1.0',
+          notes: 'Bản đầu',
+          publishedByName: 'Quản trị 1',
+        });
 
-        const tpl = await call('POST', '/templates', { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } }, admin);
+        const tpl = await call(
+          'POST',
+          '/templates',
+          { name: 'A', moduleKey: 'game.thu-nghiem', source: { type: 'defaults' } },
+          admin,
+        );
         expect(tpl.status).toBe(201);
         expect(tpl.json.template.moduleVersion).toBe('0.1.0');
-        const version = await call('GET', '/modules/game.thu-nghiem/versions/0.1.0', undefined, admin);
+        const version = await call(
+          'GET',
+          '/modules/game.thu-nghiem/versions/0.1.0',
+          undefined,
+          admin,
+        );
         expect(Object.keys(version.json.files)).toContain('schema.ts');
       });
 
@@ -690,32 +1026,81 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
         const admin = await setupAdmin();
         await call('GET', '/modules', undefined, admin);
         const pkg = samplePackage('game.sample', '0.1.0');
-        const first = await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin);
+        const first = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          { ...pkg, baseUpdatedAt: null },
+          admin,
+        );
         expect(first.status).toBe(200);
         const at = first.json.module.draft.updatedAt;
-        expect((await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin)).status).toBe(409);
+        expect(
+          (await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: null }, admin))
+            .status,
+        ).toBe(409);
 
-        const otherKey = await call('PUT', '/modules/game.sample/draft', { ...samplePackage('game.khac'), baseUpdatedAt: at }, admin);
+        const otherKey = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          { ...samplePackage('game.khac'), baseUpdatedAt: at },
+          admin,
+        );
         expect(otherKey.status).toBe(422);
         expect(otherKey.json.error.message).toContain('game.sample');
 
-        const badPath = await call('PUT', '/modules/game.sample/draft', { ...pkg, files: { ...pkg.files, 'a b.ts': '' }, baseUpdatedAt: at }, admin);
+        const badPath = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          { ...pkg, files: { ...pkg.files, 'a b.ts': '' }, baseUpdatedAt: at },
+          admin,
+        );
         expect(badPath.status).toBe(422);
 
         // Lưu được cả khi chưa biên dịch được.
-        const broken = await call('PUT', '/modules/game.sample/draft', { ...pkg, schemaJs: null, runtimeJs: null, baseUpdatedAt: at }, admin);
+        const broken = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          { ...pkg, schemaJs: null, runtimeJs: null, baseUpdatedAt: at },
+          admin,
+        );
         expect(broken.status).toBe(200);
         expect(broken.json.module.draft.version).toBeNull();
         const at2 = broken.json.module.draft.updatedAt;
-        expect((await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: at2 }, admin)).status).toBe(422);
+        expect(
+          (await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: at2 }, admin))
+            .status,
+        ).toBe(422);
 
-        const same = await call('PUT', '/modules/game.sample/draft', { ...pkg, baseUpdatedAt: at2 }, admin);
-        const notNewer = await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: same.json.module.draft.updatedAt }, admin);
+        const same = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          { ...pkg, baseUpdatedAt: at2 },
+          admin,
+        );
+        const notNewer = await call(
+          'POST',
+          '/modules/game.sample/publish',
+          { baseUpdatedAt: same.json.module.draft.updatedAt },
+          admin,
+        );
         expect(notNewer.status).toBe(422);
         expect(notNewer.json.error.message).toContain('0.1.1');
 
-        const bumped = await call('PUT', '/modules/game.sample/draft', { ...samplePackage('game.sample', '0.2.0'), baseUpdatedAt: same.json.module.draft.updatedAt }, admin);
-        const ok = await call('POST', '/modules/game.sample/publish', { baseUpdatedAt: bumped.json.module.draft.updatedAt }, admin);
+        const bumped = await call(
+          'PUT',
+          '/modules/game.sample/draft',
+          {
+            ...samplePackage('game.sample', '0.2.0'),
+            baseUpdatedAt: same.json.module.draft.updatedAt,
+          },
+          admin,
+        );
+        const ok = await call(
+          'POST',
+          '/modules/game.sample/publish',
+          { baseUpdatedAt: bumped.json.module.draft.updatedAt },
+          admin,
+        );
         expect(ok.status).toBe(200);
         expect(ok.json.module.latestVersion).toBe('0.2.0');
 
@@ -728,14 +1113,29 @@ describe.skipIf(!url)('API quản trị (PostgreSQL thật)', () => {
       it('file kèm: xin link tải lên, địa chỉ theo nội dung file', async () => {
         const admin = await setupAdmin();
         const sha = 'a'.repeat(64);
-        const up = await call('POST', '/modules/game.moi/assets/upload-url', { path: 'ome/nen.webp', mime: 'image/webp', size: 1000, sha256: sha }, admin);
+        const up = await call(
+          'POST',
+          '/modules/game.moi/assets/upload-url',
+          { path: 'ome/nen.webp', mime: 'image/webp', size: 1000, sha256: sha },
+          admin,
+        );
         expect(up.status).toBe(200);
         expect(up.json.url).toBe(`https://media.example/game-assets/game.moi/${sha}.webp`);
         expect(up.json.uploadUrl).toContain('game-assets/game.moi/');
-        const bad = await call('POST', '/modules/game.moi/assets/upload-url', { path: 'x.exe', mime: 'application/x-msdownload', size: 10, sha256: sha }, admin);
+        const bad = await call(
+          'POST',
+          '/modules/game.moi/assets/upload-url',
+          { path: 'x.exe', mime: 'application/x-msdownload', size: 10, sha256: sha },
+          admin,
+        );
         expect(bad.status).toBe(422);
 
-        const pkg = { ...samplePackage('game.moi'), assets: { 'ome/nen.webp': { url: '/media/la', size: 1000, mime: 'image/webp', sha256: sha } } };
+        const pkg = {
+          ...samplePackage('game.moi'),
+          assets: {
+            'ome/nen.webp': { url: '/media/la', size: 1000, mime: 'image/webp', sha256: sha },
+          },
+        };
         const created = await call('POST', '/modules', pkg, admin);
         expect(created.status).toBe(201);
         expect(created.json.module.draft.assets['ome/nen.webp'].url).toBe(up.json.url);

@@ -65,7 +65,9 @@ function FieldsView({ fields, path, ctx }: { fields: Fields; path: Path; ctx: Fo
   return (
     <Stack spacing={2.5}>
       {Object.entries(fields).map(([key, f]) =>
-        ctx.hidden.has(pathKey([...path, key])) ? null : <FieldView key={key} field={f} path={[...path, key]} ctx={ctx} />,
+        ctx.hidden.has(pathKey([...path, key])) ? null : (
+          <FieldView key={key} field={f} path={[...path, key]} ctx={ctx} />
+        ),
       )}
     </Stack>
   );
@@ -100,7 +102,17 @@ function FieldView({ field: f, path, ctx }: { field: Field; path: Path; ctx: For
   }
 }
 
-function GroupView({ field: f, path, ctx, nested }: { field: GroupField; path: Path; ctx: FormCtx; nested?: boolean }) {
+function GroupView({
+  field: f,
+  path,
+  ctx,
+  nested,
+}: {
+  field: GroupField;
+  path: Path;
+  ctx: FormCtx;
+  nested?: boolean;
+}) {
   const errorCount = countErrorsUnder(ctx.errors, path);
   if (nested) {
     return (
@@ -120,7 +132,12 @@ function GroupView({ field: f, path, ctx, nested }: { field: GroupField; path: P
     );
   }
   return (
-    <Accordion defaultExpanded={!f.collapsed} disableGutters variant="outlined" id={`${domId(path)}-group`}>
+    <Accordion
+      defaultExpanded={!f.collapsed}
+      disableGutters
+      variant="outlined"
+      id={`${domId(path)}-group`}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography fontWeight={600}>{f.label}</Typography>
@@ -188,10 +205,15 @@ function ListView({ field: f, path, ctx }: { field: ListField; path: Path; ctx: 
           const itemPath = [...path, i];
           const itemErrors = countErrorsUnder(ctx.errors, itemPath);
           const label =
-            ctx.labels[pathKey(path)]?.[i] ?? (f.itemLabel ? f.itemLabel(item as never, i) : `${f.label} ${i + 1}`);
+            ctx.labels[pathKey(path)]?.[i] ??
+            (f.itemLabel ? f.itemLabel(item as never, i) : `${f.label} ${i + 1}`);
           const expanded = open === i;
           return (
-            <Paper key={i} variant="outlined" sx={{ borderColor: itemErrors ? 'error.main' : undefined }}>
+            <Paper
+              key={i}
+              variant="outlined"
+              sx={{ borderColor: itemErrors ? 'error.main' : undefined }}
+            >
               <Stack direction="row" alignItems="center" sx={{ pl: 1.5, pr: 0.5, py: 0.5 }}>
                 <Box
                   role="button"
@@ -210,10 +232,17 @@ function ListView({ field: f, path, ctx }: { field: ListField; path: Path; ctx: 
                     {label}
                   </Typography>
                 </Box>
-                {itemErrors > 0 && <Chip size="small" color="error" label={itemErrors} sx={{ mr: 0.5 }} />}
+                {itemErrors > 0 && (
+                  <Chip size="small" color="error" label={itemErrors} sx={{ mr: 0.5 }} />
+                )}
                 <Tooltip title={t('cms.moduleForm.moveUp')}>
                   <span>
-                    <IconButton size="small" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label={t('cms.moduleForm.moveUp')}>
+                    <IconButton
+                      size="small"
+                      disabled={i === 0}
+                      onClick={() => move(i, i - 1)}
+                      aria-label={t('cms.moduleForm.moveUp')}
+                    >
                       <ArrowUpwardIcon fontSize="small" />
                     </IconButton>
                   </span>
@@ -317,7 +346,8 @@ export function SchemaForm<Config>({
       document.getElementById(`cfg-${key.replace(/\./g, '-')}`) ??
       document.getElementById(`cfg-${key.split('.')[0]}-group`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.focus({ preventScroll: true });
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+      el.focus({ preventScroll: true });
   };
 
   return (
@@ -328,7 +358,12 @@ export function SchemaForm<Config>({
           <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
             {errorKeys.slice(0, 8).map((key) => (
               <li key={key}>
-                <Link component="button" type="button" onClick={() => focusError(key)} sx={{ textAlign: 'left' }}>
+                <Link
+                  component="button"
+                  type="button"
+                  onClick={() => focusError(key)}
+                  sx={{ textAlign: 'left' }}
+                >
                   {errorLabel(fields, key)}
                 </Link>
                 : {errors[key]}
@@ -344,7 +379,13 @@ export function SchemaForm<Config>({
           if (f.type === 'group') return <GroupView key={key} field={f} path={[key]} ctx={ctx} />;
           // Trường lẻ ở cấp đầu: đặt trong khung riêng cho thống nhất với các nhóm.
           return (
-            <Accordion key={key} defaultExpanded disableGutters variant="outlined" id={`cfg-${key}-group`}>
+            <Accordion
+              key={key}
+              defaultExpanded
+              disableGutters
+              variant="outlined"
+              id={`cfg-${key}-group`}
+            >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Typography fontWeight={600}>{f.label}</Typography>

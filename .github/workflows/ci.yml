@@ -79,6 +79,9 @@ jobs:
             exit 1
           fi
 
+      - name: Kiểm tra định dạng (Prettier)
+        run: pnpm format:check
+
       - name: Lint
         run: pnpm lint
 

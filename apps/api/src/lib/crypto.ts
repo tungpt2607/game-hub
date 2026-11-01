@@ -41,5 +41,7 @@ const PASSWORD_ALPHABET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456
 export function temporaryPassword(): string {
   const bytes = randomBytes(12);
   const chars = Array.from(bytes, (b) => PASSWORD_ALPHABET[b % PASSWORD_ALPHABET.length]);
-  return [chars.slice(0, 4), chars.slice(4, 8), chars.slice(8, 12)].map((g) => g.join('')).join('-');
+  return [chars.slice(0, 4), chars.slice(4, 8), chars.slice(8, 12)]
+    .map((g) => g.join(''))
+    .join('-');
 }

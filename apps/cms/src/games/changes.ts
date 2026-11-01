@@ -53,7 +53,11 @@ export function diffPackages(
     const a = before.assets[key];
     const b = after.assets[key];
     if (a?.sha256 === b?.sha256) continue;
-    out.push({ path: `assets/${key}`, type: 'asset', kind: !a ? 'added' : !b ? 'removed' : 'modified' });
+    out.push({
+      path: `assets/${key}`,
+      type: 'asset',
+      kind: !a ? 'added' : !b ? 'removed' : 'modified',
+    });
   }
   return out.sort((x, y) => x.path.localeCompare(y.path));
 }

@@ -93,7 +93,14 @@ export function FileTree(props: FileTreeProps) {
       }}
     >
       {nodes.map((node) => (
-        <TreeRow key={node.path} node={node} depth={0} dropTarget={dropTarget} dragHandlers={dragHandlers} {...props} />
+        <TreeRow
+          key={node.path}
+          node={node}
+          depth={0}
+          dropTarget={dropTarget}
+          dragHandlers={dragHandlers}
+          {...props}
+        />
       ))}
     </Box>
   );
@@ -111,7 +118,8 @@ function TreeRow({
   dropTarget: string | null;
   dragHandlers: (folder: string) => DragHandlers;
 }) {
-  const { selected, expanded, errorCount, onToggle, onOpen, onSelect, onMenu, onRename, onDelete } = props;
+  const { selected, expanded, errorCount, onToggle, onOpen, onSelect, onMenu, onRename, onDelete } =
+    props;
   const isFolder = node.type === 'folder';
   const open = isFolder && expanded.has(node.path);
   const errors = errorCount(node.path);
@@ -169,21 +177,48 @@ function TreeRow({
           fontSize: 13,
           whiteSpace: 'nowrap',
           color: errors ? 'error.main' : 'text.primary',
-          bgcolor: highlighted ? 'action.focus' : selected === node.path ? 'action.selected' : 'transparent',
-          '&:hover': { bgcolor: highlighted ? 'action.focus' : selected === node.path ? 'action.selected' : 'action.hover' },
-          '&:focus-visible': { outline: '1px solid', outlineColor: 'primary.main', outlineOffset: -1 },
-          '&:hover .row-more, &:focus-within .row-more, &[aria-selected="true"] .row-more': { opacity: 1 },
+          bgcolor: highlighted
+            ? 'action.focus'
+            : selected === node.path
+              ? 'action.selected'
+              : 'transparent',
+          '&:hover': {
+            bgcolor: highlighted
+              ? 'action.focus'
+              : selected === node.path
+                ? 'action.selected'
+                : 'action.hover',
+          },
+          '&:focus-visible': {
+            outline: '1px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: -1,
+          },
+          '&:hover .row-more, &:focus-within .row-more, &[aria-selected="true"] .row-more': {
+            opacity: 1,
+          },
         }}
       >
         <Box sx={{ width: 16, display: 'flex', flexShrink: 0, color: 'text.secondary' }}>
-          {isFolder && (open ? <ExpandMoreIcon sx={{ fontSize: 16 }} /> : <ChevronRightIcon sx={{ fontSize: 16 }} />)}
+          {isFolder &&
+            (open ? (
+              <ExpandMoreIcon sx={{ fontSize: 16 }} />
+            ) : (
+              <ChevronRightIcon sx={{ fontSize: 16 }} />
+            ))}
         </Box>
         <FileIcon path={node.path} folder={isFolder} open={open} />
-        <Box component="span" sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <Box
+          component="span"
+          sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
           {node.name}
         </Box>
         {errors > 0 && (
-          <Box component="span" sx={{ fontSize: 11, fontWeight: 700, color: 'error.main', px: 0.5 }}>
+          <Box
+            component="span"
+            sx={{ fontSize: 11, fontWeight: 700, color: 'error.main', px: 0.5 }}
+          >
             {errors}
           </Box>
         )}
@@ -204,7 +239,14 @@ function TreeRow({
       </Box>
       {open &&
         node.children.map((child) => (
-          <TreeRow key={child.path} node={child} depth={depth + 1} dropTarget={dropTarget} dragHandlers={dragHandlers} {...props} />
+          <TreeRow
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            dropTarget={dropTarget}
+            dragHandlers={dragHandlers}
+            {...props}
+          />
         ))}
     </>
   );

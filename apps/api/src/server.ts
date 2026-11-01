@@ -10,12 +10,12 @@ async function main() {
   const url = process.env.DATABASE_URL;
   if (process.env.RUN_MIGRATIONS === 'true' && url) {
     await runMigrations(url, process.env.MIGRATIONS_DIR || undefined);
-    console.log('Đã chạy xong migration.');
+    console.info('Đã chạy xong migration.');
   }
 
   const port = Number(process.env.PORT ?? 4000);
   serve({ fetch: createApp().fetch, port }, (info) => {
-    console.log(`API đang chạy tại http://localhost:${info.port}/api/health`);
+    console.info(`API đang chạy tại http://localhost:${info.port}/api/health`);
   });
 }
 

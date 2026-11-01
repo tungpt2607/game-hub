@@ -22,7 +22,10 @@ const ALLOWED = (process.env.OPES_CMS_ORIGINS ?? '').split(',').filter(Boolean);
 
 type Mod = ModuleDefinition<unknown>;
 
-class Boundary extends Component<{ children: ReactNode; onCrash: (message: string) => void }, { error: Error | null }> {
+class Boundary extends Component<
+  { children: ReactNode; onCrash: (message: string) => void },
+  { error: Error | null }
+> {
   state = { error: null as Error | null };
   static getDerivedStateFromError(error: Error) {
     return { error };
@@ -66,16 +69,31 @@ export function EmbedClient() {
     const post = (msg: HostReply, origin: string) => window.parent.postMessage(msg, origin);
 
     const onMessage = async (event: MessageEvent) => {
-      if (event.source !== window.parent || !ALLOWED.includes(event.origin) || !isHostMessage(event.data)) return;
+      if (
+        event.source !== window.parent ||
+        !ALLOWED.includes(event.origin) ||
+        !isHostMessage(event.data)
+      )
+        return;
       parentOrigin.current = event.origin;
       const req = event.data as HostRequest;
       if (req.type === 'render') {
         setRender(req.state);
         return;
       }
-      const reply = (result: unknown) => post({ opes: 1, type: 'reply', id: req.id, ok: true, result }, event.origin);
+      const reply = (result: unknown) =>
+        post({ opes: 1, type: 'reply', id: req.id, ok: true, result }, event.origin);
       const fail = (e: unknown) =>
-        post({ opes: 1, type: 'reply', id: req.id, ok: false, error: e instanceof Error ? e.message : String(e) }, event.origin);
+        post(
+          {
+            opes: 1,
+            type: 'reply',
+            id: req.id,
+            ok: false,
+            error: e instanceof Error ? e.message : String(e),
+          },
+          event.origin,
+        );
       try {
         if (req.type === 'load') {
           const next = await resolve(req.source);
@@ -123,10 +141,19 @@ export function EmbedClient() {
         key={`${loadCount}-${render.run}`}
         onCrash={(message) => {
           const origin = parentOrigin.current;
-          if (origin) window.parent.postMessage({ opes: 1, type: 'crash', message } satisfies HostReply, origin);
+          if (origin)
+            window.parent.postMessage(
+              { opes: 1, type: 'crash', message } satisfies HostReply,
+              origin,
+            );
         }}
       >
-        <Runtime config={render.config} host={host} initialScreen={render.screen} muted={render.muted} />
+        <Runtime
+          config={render.config}
+          host={host}
+          initialScreen={render.screen}
+          muted={render.muted}
+        />
       </Boundary>
     </div>
   );

@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { t } from '@opes/i18n';
 import { ApiStatus } from '../../../components/ApiStatus';
+import { PageHeader } from '../../../components/ui/PageHeader';
 
 type StepState = 'done' | 'inProgress' | 'upcoming';
 
@@ -31,12 +32,7 @@ const CHIP: Record<StepState, { label: string; color: 'success' | 'primary' | 'd
 export default function DashboardPage() {
   return (
     <Stack spacing={3}>
-      <div>
-        <Typography variant="h4" component="h1" fontWeight={700}>
-          {t('cms.overview.heading')}
-        </Typography>
-        <Typography color="text.secondary">{t('cms.overview.lead')}</Typography>
-      </div>
+      <PageHeader title={t('cms.overview.heading')} description={t('cms.overview.lead')} />
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card variant="outlined">

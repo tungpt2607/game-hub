@@ -9,7 +9,13 @@ import {
   SetupRequestSchema,
 } from '@opes/contracts';
 import { schema } from '@opes/db';
-import { clientIp, endSession, requireAuth, revokeAllSessions, startSession } from '../auth/session';
+import {
+  clientIp,
+  endSession,
+  requireAuth,
+  revokeAllSessions,
+  startSession,
+} from '../auth/session';
 import type { AppDeps, AppEnv } from '../context';
 import { audit } from '../lib/audit';
 import { hashPassword, verifyPassword } from '../lib/crypto';
@@ -45,7 +51,11 @@ export function authRoutes(deps: AppDeps) {
       await tx.execute(sql`select pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
       const [row] = await tx.select({ value: count() }).from(schema.users);
       if ((row?.value ?? 0) > 0) {
-        throw new AppError(409, ErrorCode.SETUP_DONE, 'Hệ thống đã có tài khoản. Vui lòng đăng nhập.');
+        throw new AppError(
+          409,
+          ErrorCode.SETUP_DONE,
+          'Hệ thống đã có tài khoản. Vui lòng đăng nhập.',
+        );
       }
       const [user] = await tx
         .insert(schema.users)
@@ -67,10 +77,18 @@ export function authRoutes(deps: AppDeps) {
 
     const ip = clientIp(c) ?? 'unknown';
     if (!(await hitRateLimit(db, `login:ip:${ip}`, 30, 15 * 60, now))) {
-      throw new AppError(429, ErrorCode.RATE_LIMITED, 'Bạn thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+      throw new AppError(
+        429,
+        ErrorCode.RATE_LIMITED,
+        'Bạn thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 15 phút.',
+      );
     }
 
-    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, input.email)).limit(1);
+    const [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, input.email))
+      .limit(1);
     if (!user) {
       await verifyPassword(input.password, await getDummyHash());
       throw new AppError(401, ErrorCode.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng.');
@@ -97,7 +115,12 @@ export function authRoutes(deps: AppDeps) {
         )
         .where(eq(schema.users.id, user.id));
       if (lock) {
-        await audit(db, { userId: user.id, action: 'login.locked', entity: 'user', entityId: user.id });
+        await audit(db, {
+          userId: user.id,
+          action: 'login.locked',
+          entity: 'user',
+          entityId: user.id,
+        });
         throw new AppError(
           423,
           ErrorCode.ACCOUNT_LOCKED,
@@ -108,7 +131,11 @@ export function authRoutes(deps: AppDeps) {
     }
 
     if (user.status !== 'active') {
-      throw new AppError(403, ErrorCode.ACCOUNT_DISABLED, 'Tài khoản đã bị vô hiệu hóa. Liên hệ quản trị viên.');
+      throw new AppError(
+        403,
+        ErrorCode.ACCOUNT_DISABLED,
+        'Tài khoản đã bị vô hiệu hóa. Liên hệ quản trị viên.',
+      );
     }
 
     const [updated] = await db

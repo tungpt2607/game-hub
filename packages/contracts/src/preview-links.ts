@@ -47,7 +47,10 @@ export const PreviewLinkCreateRequestSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .regex(PREVIEW_SLUG_PATTERN, 'Mã link chỉ gồm chữ thường không dấu, số và dấu gạch ngang (4–60 ký tự)')
+    .regex(
+      PREVIEW_SLUG_PATTERN,
+      'Mã link chỉ gồm chữ thường không dấu, số và dấu gạch ngang (4–60 ký tự)',
+    )
     .nullish(),
   password: password.nullish(),
   expiresAt,

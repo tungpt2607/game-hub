@@ -9,14 +9,19 @@ export type TsStatus = 'loading' | 'ready' | 'error';
 export class TsClient {
   private worker: Worker | null = null;
   private nextId = 1;
-  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+  private pending = new Map<
+    number,
+    { resolve: (v: unknown) => void; reject: (e: Error) => void }
+  >();
   private listeners = new Set<(s: TsStatus) => void>();
   status: TsStatus = 'loading';
 
   private ensure(): Worker {
     if (!this.worker) {
       this.worker = new Worker(new URL('./ts.worker.ts', import.meta.url), { type: 'module' });
-      this.worker.onmessage = (event: MessageEvent<{ id: number; ok: boolean; result?: unknown; error?: string }>) => {
+      this.worker.onmessage = (
+        event: MessageEvent<{ id: number; ok: boolean; result?: unknown; error?: string }>,
+      ) => {
         const { id, ok, result, error } = event.data;
         const waiter = this.pending.get(id);
         if (!waiter) return;
@@ -41,7 +46,9 @@ export class TsClient {
     return () => this.listeners.delete(listener);
   }
 
-  request<K extends TsRequest['type']>(req: Extract<TsRequest, { type: K }>): Promise<TsResponses[K]> {
+  request<K extends TsRequest['type']>(
+    req: Extract<TsRequest, { type: K }>,
+  ): Promise<TsResponses[K]> {
     const worker = this.ensure();
     const id = this.nextId++;
     return new Promise<TsResponses[K]>((resolve, reject) => {
@@ -69,7 +76,9 @@ export class TsClient {
 }
 
 /** Mở rộng một hàm bất đồng bộ để chỉ giữ kết quả của lần gọi mới nhất (các lần cũ trả về null). */
-export function latestOnly<A extends unknown[], R>(fn: (...args: A) => Promise<R>): (...args: A) => Promise<R | null> {
+export function latestOnly<A extends unknown[], R>(
+  fn: (...args: A) => Promise<R>,
+): (...args: A) => Promise<R | null> {
   let seq = 0;
   return async (...args: A) => {
     const mine = ++seq;

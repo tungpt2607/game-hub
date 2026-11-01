@@ -25,7 +25,14 @@ function getService(): Promise<TsService> {
   return service;
 }
 
-const PARSER: Record<string, string> = { ts: 'typescript', tsx: 'typescript', js: 'babel', jsx: 'babel', json: 'json', md: 'markdown' };
+const PARSER: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'typescript',
+  js: 'babel',
+  jsx: 'babel',
+  json: 'json',
+  md: 'markdown',
+};
 
 /** Định dạng bằng Prettier (tải khi dùng lần đầu), cùng cấu hình với repo. */
 async function format(path: string, text: string): Promise<string> {
@@ -85,6 +92,7 @@ scope.onmessage = (event) => {
   const { id, req } = event.data;
   handle(req).then(
     (result) => scope.postMessage({ id, ok: true, result }),
-    (e: unknown) => scope.postMessage({ id, ok: false, error: e instanceof Error ? e.message : String(e) }),
+    (e: unknown) =>
+      scope.postMessage({ id, ok: false, error: e instanceof Error ? e.message : String(e) }),
   );
 };

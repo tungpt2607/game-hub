@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import builtin from '@opes/modules/bundles';
 import { sandbox } from './module-sandbox';
 
-type Bundle = { meta: { key: string; presets: { id: string; config: unknown }[]; defaults: unknown }; schemaJs: string };
+type Bundle = {
+  meta: { key: string; presets: { id: string; config: unknown }[]; defaults: unknown };
+  schemaJs: string;
+};
 const bundles = builtin as Bundle[];
 const quiz = bundles.find((b) => b.meta.key === 'game.catch-quiz')!;
 
@@ -17,7 +20,8 @@ describe('hộp cách ly chạy gói mô tả game', () => {
   it('mẫu và cấu hình mặc định đều hợp lệ', async () => {
     for (const b of bundles) {
       expect(await sandbox.validate(b.schemaJs, b.meta.defaults)).toEqual({});
-      for (const p of b.meta.presets) expect(await sandbox.validate(b.schemaJs, p.config)).toEqual({});
+      for (const p of b.meta.presets)
+        expect(await sandbox.validate(b.schemaJs, p.config)).toEqual({});
     }
   });
 
@@ -33,6 +37,10 @@ describe('hộp cách ly chạy gói mô tả game', () => {
 
   it('không truy cập được tài nguyên của máy chủ', async () => {
     const probe = `globalThis.__opes = { meta: () => ({ process: typeof process, require: typeof require, fetch: typeof fetch }) };`;
-    expect(await sandbox.meta(probe)).toEqual({ process: 'undefined', require: 'undefined', fetch: 'undefined' });
+    expect(await sandbox.meta(probe)).toEqual({
+      process: 'undefined',
+      require: 'undefined',
+      fetch: 'undefined',
+    });
   });
 });

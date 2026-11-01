@@ -101,7 +101,8 @@ export class CatchEngine {
   /** Mức khó hiện tại, từ 0 (dễ nhất) tới 1 (khó nhất). */
   get progress(): number {
     const d = this.opts.difficulty;
-    if (d.mode === 'levels') return d.maxLevel <= 1 ? 1 : clamp((this.level - 1) / (d.maxLevel - 1), 0, 1);
+    if (d.mode === 'levels')
+      return d.maxLevel <= 1 ? 1 : clamp((this.level - 1) / (d.maxLevel - 1), 0, 1);
     return d.rampSeconds <= 0 ? 1 : clamp(this.elapsed / d.rampSeconds, 0, 1);
   }
   get fallTime() {
@@ -204,7 +205,14 @@ export class CatchEngine {
         this.score += item.points;
         this.caught += 1;
         if (lostLife) this.lives -= 1;
-        events.push({ type: 'catch', itemIndex: f.itemIndex, points: item.points, x: f.x, y: top, lostLife });
+        events.push({
+          type: 'catch',
+          itemIndex: f.itemIndex,
+          points: item.points,
+          x: f.x,
+          y: top,
+          lostLife,
+        });
         continue;
       }
       if (f.y - size / 2 > this.height) {
@@ -220,7 +228,11 @@ export class CatchEngine {
 
     const d = this.opts.difficulty;
     if (d.mode === 'levels' && d.pointsPerLevel > 0) {
-      const next = clamp(1 + Math.floor(Math.max(0, this.score) / d.pointsPerLevel), 1, Math.max(1, d.maxLevel));
+      const next = clamp(
+        1 + Math.floor(Math.max(0, this.score) / d.pointsPerLevel),
+        1,
+        Math.max(1, d.maxLevel),
+      );
       if (next > this.level) {
         this.level = next;
         events.push({ type: 'levelUp', level: next });
@@ -251,7 +263,10 @@ export function seededRandom(seed: number): () => number {
 }
 
 /** Lời nhắn ứng với điểm: mức cao nhất mà điểm đạt tới; không đạt mức nào thì lấy mức thấp nhất. */
-export function pickEndMessage(messages: { minScore: number; message: string }[], score: number): string {
+export function pickEndMessage(
+  messages: { minScore: number; message: string }[],
+  score: number,
+): string {
   if (messages.length === 0) return '';
   const sorted = [...messages].sort((a, b) => a.minScore - b.minScore);
   let chosen = sorted[0]!;

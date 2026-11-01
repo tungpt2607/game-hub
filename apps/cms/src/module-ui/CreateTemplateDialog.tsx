@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -38,7 +38,15 @@ interface Choice {
 }
 
 /** Hộp tạo template: chọn loại game và điểm bắt đầu (mẫu, mặc định, Phòng thử), hoặc nhân bản. */
-export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; mode: CreateMode; onClose: () => void }) {
+export function CreateTemplateDialog({
+  open,
+  mode,
+  onClose,
+}: {
+  open: boolean;
+  mode: CreateMode;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -68,44 +76,49 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
       setNote('');
       if (mode.type === 'config') setModuleKey(mode.moduleKey);
     }
-    // Chỉ đặt lại khi mở hộp; `mode` có thể là object mới ở mỗi lần render của trang cha.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ đặt lại khi mở hộp; `mode` có thể là object mới ở mỗi lần render của trang cha.
   }, [open]);
 
   const mod = modules?.find((m) => m.key === moduleKey) ?? (moduleKey ? undefined : modules?.[0]);
   const selectedKey = mod?.key ?? moduleKey;
   useEffect(() => {
-    if (open && mode.type === 'new' && selectedKey) setPlayground(readPlaygroundConfig(selectedKey));
+    if (open && mode.type === 'new' && selectedKey)
+      setPlayground(readPlaygroundConfig(selectedKey));
   }, [open, mode.type, selectedKey]);
 
-  const choices: Choice[] =
-    mode.type === 'new' && mod
-      ? [
-          ...(mod.presets ?? []).map((p) => ({
-            id: `preset:${p.id}`,
-            title: p.name,
-            subtitle: p.description,
-            config: p.config,
-            source: { type: 'preset', presetId: p.id } as TemplateSource,
-          })),
-          {
-            id: 'defaults',
-            title: t('cms.templates.fromDefaults'),
-            config: mod.defaults,
-            source: { type: 'defaults' },
-          },
-          ...(playground
-            ? [
-                {
-                  id: 'playground',
-                  title: t('cms.templates.fromPlayground'),
-                  subtitle: t('cms.templates.fromPlaygroundHint'),
-                  config: playground,
-                  source: { type: 'config', config: playground } as TemplateSource,
-                },
-              ]
-            : []),
-        ]
-      : [];
+  // Giữ cùng một mảng giữa các lần render để effect chọn mặc định bên dưới không chạy lại vô ích.
+  const choices = useMemo<Choice[]>(
+    () =>
+      mode.type === 'new' && mod
+        ? [
+            ...(mod.presets ?? []).map((p) => ({
+              id: `preset:${p.id}`,
+              title: p.name,
+              subtitle: p.description,
+              config: p.config,
+              source: { type: 'preset', presetId: p.id } as TemplateSource,
+            })),
+            {
+              id: 'defaults',
+              title: t('cms.templates.fromDefaults'),
+              config: mod.defaults,
+              source: { type: 'defaults' },
+            },
+            ...(playground
+              ? [
+                  {
+                    id: 'playground',
+                    title: t('cms.templates.fromPlayground'),
+                    subtitle: t('cms.templates.fromPlaygroundHint'),
+                    config: playground,
+                    source: { type: 'config', config: playground } as TemplateSource,
+                  },
+                ]
+              : []),
+          ]
+        : [],
+    [mode.type, mod, playground],
+  );
 
   useEffect(() => {
     if (choices.length > 0 && !choices.some((c) => c.id === choiceId)) setChoiceId(choices[0]!.id);
@@ -123,7 +136,13 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
     try {
       const res = await api<{ template: TemplateDetail }>('/templates', {
         method: 'POST',
-        body: { name, brandName, note, moduleKey: mode.type === 'duplicate' ? undefined : selectedKey, source },
+        body: {
+          name,
+          brandName,
+          note,
+          moduleKey: mode.type === 'duplicate' ? undefined : selectedKey,
+          source,
+        },
       });
       router.push(`/templates/${res.template.id}`);
     } catch (err) {
@@ -144,7 +163,13 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
         : t('cms.templates.createTitle');
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
+    <Dialog
+      open={open}
+      onClose={busy ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={fullScreen}
+    >
       <form onSubmit={submit} noValidate>
         <DialogTitle>{title}</DialogTitle>
         <DialogContent dividers>
@@ -223,7 +248,12 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
                                 {c.title}
                               </Typography>
                               {c.subtitle && (
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ display: 'block' }}
+                                  noWrap
+                                >
                                   {c.subtitle}
                                 </Typography>
                               )}
@@ -237,8 +267,19 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
               </>
             )}
             {mode.type !== 'new' && (
-              <Box sx={{ maxWidth: 220, borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'divider' }}>
-                <TemplateThumb config={mode.type === 'duplicate' ? mode.template.config : mode.config} height={120} />
+              <Box
+                sx={{
+                  maxWidth: 220,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <TemplateThumb
+                  config={mode.type === 'duplicate' ? mode.template.config : mode.config}
+                  height={120}
+                />
               </Box>
             )}
           </Stack>

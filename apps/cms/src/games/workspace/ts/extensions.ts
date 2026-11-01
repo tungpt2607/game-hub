@@ -1,4 +1,9 @@
-import { autocompletion, type Completion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
+import {
+  autocompletion,
+  type Completion,
+  type CompletionContext,
+  type CompletionResult,
+} from '@codemirror/autocomplete';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { Facet, type Extension } from '@codemirror/state';
 import { EditorView, hoverTooltip, keymap } from '@codemirror/view';
@@ -24,7 +29,8 @@ export interface TsBridge {
 const bridgeFacet = Facet.define<TsBridge, TsBridge | null>({ combine: (v) => v[0] ?? null });
 
 /** File có gợi ý TypeScript (code của game và file thư viện chỉ đọc). */
-export const isTsPath = (path: string) => /\.(tsx?|jsx?)$/.test(path) || (path.startsWith('lib:') && path.endsWith('.ts'));
+export const isTsPath = (path: string) =>
+  /\.(tsx?|jsx?)$/.test(path) || (path.startsWith('lib:') && path.endsWith('.ts'));
 
 /** Loại gợi ý của TypeScript → biểu tượng của CodeMirror. */
 const TYPE: Record<string, string> = {
@@ -76,11 +82,16 @@ async function completionSource(ctx: CompletionContext): Promise<CompletionResul
   const path = ctx.state.facet(editorPath);
   if (!bridge || !isTsPath(path) || path.startsWith('lib:')) return null;
   const word = ctx.matchBefore(/[\w$]*/);
-  const prev = ctx.state.sliceDoc(ctx.pos - (word?.text.length ?? 0) - 1, ctx.pos - (word?.text.length ?? 0));
+  const prev = ctx.state.sliceDoc(
+    ctx.pos - (word?.text.length ?? 0) - 1,
+    ctx.pos - (word?.text.length ?? 0),
+  );
   // Chỉ hỏi TypeScript khi đang gõ tên, sau dấu chấm, trong chuỗi import, hoặc khi bấm Ctrl+Space.
   if (!ctx.explicit && !word?.text && !['.', '"', "'", '/', '<', '@'].includes(prev)) return null;
   const text = ctx.state.doc.toString();
-  const result = await bridge.client.request({ type: 'completions', path, text, pos: ctx.pos, explicit: ctx.explicit }).catch(() => null);
+  const result = await bridge.client
+    .request({ type: 'completions', path, text, pos: ctx.pos, explicit: ctx.explicit })
+    .catch(() => null);
   if (!result || ctx.aborted) return null;
 
   const options: Completion[] = result.entries.map((entry: TsCompletionEntry) => {
@@ -99,16 +110,26 @@ async function completionSource(ctx: CompletionContext): Promise<CompletionResul
       },
       apply: (view, _completion, from, to) => {
         const insert = entry.insertText ?? entry.name;
-        const tr = view.state.update({ changes: { from, to, insert }, selection: { anchor: from + insert.length }, userEvent: 'input.complete' });
+        const tr = view.state.update({
+          changes: { from, to, insert },
+          selection: { anchor: from + insert.length },
+          userEvent: 'input.complete',
+        });
         view.dispatch(tr);
         if (!entry.hasAction) return;
         // Tự thêm import: lấy sửa đổi kèm theo từ TypeScript rồi áp vào (thường là dòng import đầu file).
-        void bridge.client.request({ type: 'completionDetails', path, text, pos: ctx.pos, entry }).then((d) => {
-          const edits = (d?.edits ?? []).filter((e) => e.path === path);
-          if (!edits.length) return;
-          const changes = edits.map((e) => ({ from: tr.changes.mapPos(e.from), to: tr.changes.mapPos(e.to), insert: e.insert }));
-          view.dispatch({ changes, userEvent: 'input.complete' });
-        });
+        void bridge.client
+          .request({ type: 'completionDetails', path, text, pos: ctx.pos, entry })
+          .then((d) => {
+            const edits = (d?.edits ?? []).filter((e) => e.path === path);
+            if (!edits.length) return;
+            const changes = edits.map((e) => ({
+              from: tr.changes.mapPos(e.from),
+              to: tr.changes.mapPos(e.to),
+              insert: e.insert,
+            }));
+            view.dispatch({ changes, userEvent: 'input.complete' });
+          });
       },
     };
   });
@@ -157,7 +178,10 @@ const hover = hoverTooltip(
   { hoverTime: 350 },
 );
 
-const at = (view: EditorView) => ({ path: view.state.facet(editorPath), pos: view.state.selection.main.head });
+const at = (view: EditorView) => ({
+  path: view.state.facet(editorPath),
+  pos: view.state.selection.main.head,
+});
 
 const tsKeymap = keymap.of([
   {
@@ -223,7 +247,11 @@ const theme = EditorView.theme({
     color: '#9CDCFE',
   },
   '.cm-ts-doc': { marginTop: '6px', fontSize: '12px', whiteSpace: 'pre-wrap', color: '#CCCCCC' },
-  '.cm-tooltip-autocomplete .cm-completionDetail': { fontStyle: 'normal', opacity: '0.7', marginLeft: '12px' },
+  '.cm-tooltip-autocomplete .cm-completionDetail': {
+    fontStyle: 'normal',
+    opacity: '0.7',
+    marginLeft: '12px',
+  },
 });
 
 /** Mọi phần TypeScript cho trình sửa, tạo một lần cho mỗi khu sửa code. */

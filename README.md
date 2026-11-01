@@ -38,7 +38,8 @@ pnpm dev
 
 | Lệnh | Việc |
 |---|---|
-| `pnpm lint` | Kiểm tra quy tắc code |
+| `pnpm check` | Chạy mọi bước CI kiểm tra (định dạng, lint, kiểu, kiểm thử): chạy trước khi đẩy code |
+| `pnpm lint` | Kiểm tra quy tắc code ([quy ước code](docs/huong-dan/quy-uoc-code.md)) |
 | `pnpm typecheck` | Kiểm tra kiểu TypeScript |
 | `pnpm test` | Chạy kiểm thử |
 | `pnpm build` | Build cả 3 ứng dụng |

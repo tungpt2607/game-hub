@@ -43,7 +43,13 @@ export const sampleFields = {
   rules: field.group({
     label: 'Luật chơi',
     fields: {
-      duration: field.number({ label: 'Thời gian chơi', min: 5, max: 120, integer: true, unit: 'giây' }),
+      duration: field.number({
+        label: 'Thời gian chơi',
+        min: 5,
+        max: 120,
+        integer: true,
+        unit: 'giây',
+      }),
       showTimer: field.boolean({ label: 'Hiện đồng hồ đếm ngược' }),
       difficulty: field.select({
         label: 'Độ khó',
@@ -61,10 +67,17 @@ export const sampleFields = {
     min: 1,
     max: 8,
     newItem: { symbol: { emoji: '⭐', image: null }, points: 1 },
-    itemLabel: (item, i) => `${item.symbol.image ? '🖼️' : item.symbol.emoji} Vật phẩm ${i + 1} · ${item.points} điểm`,
+    itemLabel: (item, i) =>
+      `${item.symbol.image ? '🖼️' : item.symbol.emoji} Vật phẩm ${i + 1} · ${item.points} điểm`,
     item: {
       symbol: field.emojiOrImage({ label: 'Hình' }),
-      points: field.number({ label: 'Điểm', min: -10, max: 100, integer: true, help: 'Điểm âm là vật phẩm cần tránh.' }),
+      points: field.number({
+        label: 'Điểm',
+        min: -10,
+        max: 100,
+        integer: true,
+        help: 'Điểm âm là vật phẩm cần tránh.',
+      }),
     },
   }),
   sound: field.group({

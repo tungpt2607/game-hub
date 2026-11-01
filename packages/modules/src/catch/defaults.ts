@@ -1,0 +1,82 @@
+import { type CatchConfig } from './types';
+
+export const catchDefaults: CatchConfig = {
+  content: {
+    title: 'Hứng quà rinh điểm',
+    intro: 'Kéo giỏ sang trái, sang phải để hứng thật nhiều quà. Cẩn thận với quả bom!',
+    startLabel: 'Bắt đầu',
+    logo: null,
+  },
+  guide: {
+    enabled: true,
+    text: 'Dùng ngón tay kéo giỏ để hứng vật phẩm.',
+    image: null,
+    playLabel: 'Chơi ngay',
+  },
+  look: {
+    background: '#0EA5E9',
+    backgroundImage: null,
+    text: '#FFFFFF',
+    primary: '#F97316',
+    buttonText: '#FFFFFF',
+    font: { family: 'Baloo 2', media: null },
+  },
+  basket: { symbol: { emoji: '🧺', image: null }, size: 'medium' },
+  rules: { endMode: 'either', duration: 45, lives: 3, countdown: true },
+  difficulty: {
+    mode: 'ramp',
+    fallStart: 3.2,
+    fallEnd: 1.6,
+    spawnStart: 0.9,
+    spawnEnd: 2.2,
+    rampSeconds: 40,
+    pointsPerLevel: 20,
+    maxLevel: 8,
+  },
+  items: [
+    {
+      symbol: { emoji: '🎁', image: null },
+      points: 3,
+      weight: 4,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '⭐', image: null },
+      points: 1,
+      weight: 8,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '💎', image: null },
+      points: 10,
+      weight: 1,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '💣', image: null },
+      points: 0,
+      weight: 3,
+      loseLifeOnCatch: true,
+      loseLifeOnMiss: false,
+    },
+  ],
+  sound: { music: null, catch: null, bad: null, end: null },
+  end: {
+    title: 'Kết thúc!',
+    messages: [
+      { minScore: 0, message: 'Bạn đạt {score} điểm. Thử lại nhé!' },
+      { minScore: 30, message: 'Giỏi lắm! {score} điểm.' },
+      { minScore: 80, message: 'Xuất sắc! {score} điểm – bạn là cao thủ hứng quà!' },
+    ],
+    showBest: true,
+    replayLabel: 'Chơi lại',
+    ctaEnabled: false,
+    ctaLabel: 'Xem ưu đãi',
+    ctaUrl: '',
+    shareEnabled: true,
+    shareText: 'Mình vừa đạt {score} điểm trong game Hứng quà, thử sức xem!',
+  },
+};

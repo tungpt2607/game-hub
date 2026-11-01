@@ -31,7 +31,15 @@ export function useGameForm(source: GameSource | null, config: unknown) {
     frame.setAttribute('sandbox', FRAME_SANDBOX);
     frame.setAttribute('aria-hidden', 'true');
     frame.tabIndex = -1;
-    Object.assign(frame.style, { position: 'fixed', width: '1px', height: '1px', left: '-10px', top: '-10px', border: '0', opacity: '0' });
+    Object.assign(frame.style, {
+      position: 'fixed',
+      width: '1px',
+      height: '1px',
+      left: '-10px',
+      top: '-10px',
+      border: '0',
+      opacity: '0',
+    });
     document.body.appendChild(frame);
     let current: GameClient | null = null;
     gameHostUrl()
@@ -48,7 +56,7 @@ export function useGameForm(source: GameSource | null, config: unknown) {
       client.current = null;
       frame.remove();
     };
-    // `key` đại diện cho `source` (object mới ở mỗi lần render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện cho `source` (object mới ở mỗi lần render).
   }, [key]);
 
   useEffect(() => {
@@ -95,7 +103,7 @@ export function useGameFrame(frame: HTMLIFrameElement | null, source: GameSource
       current?.destroy();
       setClient(null);
     };
-    // `key` đại diện cho `source`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện cho `source` (object mới ở mỗi lần render).
   }, [frame, key]);
 
   return { schema, error, client };

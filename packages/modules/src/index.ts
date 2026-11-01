@@ -1,3 +1,8 @@
+/**
+ * Mã nguồn các game có sẵn. Đây chỉ là bản nạp ban đầu cho cơ sở dữ liệu mới (xem ensureBuiltinModules
+ * trong apps/api/src/lib/modules.ts): game đang chạy lấy code từ cơ sở dữ liệu, sửa ở đây không cập nhật
+ * môi trường đã chạy. Muốn đổi game đang chạy thì sửa và phát hành trong CMS.
+ */
 import type { ModuleDefinition } from '@opes/module-sdk';
 import { catchModule } from './catch';
 import { catchQuizModule } from './catch-quiz';

@@ -8,9 +8,7 @@ import { t } from '@opes/i18n';
 
 type Database = 'ok' | 'down' | 'not_configured';
 type Status =
-  | { state: 'checking' }
-  | { state: 'ok'; version: string; database: Database }
-  | { state: 'down' };
+  { state: 'checking' } | { state: 'ok'; version: string; database: Database } | { state: 'down' };
 
 const DB_CHIP: Record<Database, { label: string; color: 'success' | 'error' | 'default' }> = {
   ok: { label: t('cms.overview.dbOk'), color: 'success' },

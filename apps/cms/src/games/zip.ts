@@ -1,5 +1,11 @@
 import JSZip from 'jszip';
-import { FONT_MIME_BY_EXT, GAME_CODE_EXTENSIONS, GAME_LIMITS, GAME_PATH, mediaKindOf } from '@opes/contracts';
+import {
+  FONT_MIME_BY_EXT,
+  GAME_CODE_EXTENSIONS,
+  GAME_LIMITS,
+  GAME_PATH,
+  mediaKindOf,
+} from '@opes/contracts';
 import type { GameAssets, GameFiles, PendingAsset } from './types';
 
 /**
@@ -25,7 +31,8 @@ const MIME_BY_EXT: Record<string, string> = {
   ...FONT_MIME_BY_EXT,
 };
 
-export const extOf = (path: string) => (path.includes('.') ? path.slice(path.lastIndexOf('.') + 1).toLowerCase() : '');
+export const extOf = (path: string) =>
+  path.includes('.') ? path.slice(path.lastIndexOf('.') + 1).toLowerCase() : '';
 
 /** Kiểu MIME của file kèm theo phần mở rộng; null nếu không được phép. */
 export function assetMime(path: string): string | null {
@@ -57,7 +64,8 @@ export async function readGameZip(blob: Blob): Promise<ReadZipResult> {
   const common = entries.every((e) => e.name.startsWith(`${first}/`)) ? `${first}/` : '';
   const rel = (name: string) => name.slice(common.length);
 
-  if (entries.length > GAME_LIMITS.maxFiles + GAME_LIMITS.maxAssets) throw new Error('File .zip có quá nhiều file.');
+  if (entries.length > GAME_LIMITS.maxFiles + GAME_LIMITS.maxAssets)
+    throw new Error('File .zip có quá nhiều file.');
   const files: GameFiles = {};
   const assets: Record<string, PendingAsset> = {};
   const skipped: string[] = [];
@@ -128,5 +136,8 @@ export async function exampleZip(): Promise<{ key: string; blob: Blob }> {
   const zip = new JSZip();
   for (const [path, content] of Object.entries(example.files)) zip.file(path, content);
   for (const [path, a] of Object.entries(example.assets)) zip.file(`assets/${path}`, a.text);
-  return { key: example.key, blob: await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }) };
+  return {
+    key: example.key,
+    blob: await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }),
+  };
 }

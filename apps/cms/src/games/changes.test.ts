@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { diffPackages, sameAssets, sameFiles } from './changes';
 import { countChanges, diffLines, toHunks } from './lineDiff';
 
-const asset = (sha: string) => ({ url: '/m', size: 1, mime: 'image/png', sha256: sha.padEnd(64, '0') });
+const asset = (sha: string) => ({
+  url: '/m',
+  size: 1,
+  mime: 'image/png',
+  sha256: sha.padEnd(64, '0'),
+});
 
 describe('so sánh gói game', () => {
   it('sameFiles / sameAssets so theo nội dung', () => {
@@ -40,7 +45,14 @@ describe('diffLines', () => {
     const after = before.replace('dòng 2', 'X').replace('dòng 25', 'Y');
     const hunks = toHunks(diffLines(before, after)!, 2);
     expect(hunks).toHaveLength(2);
-    expect(hunks[0]!.lines.map((l) => l.text)).toEqual(['dòng 0', 'dòng 1', 'dòng 2', 'X', 'dòng 3', 'dòng 4']);
+    expect(hunks[0]!.lines.map((l) => l.text)).toEqual([
+      'dòng 0',
+      'dòng 1',
+      'dòng 2',
+      'X',
+      'dòng 3',
+      'dòng 4',
+    ]);
   });
 
   it('file mới hoặc bị xóa', () => {

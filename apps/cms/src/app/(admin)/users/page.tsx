@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -28,14 +27,19 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { TemporaryPasswordResponse, User, UserListResponse } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { useCurrentUser } from '../../../components/AuthContext';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import {
+  api,
+  type ApiRequestError,
+  handleAuthError,
+  errorMessage,
+  toApiError,
+} from '../../../lib/api';
+import { formatDateTime } from '../../../lib/format';
 import { copyText, selectAll } from '../../../lib/clipboard';
+import { PageHeader } from '../../../components/ui/PageHeader';
 
-const formatDate = (iso: string | null) =>
-  iso
-    ? new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
-    : t('cms.users.never');
+const formatDate = (iso: string | null) => (iso ? formatDateTime(iso) : t('cms.users.never'));
 
 type Pending = { kind: 'reset' | 'disable'; user: User } | null;
 
@@ -56,7 +60,7 @@ export default function UsersPage() {
         setError(null);
       })
       .catch((e: unknown) => {
-        if (!handleAuthError(e)) setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+        if (!handleAuthError(e)) setError(errorMessage(e));
       });
   }, []);
 
@@ -68,7 +72,7 @@ export default function UsersPage() {
       await action();
       load();
     } catch (e) {
-      if (!handleAuthError(e)) setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      if (!handleAuthError(e)) setError(errorMessage(e));
     } finally {
       setBusy(false);
       setPending(null);
@@ -80,7 +84,11 @@ export default function UsersPage() {
     const { kind, user } = pending;
     await run(async () => {
       if (kind === 'reset') {
-        setTemp(await api<TemporaryPasswordResponse>(`/users/${user.id}/reset-password`, { method: 'POST' }));
+        setTemp(
+          await api<TemporaryPasswordResponse>(`/users/${user.id}/reset-password`, {
+            method: 'POST',
+          }),
+        );
       } else {
         await api(`/users/${user.id}`, { method: 'PATCH', body: { status: 'disabled' } });
       }
@@ -89,22 +97,26 @@ export default function UsersPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.users.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.users.lead')}</Typography>
-        </Box>
-        <Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            {t('cms.users.add')}
-          </Button>
-        </Box>
-      </Stack>
+      <PageHeader
+        title={t('cms.users.heading')}
+        description={t('cms.users.lead')}
+        actions={
+          <>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              {t('cms.users.add')}
+            </Button>
+          </>
+        }
+      />
 
-      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
-      {data && data.activeAdminCount <= 1 && <Alert severity="warning">{t('cms.users.singleAdmin')}</Alert>}
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      {data && data.activeAdminCount <= 1 && (
+        <Alert severity="warning">{t('cms.users.singleAdmin')}</Alert>
+      )}
 
       <TableContainer component={Paper} variant="outlined">
         <Table sx={{ minWidth: 640 }}>
@@ -252,10 +264,12 @@ function CreateUserDialog({
     event.preventDefault();
     setBusy(true);
     try {
-      onCreated(await api<TemporaryPasswordResponse>('/users', { method: 'POST', body: { name, email } }));
+      onCreated(
+        await api<TemporaryPasswordResponse>('/users', { method: 'POST', body: { name, email } }),
+      );
     } catch (e) {
       if (!handleAuthError(e)) {
-        setError(e instanceof ApiRequestError ? e : new ApiRequestError(0, 'NETWORK', t('common.networkError')));
+        setError(toApiError(e));
       }
     } finally {
       setBusy(false);
@@ -297,7 +311,11 @@ function CreateUserDialog({
           <Button onClick={onClose} disabled={busy}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={busy || !name.trim() || !email.trim()}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={busy || !name.trim() || !email.trim()}
+          >
             {t('cms.users.createSubmit')}
           </Button>
         </DialogActions>

@@ -50,9 +50,12 @@ const defaultDeps: AppDeps = {
     );
   },
   secureCookies: () =>
-    process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production',
+    process.env.COOKIE_SECURE
+      ? process.env.COOKIE_SECURE === 'true'
+      : process.env.NODE_ENV === 'production',
   now: () => new Date(),
-  playPublicUrl: () => (process.env.PLAY_PUBLIC_URL || 'https://opes-gamehub-play.vercel.app').replace(/\/+$/, ''),
+  playPublicUrl: () =>
+    (process.env.PLAY_PUBLIC_URL || 'https://opes-gamehub-play.vercel.app').replace(/\/+$/, ''),
   // PLAY_MEDIA_PROXY là tên cũ, vẫn được nhận.
   mediaProxy: () => process.env.MEDIA_PROXY === 'true' || process.env.PLAY_MEDIA_PROXY === 'true',
 };
@@ -93,7 +96,12 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
   app.use('/admin/*', async (c, next) => {
     await next();
     const storage = deps.getStorage();
-    if (!deps.mediaProxy() || !storage || !c.res.headers.get('content-type')?.includes('application/json')) return;
+    if (
+      !deps.mediaProxy() ||
+      !storage ||
+      !c.res.headers.get('content-type')?.includes('application/json')
+    )
+      return;
     const data: unknown = await c.res.clone().json();
     const headers = new Headers(c.res.headers);
     headers.delete('content-length');

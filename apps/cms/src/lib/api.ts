@@ -14,7 +14,10 @@ export class ApiRequestError extends Error {
 }
 
 /** Gọi API quản trị qua đường dẫn /api/admin/* (cùng tên miền với CMS nên cookie đăng nhập đi kèm). */
-export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  options: { method?: string; body?: unknown } = {},
+): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`/api/admin${path}`, {
@@ -28,9 +31,9 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     throw new ApiRequestError(0, 'NETWORK_ERROR', t('common.networkError'));
   }
   if (res.status === 204) return undefined as T;
-  const data = (await res.json().catch(() => null)) as
-    | { error?: { code?: string; message?: string; fields?: Record<string, string>; details?: unknown } }
-    | null;
+  const data = (await res.json().catch(() => null)) as {
+    error?: { code?: string; message?: string; fields?: Record<string, string>; details?: unknown };
+  } | null;
   if (!res.ok) {
     const error = data?.error;
     throw new ApiRequestError(
@@ -42,6 +45,18 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     );
   }
   return data as T;
+}
+
+/** Chuẩn hóa lỗi bất kỳ về ApiRequestError (lỗi không đến từ API được coi là lỗi mạng). */
+export function toApiError(error: unknown): ApiRequestError {
+  return error instanceof ApiRequestError
+    ? error
+    : new ApiRequestError(0, 'NETWORK_ERROR', t('common.networkError'));
+}
+
+/** Thông báo lỗi để hiện cho người dùng: lỗi từ API thì lấy thông báo của API, lỗi khác báo lỗi mạng. */
+export function errorMessage(error: unknown): string {
+  return toApiError(error).message;
 }
 
 /** Chuyển về trang đăng nhập khi phiên hết hạn, hoặc trang đổi mật khẩu khi bắt buộc. */

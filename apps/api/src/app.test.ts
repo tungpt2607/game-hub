@@ -18,17 +18,13 @@ describe('GET /api/health', () => {
   });
 
   it('cơ sở dữ liệu kết nối được: báo ok', async () => {
-    const { res, body } = await health(
-      createApp({ getDb: () => fakeDb, ping: async () => true }),
-    );
+    const { res, body } = await health(createApp({ getDb: () => fakeDb, ping: async () => true }));
     expect(res.status).toBe(200);
     expect(body).toMatchObject({ status: 'ok', database: 'ok' });
   });
 
   it('cơ sở dữ liệu lỗi: báo degraded với mã 503', async () => {
-    const { res, body } = await health(
-      createApp({ getDb: () => fakeDb, ping: async () => false }),
-    );
+    const { res, body } = await health(createApp({ getDb: () => fakeDb, ping: async () => false }));
     expect(res.status).toBe(503);
     expect(body).toMatchObject({ status: 'degraded', database: 'down' });
   });

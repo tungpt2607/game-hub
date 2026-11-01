@@ -4,8 +4,7 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { t } from '@opes/i18n';
-
-const formatTime = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+import { formatDateTime } from '../lib/format';
 
 /**
  * Hỏi khôi phục bản tạm trên trình duyệt (thay đổi chưa lưu nháp từ lần sửa trước).
@@ -38,7 +37,7 @@ export function LocalDraftBanner({
         </Stack>
       }
     >
-      {t('cms.localDraft.text', { count: fileCount, time: formatTime(savedAt) })}
+      {t('cms.localDraft.text', { count: fileCount, time: formatDateTime(savedAt) })}
       {outdated ? ` ${t('cms.localDraft.outdated')}` : ''}
     </Alert>
   );
