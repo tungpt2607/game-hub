@@ -20,14 +20,6 @@ export interface ModuleVersion {
   runtimeJs: string;
 }
 
-interface BuiltinBundle {
-  folder: string;
-  meta: GameModuleMeta;
-  files: Record<string, string>;
-  schemaJs: string;
-  runtimeJs: string;
-}
-
 /** Gói đã biên dịch không đổi sau khi phát hành, nên giữ trong bộ nhớ theo khóa key@version. */
 const cache = new LruCache<string, ModuleVersion>(50);
 /**
@@ -40,7 +32,7 @@ let seeded: Promise<void> | null = null;
 /** Nạp các game có sẵn còn thiếu; chạy một lần cho mỗi tiến trình. */
 export function ensureBuiltinModules(db: Database): Promise<void> {
   seeded ??= (async () => {
-    for (const b of builtin as BuiltinBundle[]) {
+    for (const b of builtin) {
       const inserted = await db
         .insert(schema.gameModules)
         .values({
