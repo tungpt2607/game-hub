@@ -41,7 +41,12 @@ export function ConfirmDialog({
         <Button onClick={onClose} disabled={busy}>
           {cancelLabel ?? t('common.cancel')}
         </Button>
-        <Button onClick={onConfirm} variant="contained" color={danger ? 'error' : 'primary'} disabled={busy}>
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          color={danger ? 'error' : 'primary'}
+          disabled={busy}
+        >
           {confirmLabel}
         </Button>
       </DialogActions>

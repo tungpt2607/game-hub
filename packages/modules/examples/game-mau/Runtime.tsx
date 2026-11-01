@@ -15,13 +15,26 @@ interface Spawned {
   bornAt: number;
 }
 
-const LIFETIME: Record<SampleConfig['rules']['difficulty'], number> = { easy: 1800, normal: 1300, hard: 900 };
-const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = { easy: 700, normal: 550, hard: 420 };
+const LIFETIME: Record<SampleConfig['rules']['difficulty'], number> = {
+  easy: 1800,
+  normal: 1300,
+  hard: 900,
+};
+const SPAWN_EVERY: Record<SampleConfig['rules']['difficulty'], number> = {
+  easy: 700,
+  normal: 550,
+  hard: 420,
+};
 
 function ItemSymbol({ item, size }: { item: SampleItem; size: number }) {
   if (item.symbol.image) {
     return (
-      <img src={item.symbol.image.url} alt="" style={{ width: size, height: size, objectFit: 'contain' }} draggable={false} />
+      <img
+        src={item.symbol.image.url}
+        alt=""
+        style={{ width: size, height: size, objectFit: 'contain' }}
+        draggable={false}
+      />
     );
   }
   return <span style={{ fontSize: size * 0.85, lineHeight: 1 }}>{item.symbol.emoji}</span>;
@@ -80,7 +93,11 @@ export function SampleRuntime({ config, host, initialScreen, muted }: RuntimePro
         music.stop();
         setScreen('end');
         const id = playId.current;
-        if (id) void host.finishPlay(id, { score: scoreRef.current, durationMs: now - startedAt.current });
+        if (id)
+          void host.finishPlay(id, {
+            score: scoreRef.current,
+            durationMs: now - startedAt.current,
+          });
       }
     }, 100);
     const spawn = setInterval(() => {
@@ -88,7 +105,13 @@ export function SampleRuntime({ config, host, initialScreen, muted }: RuntimePro
       if (!item) return;
       setSpawned((list) => [
         ...list,
-        { id: nextId.current++, item, x: 8 + Math.random() * 76, y: 18 + Math.random() * 66, bornAt: Date.now() },
+        {
+          id: nextId.current++,
+          item,
+          x: 8 + Math.random() * 76,
+          y: 18 + Math.random() * 66,
+          bornAt: Date.now(),
+        },
       ]);
     }, SPAWN_EVERY[difficulty]);
     return () => {
@@ -114,7 +137,9 @@ export function SampleRuntime({ config, host, initialScreen, muted }: RuntimePro
     fontFamily,
     color: config.look.text,
     background: config.look.background,
-    backgroundImage: config.look.backgroundImage ? `url(${JSON.stringify(config.look.backgroundImage.url)})` : undefined,
+    backgroundImage: config.look.backgroundImage
+      ? `url(${JSON.stringify(config.look.backgroundImage.url)})`
+      : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     userSelect: 'none',
@@ -150,10 +175,18 @@ export function SampleRuntime({ config, host, initialScreen, muted }: RuntimePro
       {screen === 'intro' && (
         <div style={center}>
           {config.content.logo && (
-                  <img src={config.content.logo.url} alt="" style={{ maxWidth: '60%', maxHeight: 120, objectFit: 'contain' }} />
+            <img
+              src={config.content.logo.url}
+              alt=""
+              style={{ maxWidth: '60%', maxHeight: 120, objectFit: 'contain' }}
+            />
           )}
           <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.15 }}>{config.content.title}</h1>
-          {config.content.intro && <p style={{ margin: 0, fontSize: 16, opacity: 0.9, whiteSpace: 'pre-line' }}>{config.content.intro}</p>}
+          {config.content.intro && (
+            <p style={{ margin: 0, fontSize: 16, opacity: 0.9, whiteSpace: 'pre-line' }}>
+              {config.content.intro}
+            </p>
+          )}
           <button type="button" style={button} onClick={() => void start()}>
             {config.content.startLabel}
           </button>

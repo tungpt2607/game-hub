@@ -3,7 +3,8 @@
 import Box from '@mui/material/Box';
 
 type Obj = Record<string, unknown>;
-const obj = (v: unknown): Obj => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : {});
+const obj = (v: unknown): Obj =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : {};
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const url = (v: unknown) => str(obj(v).url);
 
@@ -51,7 +52,13 @@ export function TemplateThumb({ config, height = 160 }: { config: Obj; height?: 
         textAlign: 'center',
       }}
     >
-      {logo && <img src={logo} alt="" style={{ maxWidth: '50%', maxHeight: height * 0.3, objectFit: 'contain' }} />}
+      {logo && (
+        <img
+          src={logo}
+          alt=""
+          style={{ maxWidth: '50%', maxHeight: height * 0.3, objectFit: 'contain' }}
+        />
+      )}
       <Box
         sx={{
           fontWeight: 800,

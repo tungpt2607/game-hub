@@ -41,13 +41,17 @@ export function toPreviewLink(row: LinkRow, deps: AppDeps): PreviewLink {
 }
 
 async function findTemplate(db: Database, id: string) {
-  const [row] = UUID.test(id) ? await db.select().from(schema.templates).where(eq(schema.templates.id, id)).limit(1) : [];
+  const [row] = UUID.test(id)
+    ? await db.select().from(schema.templates).where(eq(schema.templates.id, id)).limit(1)
+    : [];
   if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy template.');
   return row;
 }
 
 async function findLink(db: Database, id: string) {
-  const [row] = UUID.test(id) ? await db.select().from(schema.previewLinks).where(eq(schema.previewLinks.id, id)).limit(1) : [];
+  const [row] = UUID.test(id)
+    ? await db.select().from(schema.previewLinks).where(eq(schema.previewLinks.id, id)).limit(1)
+    : [];
   if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy link.');
   return row;
 }
@@ -84,7 +88,11 @@ export function previewLinkRoutes(deps: AppDeps) {
     const input = parseInput(PreviewLinkCreateRequestSchema, await readJson(c.req));
     const template = await findTemplate(db, c.req.query('templateId') ?? '');
     if (template.archivedAt) {
-      throw new AppError(409, ErrorCode.TEMPLATE_ARCHIVED, 'Template đã lưu trữ, không tạo link mới được.');
+      throw new AppError(
+        409,
+        ErrorCode.TEMPLATE_ARCHIVED,
+        'Template đã lưu trữ, không tạo link mới được.',
+      );
     }
 
     let snapshot: LinkRow['snapshot'] = null;
@@ -92,7 +100,11 @@ export function previewLinkRoutes(deps: AppDeps) {
       const source = input.snapshotSource ?? 'published';
       if (source === 'published') {
         if (!template.publishedConfig) {
-          throw new AppError(400, ErrorCode.VALIDATION, 'Template chưa công bố lần nào; hãy chụp từ bản nháp hoặc công bố trước.');
+          throw new AppError(
+            400,
+            ErrorCode.VALIDATION,
+            'Template chưa công bố lần nào; hãy chụp từ bản nháp hoặc công bố trước.',
+          );
         }
         snapshot = {
           moduleKey: template.moduleKey,
@@ -102,10 +114,18 @@ export function previewLinkRoutes(deps: AppDeps) {
           config: template.publishedConfig,
         };
       } else {
-        const mod = await getModuleVersion(db, template.moduleKey, template.moduleVersion).catch(() => null);
-        const count = mod ? Object.keys(await sandbox.validate(mod.schemaJs, template.config)).length : 0;
+        const mod = await getModuleVersion(db, template.moduleKey, template.moduleVersion).catch(
+          () => null,
+        );
+        const count = mod
+          ? Object.keys(await sandbox.validate(mod.schemaJs, template.config)).length
+          : 0;
         if (count > 0) {
-          throw new AppError(422, ErrorCode.TEMPLATE_INVALID, `Bản nháp còn ${count} lỗi nên chưa chụp được. Sửa và lưu nháp trước.`);
+          throw new AppError(
+            422,
+            ErrorCode.TEMPLATE_INVALID,
+            `Bản nháp còn ${count} lỗi nên chưa chụp được. Sửa và lưu nháp trước.`,
+          );
         }
         snapshot = {
           moduleKey: template.moduleKey,
@@ -118,7 +138,9 @@ export function previewLinkRoutes(deps: AppDeps) {
     }
 
     if (input.slug && RESERVED_SLUGS.has(input.slug)) {
-      throw new AppError(409, ErrorCode.SLUG_TAKEN, 'Mã link này đã được dùng. Chọn mã khác.', { fields: { slug: 'Mã link này đã được dùng.' } });
+      throw new AppError(409, ErrorCode.SLUG_TAKEN, 'Mã link này đã được dùng. Chọn mã khác.', {
+        fields: { slug: 'Mã link này đã được dùng.' },
+      });
     }
     const user = c.get('user');
     let row: LinkRow | undefined;
@@ -138,7 +160,9 @@ export function previewLinkRoutes(deps: AppDeps) {
         .returning();
     } catch (e) {
       if (isUniqueViolation(e)) {
-        throw new AppError(409, ErrorCode.SLUG_TAKEN, 'Mã link này đã được dùng. Chọn mã khác.', { fields: { slug: 'Mã link này đã được dùng.' } });
+        throw new AppError(409, ErrorCode.SLUG_TAKEN, 'Mã link này đã được dùng. Chọn mã khác.', {
+          fields: { slug: 'Mã link này đã được dùng.' },
+        });
       }
       throw e;
     }
@@ -152,19 +176,24 @@ export function previewLinkRoutes(deps: AppDeps) {
     return c.json({ link: toPreviewLink(row!, deps) }, 201);
   });
 
-
-
   app.patch('/:id', async (c) => {
     const db = c.get('db');
     const input = parseInput(PreviewLinkUpdateRequestSchema, await readJson(c.req));
     const link = await findLink(db, c.req.param('id'));
     const set: Partial<typeof schema.previewLinks.$inferInsert> = {};
     if (input.label !== undefined) set.label = input.label;
-    if (input.password !== undefined) set.passwordHash = input.password === null ? null : await hashPassword(input.password);
-    if (input.expiresAt !== undefined) set.expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
-    if (input.disabled !== undefined) set.disabledAt = input.disabled ? (link.disabledAt ?? deps.now()) : null;
+    if (input.password !== undefined)
+      set.passwordHash = input.password === null ? null : await hashPassword(input.password);
+    if (input.expiresAt !== undefined)
+      set.expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
+    if (input.disabled !== undefined)
+      set.disabledAt = input.disabled ? (link.disabledAt ?? deps.now()) : null;
     const [row] = Object.keys(set).length
-      ? await db.update(schema.previewLinks).set(set).where(eq(schema.previewLinks.id, link.id)).returning()
+      ? await db
+          .update(schema.previewLinks)
+          .set(set)
+          .where(eq(schema.previewLinks.id, link.id))
+          .returning()
       : [link];
     await audit(db, {
       userId: c.get('user').id,
@@ -172,7 +201,15 @@ export function previewLinkRoutes(deps: AppDeps) {
       entity: 'preview_link',
       entityId: link.id,
       // Không ghi mật khẩu vào nhật ký, chỉ ghi là có đổi.
-      data: { ...input, password: input.password === undefined ? undefined : input.password === null ? 'removed' : 'changed' },
+      data: {
+        ...input,
+        password:
+          input.password === undefined
+            ? undefined
+            : input.password === null
+              ? 'removed'
+              : 'changed',
+      },
     });
     return c.json({ link: toPreviewLink(row!, deps) });
   });
@@ -181,7 +218,13 @@ export function previewLinkRoutes(deps: AppDeps) {
     const db = c.get('db');
     const link = await findLink(db, c.req.param('id'));
     await db.delete(schema.previewLinks).where(eq(schema.previewLinks.id, link.id));
-    await audit(db, { userId: c.get('user').id, action: 'preview_link.delete', entity: 'preview_link', entityId: link.id, data: { label: link.label } });
+    await audit(db, {
+      userId: c.get('user').id,
+      action: 'preview_link.delete',
+      entity: 'preview_link',
+      entityId: link.id,
+      data: { label: link.label },
+    });
     return c.body(null, 204);
   });
 

@@ -26,7 +26,8 @@ export const isAssetPath = (path: string) => path.startsWith(ASSETS_PREFIX);
 export const assetKey = (path: string) => path.slice(ASSETS_PREFIX.length);
 export const assetPath = (key: string) => `${ASSETS_PREFIX}${key}`;
 export const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
-export const dirName = (path: string) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
+export const dirName = (path: string) =>
+  path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
 export const joinPath = (dir: string, name: string) => (dir ? `${dir}/${name}` : name);
 export const extOf = (path: string) => {
   const name = baseName(path);
@@ -46,7 +47,11 @@ export function fileExists(ws: Workspace, path: string): boolean {
 export function folderExists(ws: Workspace, path: string): boolean {
   if (path === '' || path === ASSETS_DIR) return true;
   const prefix = `${path}/`;
-  return ws.folders.includes(path) || ws.folders.some((f) => f.startsWith(prefix)) || allFiles(ws).some((f) => f.startsWith(prefix));
+  return (
+    ws.folders.includes(path) ||
+    ws.folders.some((f) => f.startsWith(prefix)) ||
+    allFiles(ws).some((f) => f.startsWith(prefix))
+  );
 }
 
 // ---------- Cây thư mục ----------
@@ -89,7 +94,8 @@ export function buildTree(ws: Workspace): TreeNode[] {
   };
   folder(ASSETS_DIR);
   for (const f of ws.folders) folder(f);
-  for (const path of allFiles(ws)) folder(dirName(path)).children.push({ name: baseName(path), path, type: 'file', children: [] });
+  for (const path of allFiles(ws))
+    folder(dirName(path)).children.push({ name: baseName(path), path, type: 'file', children: [] });
   sortNodes(root.children, true);
   return root.children;
 }
@@ -99,25 +105,35 @@ export function buildTree(ws: Workspace): TreeNode[] {
 const NAME_RULE = 'Tên chỉ dùng chữ không dấu, số, - _ . ; không có dấu cách.';
 
 /** Kiểm tra đường dẫn mới cho một file (code hoặc file kèm). Trả về câu báo lỗi, hoặc null nếu hợp lệ. */
-export function checkFilePath(ws: Workspace, path: string, kind: EntryKind, ignore?: string): string | null {
+export function checkFilePath(
+  ws: Workspace,
+  path: string,
+  kind: EntryKind,
+  ignore?: string,
+): string | null {
   if (!path || path.endsWith('/')) return 'Nhập tên file.';
   if (!GAME_PATH.test(path)) return NAME_RULE;
   if (kind === 'code') {
     if (isAssetPath(path)) return 'File code không đặt trong thư mục assets/.';
-    if (!GAME_CODE_EXTENSIONS.includes(extOf(path))) return `File code chỉ nhận ${GAME_CODE_EXTENSIONS.map((e) => '.' + e).join(', ')}.`;
+    if (!GAME_CODE_EXTENSIONS.includes(extOf(path)))
+      return `File code chỉ nhận ${GAME_CODE_EXTENSIONS.map((e) => '.' + e).join(', ')}.`;
   } else {
     if (!isAssetPath(path)) return 'Ảnh, âm thanh, font phải nằm trong thư mục assets/.';
-    if (extOf(path) !== extOf(ignore ?? path)) return 'Không đổi được phần đuôi của file kèm (ví dụ .png).';
+    if (extOf(path) !== extOf(ignore ?? path))
+      return 'Không đổi được phần đuôi của file kèm (ví dụ .png).';
   }
-  if (path !== ignore && (fileExists(ws, path) || folderExists(ws, path))) return 'Đã có file hoặc thư mục trùng tên ở đây.';
+  if (path !== ignore && (fileExists(ws, path) || folderExists(ws, path)))
+    return 'Đã có file hoặc thư mục trùng tên ở đây.';
   return null;
 }
 
 export function checkFolderPath(ws: Workspace, path: string, ignore?: string): string | null {
   if (!path) return 'Nhập tên thư mục.';
-  if (!GAME_PATH.test(path) || path.includes('.')) return 'Tên thư mục chỉ dùng chữ không dấu, số, - _ ; không có dấu cách, dấu chấm.';
+  if (!GAME_PATH.test(path) || path.includes('.'))
+    return 'Tên thư mục chỉ dùng chữ không dấu, số, - _ ; không có dấu cách, dấu chấm.';
   if (path === ASSETS_DIR && ignore !== ASSETS_DIR) return 'Đã có thư mục assets.';
-  if (path !== ignore && (fileExists(ws, path) || folderExists(ws, path))) return 'Đã có file hoặc thư mục trùng tên ở đây.';
+  if (path !== ignore && (fileExists(ws, path) || folderExists(ws, path)))
+    return 'Đã có file hoặc thư mục trùng tên ở đây.';
   return null;
 }
 
@@ -131,10 +147,15 @@ export type Moves = [from: string, to: string][];
  * Đổi tên hoặc di chuyển một file hay thư mục (`from` → `to`, đường dẫn đầy đủ).
  * Trả về workspace mới và danh sách file đã chuyển. Báo lỗi nếu vi phạm quy tắc (code vào assets/…).
  */
-export function moveEntry(ws: Workspace, from: string, to: string): { ws: Workspace; moves: Moves } {
+export function moveEntry(
+  ws: Workspace,
+  from: string,
+  to: string,
+): { ws: Workspace; moves: Moves } {
   if (from === to) return { ws, moves: [] };
   if (from === ASSETS_DIR) throw new Error('Không đổi tên hay di chuyển được thư mục assets.');
-  if (to === from || to.startsWith(`${from}/`)) throw new Error('Không chuyển được thư mục vào chính nó.');
+  if (to === from || to.startsWith(`${from}/`))
+    throw new Error('Không chuyển được thư mục vào chính nó.');
   const isFolder = !fileExists(ws, from);
   const moves: Moves = [];
   if (isFolder) {
@@ -145,7 +166,11 @@ export function moveEntry(ws: Workspace, from: string, to: string): { ws: Worksp
     }
     for (const [src, dest] of moves) {
       if (isAssetPath(src) !== isAssetPath(dest)) {
-        throw new Error(isAssetPath(dest) ? 'File code không chuyển vào thư mục assets/ được.' : 'File kèm phải nằm trong thư mục assets/.');
+        throw new Error(
+          isAssetPath(dest)
+            ? 'File code không chuyển vào thư mục assets/ được.'
+            : 'File kèm phải nằm trong thư mục assets/.',
+        );
       }
       if (!GAME_PATH.test(dest)) throw new Error(NAME_RULE);
     }
@@ -162,7 +187,9 @@ export function moveEntry(ws: Workspace, from: string, to: string): { ws: Worksp
     const dest = map.get(assetPath(key));
     assets[dest ? assetKey(dest) : key] = a;
   }
-  const folders = ws.folders.map((f) => (f === from || f.startsWith(`${from}/`) ? to + f.slice(from.length) : f));
+  const folders = ws.folders.map((f) =>
+    f === from || f.startsWith(`${from}/`) ? to + f.slice(from.length) : f,
+  );
   if (isFolder && moves.length === 0 && !folders.includes(to)) folders.push(to);
   return { ws: pruneFolders({ files, assets, folders: [...new Set(folders)] }), moves };
 }
@@ -181,13 +208,26 @@ export function deleteEntry(ws: Workspace, path: string): Workspace {
 /** Bỏ thư mục rỗng đã có file bên trong (để danh sách thư mục rỗng luôn gọn). */
 export function pruneFolders(ws: Workspace): Workspace {
   const paths = allFiles(ws);
-  const folders = ws.folders.filter((f) => !paths.some((p) => p.startsWith(`${f}/`)) && !ws.folders.some((g) => g.startsWith(`${f}/`)));
+  const folders = ws.folders.filter(
+    (f) =>
+      !paths.some((p) => p.startsWith(`${f}/`)) && !ws.folders.some((g) => g.startsWith(`${f}/`)),
+  );
   return folders.length === ws.folders.length ? ws : { ...ws, folders };
 }
 
 // ---------- Cập nhật chỗ trỏ tới ----------
 
-const RESOLVE_EXTS = ['', '.ts', '.tsx', '.js', '.jsx', '.json', '/index.ts', '/index.tsx', '/index.js'];
+const RESOLVE_EXTS = [
+  '',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.json',
+  '/index.ts',
+  '/index.tsx',
+  '/index.js',
+];
 
 function normalize(path: string): string {
   const out: string[] = [];
@@ -211,7 +251,11 @@ export function relativePath(fromDir: string, to: string): string {
 }
 
 /** Tìm file mà một import tương đối trỏ tới (giống cách biên dịch tìm). */
-function resolveImport(paths: Set<string>, importerDir: string, spec: string): { target: string; suffix: string } | null {
+function resolveImport(
+  paths: Set<string>,
+  importerDir: string,
+  spec: string,
+): { target: string; suffix: string } | null {
   const base = normalize(joinPath(importerDir, spec));
   for (const suffix of RESOLVE_EXTS) {
     if (paths.has(base + suffix)) return { target: base + suffix, suffix };
@@ -233,7 +277,11 @@ export interface ReferenceChange {
  * import tương đối (cả import bên trong file vừa chuyển) và asset('...'). Trả về nội dung code đã sửa
  * và danh sách file bị sửa. `before` là workspace trước khi chuyển, `after` là sau khi chuyển.
  */
-export function updateReferences(before: Workspace, after: Workspace, moves: Moves): { files: GameFiles; changes: ReferenceChange[] } {
+export function updateReferences(
+  before: Workspace,
+  after: Workspace,
+  moves: Moves,
+): { files: GameFiles; changes: ReferenceChange[] } {
   const map = new Map(moves);
   const back = new Map(moves.map(([a, b]) => [b, a]));
   const oldPaths = new Set(allFiles(before));
@@ -249,7 +297,8 @@ export function updateReferences(before: Workspace, after: Workspace, moves: Mov
       if (newTarget === found.target && path === oldPath) return match;
       // Giữ kiểu viết: bỏ đuôi / bỏ /index như cách viết cũ.
       let written = newTarget;
-      if (found.suffix && written.endsWith(found.suffix)) written = written.slice(0, -found.suffix.length);
+      if (found.suffix && written.endsWith(found.suffix))
+        written = written.slice(0, -found.suffix.length);
       const spec2 = relativePath(dirName(path), written);
       if (spec2 === spec) return match;
       count++;

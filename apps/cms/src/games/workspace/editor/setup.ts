@@ -33,7 +33,8 @@ import { createSearchPanel, searchPanelTheme } from './searchPanel';
 export const editorPath = Facet.define<string, string>({ combine: (values) => values[0] ?? '' });
 
 /** Màn hình cảm ứng: chữ 16px để iPhone không tự phóng to khi chạm vào ô code. */
-const isTouch = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+const isTouch = () =>
+  typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
 export function languageFor(path: string): Extension {
   switch (extOf(path)) {
@@ -57,9 +58,14 @@ export function languageFor(path: string): Extension {
 const baseTheme = () =>
   EditorView.theme({
     '&': { height: '100%', fontSize: isTouch() ? '16px' : '13px' },
-    '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+    '.cm-scroller': {
+      overflow: 'auto',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+    },
     '.cm-tooltip': { maxWidth: 'min(560px, 90vw)' },
-    '.cm-tooltip-autocomplete > ul': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+    '.cm-tooltip-autocomplete > ul': {
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+    },
     '.cm-completionInfo': { whiteSpace: 'pre-wrap', maxWidth: '420px' },
   });
 

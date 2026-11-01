@@ -82,7 +82,8 @@ async function isAnimated(file: File): Promise<boolean> {
     };
     if (file.type === 'image/webp') {
       // Khối VP8X: bit 1 của byte cờ (byte 20) bật khi ảnh có chuyển động.
-      const isVp8x = head[12] === 0x56 && head[13] === 0x50 && head[14] === 0x38 && head[15] === 0x58;
+      const isVp8x =
+        head[12] === 0x56 && head[13] === 0x50 && head[14] === 0x38 && head[15] === 0x58;
       return (isVp8x && ((head[20] ?? 0) & 0x02) !== 0) || has('ANIM');
     }
     if (file.type === 'image/png') return has('acTL');
@@ -105,7 +106,15 @@ async function prepare(file: File): Promise<Prepared> {
   const mime = fileMime(file);
   const kind = mediaKindOf(mime);
   if (kind === 'font') {
-    return { blob: file, mime, fileName: file.name, width: null, height: null, durationMs: null, optimized: false };
+    return {
+      blob: file,
+      mime,
+      fileName: file.name,
+      width: null,
+      height: null,
+      durationMs: null,
+      optimized: false,
+    };
   }
   if (kind === 'audio') {
     return {
@@ -122,8 +131,17 @@ async function prepare(file: File): Promise<Prepared> {
   const img = file.type === 'image/svg+xml' ? null : await loadImage(file).catch(() => null);
   const width = img?.naturalWidth ?? null;
   const height = img?.naturalHeight ?? null;
-  const base: Prepared = { blob: file, mime: file.type, fileName: file.name, width, height, durationMs: null, optimized: false };
-  if (!img || !width || !height || !OPTIMIZABLE.has(file.type) || (await isAnimated(file))) return base;
+  const base: Prepared = {
+    blob: file,
+    mime: file.type,
+    fileName: file.name,
+    width,
+    height,
+    durationMs: null,
+    optimized: false,
+  };
+  if (!img || !width || !height || !OPTIMIZABLE.has(file.type) || (await isAnimated(file)))
+    return base;
 
   const scale = Math.min(1, IMAGE_MAX_DIMENSION / Math.max(width, height));
   if (scale === 1 && file.size <= OPTIMIZE_ABOVE_BYTES) return base;
@@ -140,7 +158,8 @@ async function prepare(file: File): Promise<Prepared> {
   // Safari không tạo được WebP và trả về PNG. Nếu đã thu nhỏ thì vẫn dùng bản PNG đó
   // (đúng kích thước tối đa); chỉ nén lại mà không thu nhỏ thì giữ file gốc.
   if (blob && blob.type !== target && !(blob.type === 'image/png' && scale < 1)) blob = null;
-  if (!blob || blob.size > MEDIA_RULES.image.maxBytes || (scale === 1 && blob.size >= file.size)) return base;
+  if (!blob || blob.size > MEDIA_RULES.image.maxBytes || (scale === 1 && blob.size >= file.size))
+    return base;
   const outMime = blob.type;
   const ext = outMime === 'image/webp' ? 'webp' : outMime === 'image/png' ? 'png' : 'jpg';
   return {
@@ -165,7 +184,12 @@ export function precheck(file: File): string | null {
 export async function uploadFile(file: File): Promise<{ item: MediaItem; optimized: boolean }> {
   const prepared = await prepare(file);
   const kind = mediaKindOf(prepared.mime);
-  if (!kind) throw new ApiRequestError(400, 'MEDIA_TYPE_NOT_ALLOWED', `"${file.name}": loại file không được hỗ trợ.`);
+  if (!kind)
+    throw new ApiRequestError(
+      400,
+      'MEDIA_TYPE_NOT_ALLOWED',
+      `"${file.name}": loại file không được hỗ trợ.`,
+    );
   if (prepared.blob.size > MEDIA_RULES[kind].maxBytes) {
     const mb = MEDIA_RULES[kind].maxBytes / 1024 / 1024;
     throw new ApiRequestError(400, 'MEDIA_TOO_LARGE', `"${file.name}" vượt quá ${mb}MB.`);
@@ -175,9 +199,11 @@ export async function uploadFile(file: File): Promise<{ item: MediaItem; optimiz
     method: 'POST',
     body: { fileName: prepared.fileName, mime: prepared.mime, sizeBytes: prepared.blob.size },
   });
-  const put = await fetch(signed.uploadUrl, { method: 'PUT', headers: signed.headers, body: prepared.blob }).catch(
-    () => null,
-  );
+  const put = await fetch(signed.uploadUrl, {
+    method: 'PUT',
+    headers: signed.headers,
+    body: prepared.blob,
+  }).catch(() => null);
   if (!put || !put.ok) {
     throw new ApiRequestError(
       502,

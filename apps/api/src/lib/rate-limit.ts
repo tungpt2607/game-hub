@@ -30,7 +30,9 @@ export async function hitRateLimit(
     })
     .returning({ count: schema.rateLimits.count });
   if (random() < CLEANUP_PROBABILITY) {
-    await db.delete(schema.rateLimits).where(lt(schema.rateLimits.windowStart, new Date(now.getTime() - RETENTION_MS)));
+    await db
+      .delete(schema.rateLimits)
+      .where(lt(schema.rateLimits.windowStart, new Date(now.getTime() - RETENTION_MS)));
   }
   return (row?.count ?? 0) <= limit;
 }

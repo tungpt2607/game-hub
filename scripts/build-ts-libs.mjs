@@ -29,13 +29,15 @@ while (pending.length) {
   const file = `lib.${name}.d.ts`;
   const text = readFileSync(path.join(tsLibDir, file), 'utf8');
   out[`/lib/${file}`] = text;
-  for (const m of text.matchAll(/\/\/\/\s*<reference\s+lib="([^"]+)"/g)) pending.push(m[1].toLowerCase());
+  for (const m of text.matchAll(/\/\/\/\s*<reference\s+lib="([^"]+)"/g))
+    pending.push(m[1].toLowerCase());
 }
 
 // 2. React và csstype (csstype là phụ thuộc của @types/react).
 const reactDir = path.dirname(require.resolve('@types/react/package.json'));
 for (const name of readdirSync(reactDir)) {
-  if (name.endsWith('.d.ts')) out[`/types/react/${name}`] = readFileSync(path.join(reactDir, name), 'utf8');
+  if (name.endsWith('.d.ts'))
+    out[`/types/react/${name}`] = readFileSync(path.join(reactDir, name), 'utf8');
 }
 const reactRequire = createRequire(path.join(reactDir, 'package.json'));
 const csstypeDir = path.dirname(reactRequire.resolve('csstype/package.json'));
@@ -44,11 +46,14 @@ out['/types/csstype/index.d.ts'] = readFileSync(path.join(csstypeDir, 'index.d.t
 // 3. Mã nguồn module-sdk (không gồm test).
 const sdkDir = path.join(root, 'packages/module-sdk/src');
 for (const name of readdirSync(sdkDir)) {
-  if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)) out[`/sdk/${name}`] = readFileSync(path.join(sdkDir, name), 'utf8');
+  if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name))
+    out[`/sdk/${name}`] = readFileSync(path.join(sdkDir, name), 'utf8');
 }
 
 const target = path.join(process.cwd(), 'public/ts-libs.json');
 mkdirSync(path.dirname(target), { recursive: true });
 writeFileSync(target, JSON.stringify(out));
 const kb = Math.round(Buffer.byteLength(JSON.stringify(out)) / 1024);
-console.log(`Đã gom ${Object.keys(out).length} file khai báo kiểu vào public/ts-libs.json (${kb}KB)`);
+console.log(
+  `Đã gom ${Object.keys(out).length} file khai báo kiểu vào public/ts-libs.json (${kb}KB)`,
+);

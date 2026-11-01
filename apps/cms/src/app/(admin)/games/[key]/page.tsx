@@ -44,14 +44,18 @@ import type { GameAssets, GameFiles, PendingAsset } from '../../../../games/type
 import { Workspace, type WorkspaceHandle } from '../../../../games/workspace/Workspace';
 import { diffPackages, sameAssets, sameFiles } from '../../../../games/changes';
 import { LocalDraftBanner } from '../../../../games/LocalDraftBanner';
-import { clearLocalDraft, readLocalDraft, writeLocalDraft, type LocalDraft } from '../../../../games/localDraft';
+import {
+  clearLocalDraft,
+  readLocalDraft,
+  writeLocalDraft,
+  type LocalDraft,
+} from '../../../../games/localDraft';
 import { PublishDialog } from '../../../../games/PublishDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
 import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
-
 
 type Compile = { state: 'idle' | 'compiling' } | ({ state: 'done' } & CompileResult);
 
@@ -96,7 +100,9 @@ export default function GameEditorPage() {
       nextFiles = next.draft.files;
       nextAssets = next.draft.assets;
     } else if (next.latestVersion) {
-      const v = await api<GameVersionDetail>(`/modules/${encodeURIComponent(next.key)}/versions/${encodeURIComponent(next.latestVersion)}`);
+      const v = await api<GameVersionDetail>(
+        `/modules/${encodeURIComponent(next.key)}/versions/${encodeURIComponent(next.latestVersion)}`,
+      );
       nextFiles = v.files;
       nextAssets = v.assets;
     }
@@ -108,7 +114,8 @@ export default function GameEditorPage() {
     setConflict(false);
     // Có bản tạm khác bản vừa tải: hỏi người dùng (không tự khôi phục).
     const local = readLocalDraft(next.key);
-    if (local && !(sameFiles(local.files, nextFiles) && sameAssets(local.assets, nextAssets))) setLocalOffer(local);
+    if (local && !(sameFiles(local.files, nextFiles) && sameAssets(local.assets, nextAssets)))
+      setLocalOffer(local);
     else {
       setLocalOffer(null);
       clearLocalDraft(next.key);
@@ -116,13 +123,19 @@ export default function GameEditorPage() {
   }, []);
 
   /** "Chưa lưu" = khác bản đã lưu (gõ rồi xóa về như cũ thì không còn). */
-  const dirty = useMemo(() => !sameFiles(files, savedFiles) || !sameAssets(assets, savedAssets), [files, savedFiles, assets, savedAssets]);
+  const dirty = useMemo(
+    () => !sameFiles(files, savedFiles) || !sameAssets(assets, savedAssets),
+    [files, savedFiles, assets, savedAssets],
+  );
   /** Bản nháp trên máy chủ mà bản tạm dựa vào. */
   const serverBase = mod ? (mod.draft?.updatedAt ?? `v:${mod.latestVersion ?? ''}`) : '';
 
   const load = useCallback(async () => {
     try {
-      await apply((await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(moduleKey)}`)).module);
+      await apply(
+        (await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(moduleKey)}`))
+          .module,
+      );
     } catch (e) {
       if (handleAuthError(e)) return;
       setLoadError(errorMessage(e));
@@ -151,7 +164,13 @@ export default function GameEditorPage() {
           setCompile({ state: 'done', ...result });
           if (result.ok) setRuntimeJs(result.runtimeJs);
         },
-        (e: unknown) => alive && setCompile({ state: 'done', ok: false, errors: [{ file: null, line: 0, column: 0, text: String(e) }] }),
+        (e: unknown) =>
+          alive &&
+          setCompile({
+            state: 'done',
+            ok: false,
+            errors: [{ file: null, line: 0, column: 0, text: String(e) }],
+          }),
       );
     }, 700);
     return () => {
@@ -168,12 +187,20 @@ export default function GameEditorPage() {
       return;
     }
     const timer = setTimeout(() => {
-      writeLocalDraft(mod.key, { files, assets, base: serverBase, savedAt: new Date().toISOString() });
+      writeLocalDraft(mod.key, {
+        files,
+        assets,
+        base: serverBase,
+        savedAt: new Date().toISOString(),
+      });
     }, 1000);
     return () => clearTimeout(timer);
   }, [mod, localOffer, dirty, files, assets, serverBase]);
 
-  const source = useMemo<GameSource | null>(() => (runtimeJs ? { kind: 'code', code: runtimeJs, label: moduleKey } : null), [runtimeJs, moduleKey]);
+  const source = useMemo<GameSource | null>(
+    () => (runtimeJs ? { kind: 'code', code: runtimeJs, label: moduleKey } : null),
+    [runtimeJs, moduleKey],
+  );
   const previewConfig = useMemo(() => {
     if (!schema) return null;
     return schema.presets.find((p) => p.id === presetId)?.config ?? schema.defaults;
@@ -204,16 +231,19 @@ export default function GameEditorPage() {
     if (!mod) return null;
     const toSave = (await workspace.current?.prepareSave()) ?? files;
     const compiled = await compileGame(toSave, assets);
-    const res = await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(mod.key)}/draft`, {
-      method: 'PUT',
-      body: {
-        files: toSave,
-        assets,
-        schemaJs: compiled.ok ? compiled.schemaJs : null,
-        runtimeJs: compiled.ok ? compiled.runtimeJs : null,
-        baseUpdatedAt: mod.draft?.updatedAt ?? null,
+    const res = await api<{ module: GameModuleDetail }>(
+      `/modules/${encodeURIComponent(mod.key)}/draft`,
+      {
+        method: 'PUT',
+        body: {
+          files: toSave,
+          assets,
+          schemaJs: compiled.ok ? compiled.schemaJs : null,
+          runtimeJs: compiled.ok ? compiled.runtimeJs : null,
+          baseUpdatedAt: mod.draft?.updatedAt ?? null,
+        },
       },
-    });
+    );
     setMod(res.module);
     setSavedFiles(toSave);
     setSavedAssets(assets);
@@ -243,10 +273,16 @@ export default function GameEditorPage() {
     run('publish', async () => {
       const current = dirty || !mod?.draft ? await save() : mod;
       if (!current) return;
-      const res = await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(current.key)}/publish`, {
-        method: 'POST',
-        body: { notes: notes.trim() || undefined, baseUpdatedAt: current.draft?.updatedAt ?? null },
-      });
+      const res = await api<{ module: GameModuleDetail }>(
+        `/modules/${encodeURIComponent(current.key)}/publish`,
+        {
+          method: 'POST',
+          body: {
+            notes: notes.trim() || undefined,
+            baseUpdatedAt: current.draft?.updatedAt ?? null,
+          },
+        },
+      );
       setPublishOpen(false);
       await apply(res.module);
       setToast(t('cms.games.publishedToast', { version: res.module.latestVersion ?? '' }));
@@ -255,7 +291,10 @@ export default function GameEditorPage() {
   const onDiscard = () =>
     run('discard', async () => {
       if (!mod) return;
-      const res = await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(mod.key)}/draft`, { method: 'DELETE' });
+      const res = await api<{ module: GameModuleDetail }>(
+        `/modules/${encodeURIComponent(mod.key)}/draft`,
+        { method: 'DELETE' },
+      );
       clearLocalDraft(mod.key);
       setDiscardOpen(false);
       await apply(res.module);
@@ -268,7 +307,9 @@ export default function GameEditorPage() {
       let a = assets;
       let name = `${moduleKey}-${dirty || mod?.draft ? 'ban-nhap' : (mod?.latestVersion ?? '')}`;
       if (version) {
-        const v = await api<GameVersionDetail>(`/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(version)}`);
+        const v = await api<GameVersionDetail>(
+          `/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(version)}`,
+        );
         f = v.files;
         a = v.assets;
         name = `${moduleKey}-${version}`;
@@ -279,7 +320,9 @@ export default function GameEditorPage() {
   const onRestore = () =>
     run('restore', async () => {
       if (!restoreVersion) return;
-      const v = await api<GameVersionDetail>(`/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(restoreVersion)}`);
+      const v = await api<GameVersionDetail>(
+        `/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(restoreVersion)}`,
+      );
       change(v.files, v.assets);
       setRestoreVersion(null);
       setHistoryOpen(false);
@@ -289,11 +332,18 @@ export default function GameEditorPage() {
   const onZip = (file: File) =>
     run('zip', async () => {
       const zip = await readGameZip(file);
-      const uploaded = await uploadAssets(moduleKey, zip.assets, (done, total) => total && setBusy(`zip:${done}/${total}`));
+      const uploaded = await uploadAssets(
+        moduleKey,
+        zip.assets,
+        (done, total) => total && setBusy(`zip:${done}/${total}`),
+      );
       change(zip.files, uploaded);
       setToast(
         zip.skipped.length
-          ? t('cms.games.zipLoadedSkipped', { count: zip.skipped.length, list: zip.skipped.slice(0, 3).join(', ') })
+          ? t('cms.games.zipLoadedSkipped', {
+              count: zip.skipped.length,
+              list: zip.skipped.slice(0, 3).join(', '),
+            })
           : t('cms.games.zipLoaded'),
       );
     });
@@ -328,9 +378,23 @@ export default function GameEditorPage() {
       <Chip
         size="small"
         color={mod.latestVersion ? 'success' : 'default'}
-        label={mod.latestVersion ? t('cms.games.latest', { version: mod.latestVersion }) : t('cms.games.unpublished')}
+        label={
+          mod.latestVersion
+            ? t('cms.games.latest', { version: mod.latestVersion })
+            : t('cms.games.unpublished')
+        }
       />
-      {hasDraft && <Chip size="small" color="warning" label={draftVersion ? t('cms.games.draftVersion', { version: draftVersion }) : t('cms.games.hasDraft')} />}
+      {hasDraft && (
+        <Chip
+          size="small"
+          color="warning"
+          label={
+            draftVersion
+              ? t('cms.games.draftVersion', { version: draftVersion })
+              : t('cms.games.hasDraft')
+          }
+        />
+      )}
       {dirty && (
         <Typography variant="body2" color="warning.main">
           {t('cms.games.unsaved')}
@@ -338,7 +402,10 @@ export default function GameEditorPage() {
       )}
       {!dirty && mod.draft && (
         <Typography variant="body2" color="text.secondary">
-          {t('cms.games.draftSavedAt', { date: formatDateTime(mod.draft.updatedAt), name: mod.draft.updatedByName ?? '' })}
+          {t('cms.games.draftSavedAt', {
+            date: formatDateTime(mod.draft.updatedAt),
+            name: mod.draft.updatedByName ?? '',
+          })}
         </Typography>
       )}
     </Stack>
@@ -359,7 +426,9 @@ export default function GameEditorPage() {
         onSave={() => {
           if (dirty && busy === null) void onSave();
         }}
-        onNotice={(message, severity) => (severity === 'error' ? setError(message) : setToast(message))}
+        onNotice={(message, severity) =>
+          severity === 'error' ? setError(message) : setToast(message)
+        }
       />
     </Stack>
   );
@@ -396,9 +465,19 @@ export default function GameEditorPage() {
 
   return (
     <Stack spacing={2}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ md: 'flex-start' }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        justifyContent="space-between"
+        alignItems={{ md: 'flex-start' }}
+      >
         <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
-          <IconButton component={Link} href="/games" aria-label={t('cms.games.backToList')} sx={{ mt: 0.25 }}>
+          <IconButton
+            component={Link}
+            href="/games"
+            aria-label={t('cms.games.backToList')}
+            sx={{ mt: 0.25 }}
+          >
             <ArrowBackIcon />
           </IconButton>
           <Box sx={{ minWidth: 0 }}>
@@ -409,7 +488,11 @@ export default function GameEditorPage() {
           </Box>
         </Stack>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
-          <Button startIcon={<UploadFileOutlined />} onClick={() => zipInput.current?.click()} disabled={busy !== null}>
+          <Button
+            startIcon={<UploadFileOutlined />}
+            onClick={() => zipInput.current?.click()}
+            disabled={busy !== null}
+          >
             {t('cms.games.uploadZip')}
           </Button>
           <input
@@ -423,7 +506,11 @@ export default function GameEditorPage() {
               if (file) void onZip(file);
             }}
           />
-          <Button startIcon={<DownloadOutlined />} onClick={() => void onDownload()} disabled={busy !== null}>
+          <Button
+            startIcon={<DownloadOutlined />}
+            onClick={() => void onDownload()}
+            disabled={busy !== null}
+          >
             {t('cms.games.downloadZip')}
           </Button>
           <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
@@ -434,12 +521,29 @@ export default function GameEditorPage() {
               {t('cms.games.discard')}
             </Button>
           )}
-          <Button variant="outlined" startIcon={<SaveOutlined />} onClick={() => void onSave()} disabled={!dirty || busy !== null}>
+          <Button
+            variant="outlined"
+            startIcon={<SaveOutlined />}
+            onClick={() => void onSave()}
+            disabled={!dirty || busy !== null}
+          >
             {busy === 'save' ? t('cms.games.saving') : t('cms.games.saveDraft')}
           </Button>
-          <Tooltip title={canPublish ? '' : (versionProblem ?? (hasDraft ? t('cms.games.fixBeforePublish') : t('cms.games.nothingToPublish')))}>
+          <Tooltip
+            title={
+              canPublish
+                ? ''
+                : (versionProblem ??
+                  (hasDraft ? t('cms.games.fixBeforePublish') : t('cms.games.nothingToPublish')))
+            }
+          >
             <span>
-              <Button variant="contained" startIcon={<PublishIcon />} onClick={() => setPublishOpen(true)} disabled={!canPublish}>
+              <Button
+                variant="contained"
+                startIcon={<PublishIcon />}
+                onClick={() => setPublishOpen(true)}
+                disabled={!canPublish}
+              >
                 {t('cms.games.publish')}
               </Button>
             </span>
@@ -447,7 +551,9 @@ export default function GameEditorPage() {
         </Stack>
       </Stack>
 
-      {busy?.startsWith('zip:') && <Alert severity="info">{t('cms.games.uploadingAssets', { progress: busy.slice(4) })}</Alert>}
+      {busy?.startsWith('zip:') && (
+        <Alert severity="info">{t('cms.games.uploadingAssets', { progress: busy.slice(4) })}</Alert>
+      )}
       {busy !== null && <LinearProgress />}
       {localOffer && (
         <LocalDraftBanner
@@ -484,7 +590,9 @@ export default function GameEditorPage() {
         </Alert>
       )}
       {versionProblem && hasDraft && <Alert severity="info">{versionProblem}</Alert>}
-      {previewError && <Alert severity="error">{t('cms.games.runtimeError', { message: previewError })}</Alert>}
+      {previewError && (
+        <Alert severity="error">{t('cms.games.runtimeError', { message: previewError })}</Alert>
+      )}
       {mod.templateCount > 0 && (
         <Typography variant="body2" color="text.secondary">
           {t('cms.games.templateCount', { count: mod.templateCount })}
@@ -502,7 +610,12 @@ export default function GameEditorPage() {
         </Grid>
       ) : (
         <Box>
-          <Tabs value={tab} onChange={(_, v: 'code' | 'preview') => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v: 'code' | 'preview') => setTab(v)}
+            variant="fullWidth"
+            sx={{ mb: 2 }}
+          >
             <Tab value="code" label={t('cms.games.tabCode')} />
             <Tab value="preview" label={t('cms.games.tabPreview')} />
           </Tabs>
@@ -536,7 +649,11 @@ export default function GameEditorPage() {
                   disableGutters
                   secondaryAction={
                     <Stack direction="row" spacing={1}>
-                      <Button size="small" onClick={() => void onDownload(v.version)} disabled={busy !== null}>
+                      <Button
+                        size="small"
+                        onClick={() => void onDownload(v.version)}
+                        disabled={busy !== null}
+                      >
                         {t('cms.games.downloadShort')}
                       </Button>
                       <Button size="small" onClick={() => setRestoreVersion(v.version)}>
@@ -547,7 +664,9 @@ export default function GameEditorPage() {
                 >
                   <ListItemText
                     primary={`v${v.version}${v.version === mod.latestVersion ? ` · ${t('cms.games.current')}` : ''}`}
-                    secondary={[formatDateTime(v.publishedAt), v.publishedByName, v.notes].filter(Boolean).join(' · ')}
+                    secondary={[formatDateTime(v.publishedAt), v.publishedByName, v.notes]
+                      .filter(Boolean)
+                      .join(' · ')}
                     sx={{ pr: 22 }}
                   />
                 </ListItem>
@@ -580,7 +699,12 @@ export default function GameEditorPage() {
         onClose={() => setDiscardOpen(false)}
       />
       <LeaveGuard when={dirty} />
-      <Snackbar open={Boolean(toast)} autoHideDuration={5000} onClose={() => setToast(null)} message={toast} />
+      <Snackbar
+        open={Boolean(toast)}
+        autoHideDuration={5000}
+        onClose={() => setToast(null)}
+        message={toast}
+      />
     </Stack>
   );
 }

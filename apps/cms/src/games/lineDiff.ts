@@ -3,7 +3,12 @@
  * Bỏ phần đầu/cuối giống nhau rồi tìm dãy con chung dài nhất; văn bản quá lớn thì trả về null.
  */
 
-export type DiffLine = { type: 'same' | 'add' | 'del'; text: string; oldNo?: number; newNo?: number };
+export type DiffLine = {
+  type: 'same' | 'add' | 'del';
+  text: string;
+  oldNo?: number;
+  newNo?: number;
+};
 
 export interface Hunk {
   lines: DiffLine[];

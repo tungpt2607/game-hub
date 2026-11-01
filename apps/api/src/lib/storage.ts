@@ -3,7 +3,11 @@ import { AwsClient } from 'aws4fetch';
 /** Kho file dạng S3 (Cloudflare R2, MinIO, AWS S3…). Kiểm thử thay bằng bản giả. */
 export interface Storage {
   /** Link tải lên trực tiếp từ trình duyệt (PUT), hết hạn sau `expiresIn` giây. */
-  presignPut(key: string, contentType: string, expiresIn?: number): Promise<{ url: string; headers: Record<string, string> }>;
+  presignPut(
+    key: string,
+    contentType: string,
+    expiresIn?: number,
+  ): Promise<{ url: string; headers: Record<string, string> }>;
   /** Thông tin file đã có trên kho; null nếu chưa có. */
   head(key: string): Promise<{ size: number; contentType: string | null } | null>;
   delete(key: string): Promise<void>;
@@ -22,8 +26,21 @@ export interface S3Config {
 
 /** Đọc cấu hình kho từ biến môi trường; null khi chưa đủ. */
 export function s3ConfigFromEnv(env: NodeJS.ProcessEnv = process.env): S3Config | null {
-  const { S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, MEDIA_PUBLIC_URL } = env;
-  if (!S3_ENDPOINT || !S3_BUCKET || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !MEDIA_PUBLIC_URL) {
+  const {
+    S3_ENDPOINT,
+    S3_REGION,
+    S3_BUCKET,
+    S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY,
+    MEDIA_PUBLIC_URL,
+  } = env;
+  if (
+    !S3_ENDPOINT ||
+    !S3_BUCKET ||
+    !S3_ACCESS_KEY_ID ||
+    !S3_SECRET_ACCESS_KEY ||
+    !MEDIA_PUBLIC_URL
+  ) {
     return null;
   }
   return {

@@ -10,9 +10,7 @@
       "destination": "/api"
     }
   ],
-  "regions": [
-    "sin1"
-  ],
+  "regions": ["sin1"],
   "ignoreCommand": "bash ../../scripts/vercel-ignore.sh apps/api",
   "git": {
     "deploymentEnabled": {

@@ -28,7 +28,9 @@ interface Props {
 export function MoveDialog({ path, folders, validate, onMove, onClose }: Props) {
   return (
     <Dialog open={path !== null} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{t('cms.workspace.moveTitle', { name: path ? baseName(path) : '' })}</DialogTitle>
+      <DialogTitle>
+        {t('cms.workspace.moveTitle', { name: path ? baseName(path) : '' })}
+      </DialogTitle>
       <DialogContent dividers sx={{ p: 0 }}>
         <List dense>
           {folders.map((folder) => {

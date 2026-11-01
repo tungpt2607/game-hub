@@ -3,3 +3,7 @@ node_modules
 dist
 .turbo
 pnpm-lock.yaml
+# File do drizzle-kit tự sinh
+packages/db/migrations
+# Tài liệu viết tay: đoạn code mẫu phải khớp nguyên văn với file thật (người đọc tìm theo), không định dạng tự động
+*.md

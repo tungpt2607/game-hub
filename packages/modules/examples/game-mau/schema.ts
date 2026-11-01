@@ -14,7 +14,8 @@ export const schema: ModuleSchema<SampleConfig> = {
   kind: 'game',
   version: '1.0.0',
   name: 'Game mẫu: Chạm quà',
-  description: 'Gói mẫu để học cách viết game: chạm vào món quà xuất hiện để ghi điểm trước khi hết giờ.',
+  description:
+    'Gói mẫu để học cách viết game: chạm vào món quà xuất hiện để ghi điểm trước khi hết giờ.',
   fields: sampleFields,
   defaults: sampleDefaults,
   // Các màn hình để nhảy tới khi xem trước; màn hình đầu tiên là màn hình mở đầu.

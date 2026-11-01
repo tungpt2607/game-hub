@@ -17,7 +17,8 @@ const UNLOCK_TTL_MS = 30 * 24 * 3600 * 1000;
 /** Tên cookie mở khóa riêng cho từng link (mỗi link một mật khẩu). */
 const unlockCookie = (link: LinkRow) => `opes_try_${link.id.replace(/-/g, '').slice(0, 12)}`;
 /** Giá trị cookie gắn với mật khẩu hiện tại: đổi mật khẩu thì cookie cũ hết tác dụng. */
-const unlockValue = (link: LinkRow, secret: string) => hashToken(`${link.id}:${link.passwordHash}`, secret);
+const unlockValue = (link: LinkRow, secret: string) =>
+  hashToken(`${link.id}:${link.passwordHash}`, secret);
 
 async function findLink(db: Database, token: string) {
   if (!/^[A-Za-z0-9_-]{4,64}$/.test(token)) return null;
@@ -32,14 +33,16 @@ async function findLink(db: Database, token: string) {
 
 function titleOf(config: Record<string, unknown> | null, fallback: string): string {
   const content = config?.content;
-  const title = content && typeof content === 'object' ? (content as Record<string, unknown>).title : undefined;
+  const title =
+    content && typeof content === 'object' ? (content as Record<string, unknown>).title : undefined;
   return typeof title === 'string' && title.trim() ? title : fallback;
 }
 
 export function publicRoutes(deps: AppDeps) {
   const app = new Hono<AppEnv>();
 
-  const respond = (c: Context, body: TryResponse, status: 200 | 401 | 404 | 410 = 200) => c.json(body, status);
+  const respond = (c: Context, body: TryResponse, status: 200 | 401 | 404 | 410 = 200) =>
+    c.json(body, status);
 
   /** Trang chơi thử tải cấu hình game theo mã link. */
   app.get('/try/:token', async (c) => {
@@ -51,17 +54,26 @@ export function publicRoutes(deps: AppDeps) {
     if (link.disabledAt || template.archivedAt) return respond(c, { status: 'disabled' }, 410);
     if (link.expiresAt && link.expiresAt <= now) return respond(c, { status: 'expired' }, 410);
 
-    const raw = link.mode === 'snapshot' ? (link.snapshot?.config ?? null) : template.publishedConfig;
-    const moduleKey = link.mode === 'snapshot' ? (link.snapshot?.moduleKey ?? template.moduleKey) : template.moduleKey;
+    const raw =
+      link.mode === 'snapshot' ? (link.snapshot?.config ?? null) : template.publishedConfig;
+    const moduleKey =
+      link.mode === 'snapshot'
+        ? (link.snapshot?.moduleKey ?? template.moduleKey)
+        : template.moduleKey;
     const moduleVersion =
       link.mode === 'snapshot'
         ? (link.snapshot?.moduleVersion ?? template.moduleVersion)
         : (template.publishedModuleVersion ?? template.moduleVersion);
-    if (link.passwordHash && getCookie(c, unlockCookie(link)) !== unlockValue(link, deps.sessionSecret())) {
+    if (
+      link.passwordHash &&
+      getCookie(c, unlockCookie(link)) !== unlockValue(link, deps.sessionSecret())
+    ) {
       return respond(c, { status: 'password_required', title: titleOf(raw, template.name) }, 401);
     }
     const mod = raw
-      ? await getModuleVersion(db, moduleKey, moduleVersion).catch(() => getModuleVersion(db, moduleKey).catch(() => null))
+      ? await getModuleVersion(db, moduleKey, moduleVersion).catch(() =>
+          getModuleVersion(db, moduleKey).catch(() => null),
+        )
       : null;
     if (!raw || !mod) return respond(c, { status: 'not_published' }, 404);
 
@@ -108,10 +120,21 @@ export function publicRoutes(deps: AppDeps) {
     const found = await findLink(db, c.req.param('token'));
     const link = found?.link;
     const passwordHash = link?.passwordHash;
-    if (!link || !passwordHash) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy link.');
-    const allowed = await hitRateLimit(db, `try-unlock:${clientIp(c) ?? 'unknown'}:${link.id}`, 10, 15 * 60, deps.now());
+    if (!link || !passwordHash)
+      throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy link.');
+    const allowed = await hitRateLimit(
+      db,
+      `try-unlock:${clientIp(c) ?? 'unknown'}:${link.id}`,
+      10,
+      15 * 60,
+      deps.now(),
+    );
     if (!allowed) {
-      throw new AppError(429, ErrorCode.RATE_LIMITED, 'Bạn nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+      throw new AppError(
+        429,
+        ErrorCode.RATE_LIMITED,
+        'Bạn nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.',
+      );
     }
     if (!(await verifyPassword(input.password, passwordHash))) {
       throw new AppError(401, ErrorCode.WRONG_PASSWORD, 'Mật khẩu không đúng.');

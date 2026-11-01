@@ -23,13 +23,15 @@ export function LeaveGuard({ when }: { when: boolean }) {
       e.returnValue = '';
     };
     const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+        return;
       const link = (e.target as Element | null)?.closest?.('a[href]');
       if (!(link instanceof HTMLAnchorElement)) return;
       if ((link.target && link.target !== '_self') || link.hasAttribute('download')) return;
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search)
+        return;
       // Chặn trước khi Link của Next.js xử lý (bắt ở pha capture).
       e.preventDefault();
       e.stopPropagation();

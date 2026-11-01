@@ -40,7 +40,9 @@ export function loadGame(key: string, version: string): Promise<ModuleDefinition
   let pending = cache.get(id);
   if (!pending) {
     pending = (async () => {
-      const res = await fetch(`/api/public/modules/${encodeURIComponent(key)}/${encodeURIComponent(version)}/runtime.js`);
+      const res = await fetch(
+        `/api/public/modules/${encodeURIComponent(key)}/${encodeURIComponent(version)}/runtime.js`,
+      );
       if (!res.ok) throw new Error(`Không tải được game ${key} phiên bản ${version}.`);
       return evaluateGame(await res.text());
     })();

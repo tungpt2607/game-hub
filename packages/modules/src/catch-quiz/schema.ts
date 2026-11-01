@@ -8,7 +8,8 @@ export const catchQuizSchema: ModuleSchema<CatchQuizConfig> = {
   kind: 'game',
   version: '1.0.0',
   name: 'Hứng quà + câu hỏi',
-  description: 'Kéo nhân vật hứng vật phẩm theo làn; dính vật xấu thì phải trả lời câu hỏi để chơi tiếp.',
+  description:
+    'Kéo nhân vật hứng vật phẩm theo làn; dính vật xấu thì phải trả lời câu hỏi để chơi tiếp.',
   fields: catchQuizFields,
   defaults: catchQuizDefaults,
   presets: catchQuizPresets,

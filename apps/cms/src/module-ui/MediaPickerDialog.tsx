@@ -45,7 +45,10 @@ export function FontSample({ item, size = 36 }: { item: MediaItem; size?: number
     void loadFont({ family, media: toMediaRef(item) });
   }, [family, item]);
   return (
-    <Typography component="span" sx={{ fontFamily: `"${family}", sans-serif`, fontSize: size, lineHeight: 1 }}>
+    <Typography
+      component="span"
+      sx={{ fontFamily: `"${family}", sans-serif`, fontSize: size, lineHeight: 1 }}
+    >
       Aa
     </Typography>
   );
@@ -181,7 +184,9 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
             </Alert>
           )}
           {(uploading || items === null) && <LinearProgress />}
-          {items?.length === 0 && <Typography color="text.secondary">{t('cms.mediaPicker.empty')}</Typography>}
+          {items?.length === 0 && (
+            <Typography color="text.secondary">{t('cms.mediaPicker.empty')}</Typography>
+          )}
           <Grid container spacing={1.5}>
             {items?.map((item) => (
               <Grid key={item.id} size={{ xs: 4, sm: 3, md: 2 }}>

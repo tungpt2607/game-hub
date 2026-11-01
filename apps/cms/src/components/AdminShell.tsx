@@ -154,7 +154,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1 }}>
-              {NAV.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label ?? t('app.name')}
+              {NAV.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+                ?.label ?? t('app.name')}
             </Typography>
             <IconButton
               aria-label={t('cms.account.menu')}
@@ -179,7 +180,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 </Typography>
               </Box>
               <Divider />
-              <MenuItem component={Link} href="/change-password" onClick={() => setMenuAnchor(null)}>
+              <MenuItem
+                component={Link}
+                href="/change-password"
+                onClick={() => setMenuAnchor(null)}
+              >
                 <ListItemIcon>
                   <KeyOutlined fontSize="small" />
                 </ListItemIcon>
@@ -201,14 +206,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
             open={mobileOpen}
             onClose={() => setMobileOpen(false)}
             ModalProps={{ keepMounted: true }}
-            sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              '& .MuiDrawer-paper': { width: DRAWER_WIDTH },
+            }}
           >
             {nav}
           </Drawer>
           <Drawer
             variant="permanent"
             open
-            sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              '& .MuiDrawer-paper': { width: DRAWER_WIDTH },
+            }}
           >
             {nav}
           </Drawer>

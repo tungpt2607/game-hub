@@ -31,7 +31,6 @@ const GUIDE_URL = 'https://github.com/tungpt2607/game-hub/blob/main/docs/huong-d
 import { api, handleAuthError, errorMessage } from '../../../lib/api';
 import { formatDateTime } from '../../../lib/format';
 
-
 /** Mục Game: danh sách game lưu trong cơ sở dữ liệu; tải lên game mới bằng file .zip. */
 export default function GamesPage() {
   const router = useRouter();
@@ -65,9 +64,16 @@ export default function GamesPage() {
       setStep(t('cms.games.creating'));
       const res = await api<{ module: GameModuleDetail }>('/modules', {
         method: 'POST',
-        body: { files: prepared.files, assets: prepared.assets, schemaJs: prepared.schemaJs, runtimeJs: prepared.runtimeJs },
+        body: {
+          files: prepared.files,
+          assets: prepared.assets,
+          schemaJs: prepared.schemaJs,
+          runtimeJs: prepared.runtimeJs,
+        },
       });
-      router.push(`/games/${encodeURIComponent(res.module.key)}${zip.skipped.length ? '?boQua=' + zip.skipped.length : ''}`);
+      router.push(
+        `/games/${encodeURIComponent(res.module.key)}${zip.skipped.length ? '?boQua=' + zip.skipped.length : ''}`,
+      );
     } catch (e) {
       if (handleAuthError(e)) return;
       if (e instanceof CompileFailed) {
@@ -88,8 +94,19 @@ export default function GamesPage() {
           </Typography>
           <Typography color="text.secondary">{t('cms.games.lead')}</Typography>
         </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0, alignItems: 'flex-start' }}>
-          <Button startIcon={<MenuBookOutlined />} href={GUIDE_URL} target="_blank" rel="noopener noreferrer">
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ flexShrink: 0, alignItems: 'flex-start' }}
+        >
+          <Button
+            startIcon={<MenuBookOutlined />}
+            href={GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {t('cms.games.guide')}
           </Button>
           <Button
@@ -100,7 +117,12 @@ export default function GamesPage() {
           >
             {t('cms.games.downloadExample')}
           </Button>
-          <Button variant="contained" startIcon={<UploadFileOutlined />} onClick={() => input.current?.click()} disabled={step !== null}>
+          <Button
+            variant="contained"
+            startIcon={<UploadFileOutlined />}
+            onClick={() => input.current?.click()}
+            disabled={step !== null}
+          >
             {t('cms.games.uploadNew')}
           </Button>
           <input
@@ -134,7 +156,11 @@ export default function GamesPage() {
         {(items ?? []).map((m) => (
           <Grid key={m.key} size={{ xs: 12, sm: 6, lg: 4 }}>
             <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardActionArea component={Link} href={`/games/${encodeURIComponent(m.key)}`} sx={{ height: '100%' }}>
+              <CardActionArea
+                component={Link}
+                href={`/games/${encodeURIComponent(m.key)}`}
+                sx={{ height: '100%' }}
+              >
                 <CardContent>
                   <Stack spacing={1}>
                     <Typography variant="h6" fontWeight={700}>
@@ -150,11 +176,17 @@ export default function GamesPage() {
                         color={m.latestVersion ? 'success' : 'default'}
                         label={m.latestVersion ? `v${m.latestVersion}` : t('cms.games.unpublished')}
                       />
-                      {m.hasDraft && <Chip size="small" color="warning" label={t('cms.games.hasDraft')} />}
-                      {m.builtin && <Chip size="small" variant="outlined" label={t('cms.games.builtin')} />}
+                      {m.hasDraft && (
+                        <Chip size="small" color="warning" label={t('cms.games.hasDraft')} />
+                      )}
+                      {m.builtin && (
+                        <Chip size="small" variant="outlined" label={t('cms.games.builtin')} />
+                      )}
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
-                      {t('cms.games.updated', { date: formatDateTime(m.draftUpdatedAt ?? m.updatedAt) })}
+                      {t('cms.games.updated', {
+                        date: formatDateTime(m.draftUpdatedAt ?? m.updatedAt),
+                      })}
                     </Typography>
                   </Stack>
                 </CardContent>

@@ -39,11 +39,7 @@ function checkFile(mime: string, sizeBytes: number) {
   const rule = MEDIA_RULES[kind];
   if (sizeBytes > rule.maxBytes) {
     const mb = rule.maxBytes / 1024 / 1024;
-    throw new AppError(
-      400,
-      ErrorCode.MEDIA_TOO_LARGE,
-      `${KIND_LABEL[kind]} tối đa ${mb}MB.`,
-    );
+    throw new AppError(400, ErrorCode.MEDIA_TOO_LARGE, `${KIND_LABEL[kind]} tối đa ${mb}MB.`);
   }
   return { kind, ext: rule.mimes[mime]! };
 }
@@ -96,7 +92,8 @@ export function mediaRoutes(deps: AppDeps) {
     const kind = c.req.query('kind');
     if (kind) {
       const parsed = MediaKindSchema.safeParse(kind);
-      if (!parsed.success) throw new AppError(400, ErrorCode.VALIDATION, 'Loại media không hợp lệ.');
+      if (!parsed.success)
+        throw new AppError(400, ErrorCode.VALIDATION, 'Loại media không hợp lệ.');
       filters.push(eq(schema.media.kind, parsed.data));
     }
     const q = c.req.query('q')?.trim();
@@ -134,7 +131,11 @@ export function mediaRoutes(deps: AppDeps) {
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     const storageKey = `media/${now.getUTCFullYear()}/${month}/${randomUUID()}.${ext}`;
     const signed = await storage().presignPut(storageKey, input.mime);
-    const body: MediaUploadResponse = { storageKey, uploadUrl: signed.url, headers: signed.headers };
+    const body: MediaUploadResponse = {
+      storageKey,
+      uploadUrl: signed.url,
+      headers: signed.headers,
+    };
     return c.json(body);
   });
 
@@ -148,11 +149,19 @@ export function mediaRoutes(deps: AppDeps) {
     const s = storage();
     const stored = await s.head(input.storageKey);
     if (!stored) {
-      throw new AppError(400, ErrorCode.MEDIA_NOT_UPLOADED, 'Chưa thấy file trên kho media. Vui lòng tải lại.');
+      throw new AppError(
+        400,
+        ErrorCode.MEDIA_NOT_UPLOADED,
+        'Chưa thấy file trên kho media. Vui lòng tải lại.',
+      );
     }
     if (stored.size !== input.sizeBytes) {
       await s.delete(input.storageKey);
-      throw new AppError(400, ErrorCode.MEDIA_NOT_UPLOADED, 'File tải lên không khớp. Vui lòng tải lại.');
+      throw new AppError(
+        400,
+        ErrorCode.MEDIA_NOT_UPLOADED,
+        'File tải lên không khớp. Vui lòng tải lại.',
+      );
     }
     checkFile(stored.contentType?.split(';')[0]?.trim() || input.mime, stored.size);
 
@@ -174,7 +183,13 @@ export function mediaRoutes(deps: AppDeps) {
       .returning();
     const saved =
       row ??
-      (await db.select().from(schema.media).where(eq(schema.media.storageKey, input.storageKey)).limit(1))[0]!;
+      (
+        await db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.storageKey, input.storageKey))
+          .limit(1)
+      )[0]!;
     return c.json({ item: toItem(saved, s) }, row ? 201 : 200);
   });
 

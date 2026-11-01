@@ -34,7 +34,15 @@ const CSS = `
 @media (prefers-reduced-motion: reduce) { .ocq-item > .ocq-pulse, .ocq-anim { animation:none !important } }
 `;
 
-function Sym({ value, size, style }: { value: EmojiOrImage; size: number | string; style?: CSSProperties }) {
+function Sym({
+  value,
+  size,
+  style,
+}: {
+  value: EmojiOrImage;
+  size: number | string;
+  style?: CSSProperties;
+}) {
   if (value.image)
     return (
       <img
@@ -45,7 +53,14 @@ function Sym({ value, size, style }: { value: EmojiOrImage; size: number | strin
       />
     );
   return (
-    <span style={{ fontSize: typeof size === 'number' ? size * 0.8 : size, lineHeight: 1, fontFamily: EMOJI_FONT, ...style }}>
+    <span
+      style={{
+        fontSize: typeof size === 'number' ? size * 0.8 : size,
+        lineHeight: 1,
+        fontFamily: EMOJI_FONT,
+        ...style,
+      }}
+    >
       {value.emoji}
     </span>
   );
@@ -70,7 +85,12 @@ function Board({
   return (
     <div style={{ position: 'relative', width, height, ...style }}>
       {image ? (
-        <img src={image.url} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <img
+          src={image.url}
+          alt=""
+          draggable={false}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        />
       ) : (
         <div
           style={{
@@ -82,7 +102,16 @@ function Board({
           }}
         />
       )}
-      <div style={{ position: 'absolute', inset, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 15 }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 15,
+        }}
+      >
         {children}
       </div>
     </div>
@@ -170,7 +199,12 @@ interface Sounds {
   end: Sound;
 }
 
-export function CatchQuizRuntime({ config, host, initialScreen, muted }: RuntimeProps<CatchQuizConfig>) {
+export function CatchQuizRuntime({
+  config,
+  host,
+  initialScreen,
+  muted,
+}: RuntimeProps<CatchQuizConfig>) {
   const font = useFont(config.look.font);
   const numberFont = useFont(config.look.numberFont);
   const sounds: Sounds = {
@@ -196,7 +230,11 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
   const [screen, setScreen] = useState<Screen>('start');
   const screenRef = useRef<Screen>('start');
   screenRef.current = screen;
-  const [hud, setHud] = useState({ score: 0, time: config.rules.duration, lives: config.rules.lives });
+  const [hud, setHud] = useState({
+    score: 0,
+    time: config.rules.duration,
+    lives: config.rules.lives,
+  });
   const [count, setCount] = useState<string>('');
   const [hit, setHit] = useState(0);
   const [question, setQuestion] = useState<{ q: Question; order: number[] } | null>(null);
@@ -219,7 +257,9 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
     if (!e) return;
     setHud((prev) => {
       const next = { score: e.score, time: Math.ceil(e.timeLeft), lives: e.lives };
-      return prev.score === next.score && prev.time === next.time && prev.lives === next.lives ? prev : next;
+      return prev.score === next.score && prev.time === next.time && prev.lives === next.lives
+        ? prev
+        : next;
     });
   }, []);
 
@@ -386,7 +426,8 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
           finish();
         }
       }
-      if (catcherEl.current) catcherEl.current.style.transform = `translateX(${e.catcherX - configRef.current.catcher.width / 2}px)`;
+      if (catcherEl.current)
+        catcherEl.current.style.transform = `translateX(${e.catcherX - configRef.current.catcher.width / 2}px)`;
       layerRef.current?.sync(e, configRef.current);
       syncHud();
       if (!stop) raf = requestAnimationFrame(loop);
@@ -405,7 +446,8 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
     if (!e || !field.current) return;
     if (!layerRef.current) layerRef.current = new ItemLayer(field.current);
     layerRef.current.sync(e, configRef.current);
-    if (catcherEl.current) catcherEl.current.style.transform = `translateX(${e.catcherX - config.catcher.width / 2}px)`;
+    if (catcherEl.current)
+      catcherEl.current.style.transform = `translateX(${e.catcherX - config.catcher.width / 2}px)`;
   }, [screen, config.catcher.width]);
 
   const answer = (choice: number) => {
@@ -476,9 +518,15 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
     color: c.look.buttonText,
     boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
   };
-  const number: CSSProperties = { fontFamily: numberFont, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' };
+  const number: CSSProperties = {
+    fontFamily: numberFont,
+    fontWeight: 700,
+    color: '#fff',
+    fontVariantNumeric: 'tabular-nums',
+  };
   const showCatcher = screen !== 'end' && screen !== 'start';
-  const catcherSymbol = screen === 'hurt' || screen === 'question' ? c.catcher.hurt : c.catcher.normal;
+  const catcherSymbol =
+    screen === 'hurt' || screen === 'question' ? c.catcher.hurt : c.catcher.normal;
 
   const ctaHref = useMemo(() => {
     if (!c.end.ctaUrl) return '';
@@ -518,7 +566,9 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
           width: DESIGN_W,
           height: DESIGN_H,
           transform: `translate(-50%, -50%) scale(${scale})`,
-          backgroundImage: c.look.backgroundImage ? `url(${JSON.stringify(c.look.backgroundImage.url)})` : undefined,
+          backgroundImage: c.look.backgroundImage
+            ? `url(${JSON.stringify(c.look.backgroundImage.url)})`
+            : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           overflow: 'hidden',
@@ -541,17 +591,40 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
               pointerEvents: 'none',
             }}
           >
-            <Board image={c.hud.timerBoard} width={270} height={115} inset="8.98% 9.68% 20.82% 6.87%">
-              {c.hud.timerIcon && <img src={c.hud.timerIcon.url} alt="" style={{ width: 52, height: 52 }} />}
-              <span style={{ ...number, fontSize: 50, color: timeWarn ? c.hud.warnColor : '#fff' }}>{hud.time}</span>
+            <Board
+              image={c.hud.timerBoard}
+              width={270}
+              height={115}
+              inset="8.98% 9.68% 20.82% 6.87%"
+            >
+              {c.hud.timerIcon && (
+                <img src={c.hud.timerIcon.url} alt="" style={{ width: 52, height: 52 }} />
+              )}
+              <span style={{ ...number, fontSize: 50, color: timeWarn ? c.hud.warnColor : '#fff' }}>
+                {hud.time}
+              </span>
             </Board>
-            <Board image={c.hud.scoreBoard} width={273} height={169} inset="27.04% 15.38% 27.89% 12.59%">
+            <Board
+              image={c.hud.scoreBoard}
+              width={273}
+              height={169}
+              inset="27.04% 15.38% 27.89% 12.59%"
+            >
               <span style={{ ...number, fontSize: 55 }}>{hud.score}</span>
             </Board>
-            <Board image={c.hud.timerBoard} width={270} height={115} inset="8.98% 9.68% 20.82% 6.87%">
+            <Board
+              image={c.hud.timerBoard}
+              width={270}
+              height={115}
+              inset="8.98% 9.68% 20.82% 6.87%"
+            >
               <span
                 className="ocq-anim"
-                style={{ display: 'flex', gap: 10, animation: livesWarn ? 'ocq-blink .8s ease-in-out infinite' : undefined }}
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  animation: livesWarn ? 'ocq-blink .8s ease-in-out infinite' : undefined,
+                }}
               >
                 {Array.from({ length: Math.max(0, hud.lives) }, (_, i) => (
                   <Sym key={i} value={c.hud.heart} size={52} />
@@ -590,17 +663,40 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
                 filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.45))',
               }}
             >
-              <Sym value={catcherSymbol} size="100%" style={catcherSymbol.image ? undefined : { fontSize: c.catcher.height * 0.8 }} />
+              <Sym
+                value={catcherSymbol}
+                size="100%"
+                style={catcherSymbol.image ? undefined : { fontSize: c.catcher.height * 0.8 }}
+              />
             </div>
           </div>
         )}
 
         {screen === 'start' && (
           <div style={{ ...overlay, gap: 48 }}>
-            {c.start.logo && <img src={c.start.logo.url} alt="" style={{ maxWidth: 600, maxHeight: 300, objectFit: 'contain' }} />}
-            {c.start.title && <h1 style={{ margin: 0, fontSize: 84, fontWeight: 800, lineHeight: 1.15 }}>{c.start.title}</h1>}
+            {c.start.logo && (
+              <img
+                src={c.start.logo.url}
+                alt=""
+                style={{ maxWidth: 600, maxHeight: 300, objectFit: 'contain' }}
+              />
+            )}
+            {c.start.title && (
+              <h1 style={{ margin: 0, fontSize: 84, fontWeight: 800, lineHeight: 1.15 }}>
+                {c.start.title}
+              </h1>
+            )}
             {c.start.text && (
-              <p style={{ margin: 0, fontSize: 44, fontWeight: 600, lineHeight: 1.4, whiteSpace: 'pre-line', maxWidth: 900 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 44,
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                  whiteSpace: 'pre-line',
+                  maxWidth: 900,
+                }}
+              >
                 {c.start.text}
               </p>
             )}
@@ -617,7 +713,9 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
                 key={count}
                 className="ocq-anim"
                 style={{
-                  ...(Number.isNaN(Number(count)) ? { fontWeight: 800, letterSpacing: 4, color: '#fff' } : number),
+                  ...(Number.isNaN(Number(count))
+                    ? { fontWeight: 800, letterSpacing: 4, color: '#fff' }
+                    : number),
                   fontSize: 52,
                   animation: 'ocq-pop .3s ease',
                 }}
@@ -633,10 +731,18 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
             <button
               type="button"
               onClick={resume}
-              style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{
+                border: 'none',
+                background: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               <Board image={c.hud.timerBoard} width={460} height={196} inset="0 0 9% 0">
-                <span style={{ fontSize: 52, fontWeight: 700, color: '#fff' }}>{c.quiz.continueLabel}</span>
+                <span style={{ fontSize: 52, fontWeight: 700, color: '#fff' }}>
+                  {c.quiz.continueLabel}
+                </span>
               </Board>
             </button>
           </div>
@@ -660,8 +766,27 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
                 overflow: 'hidden',
               }}
             >
-              <h1 style={{ fontSize: 48, fontWeight: 600, color: '#fff', margin: '0 0 60px', maxWidth: '100%' }}>{question.q.text}</h1>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', overflowY: 'auto', padding: '0 7px' }}>
+              <h1
+                style={{
+                  fontSize: 48,
+                  fontWeight: 600,
+                  color: '#fff',
+                  margin: '0 0 60px',
+                  maxWidth: '100%',
+                }}
+              >
+                {question.q.text}
+              </h1>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  width: '100%',
+                  overflowY: 'auto',
+                  padding: '0 7px',
+                }}
+              >
                 {question.order.map((ai, i) => {
                   const a = question.q.answers[ai]!;
                   const showCorrect = picked !== null && a.correct;
@@ -679,7 +804,10 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
                         width: '100%',
                         minHeight: 103,
                         padding: 0,
-                        border: showCorrect || showWrong ? `7px solid ${showWrong ? '#2B2F76' : '#fff'}` : '3px solid #fff',
+                        border:
+                          showCorrect || showWrong
+                            ? `7px solid ${showWrong ? '#2B2F76' : '#fff'}`
+                            : '3px solid #fff',
                         borderRadius: 1000,
                         fontFamily: 'inherit',
                         fontSize: 30,
@@ -732,30 +860,67 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
         {screen === 'end' && (
           <div style={{ ...overlay, zIndex: 60 }}>
             {c.end.title && (
-              <p style={{ fontWeight: 600, fontSize: 48, margin: '0 0 80px', whiteSpace: 'pre-line' }}>
+              <p
+                style={{
+                  fontWeight: 600,
+                  fontSize: 48,
+                  margin: '0 0 80px',
+                  whiteSpace: 'pre-line',
+                }}
+              >
                 {c.end.title.replaceAll('{score}', String(hud.score))}
               </p>
             )}
-            <Board image={c.hud.scoreBoard} width={641} height={398} inset="27.04% 15.38% 27.89% 12.59%">
+            <Board
+              image={c.hud.scoreBoard}
+              width={641}
+              height={398}
+              inset="27.04% 15.38% 27.89% 12.59%"
+            >
               <span style={{ ...number, fontSize: 135, fontWeight: 800 }}>{hud.score}</span>
             </Board>
-            <div style={{ width: 800, height: 598, maxWidth: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+              style={{
+                width: 800,
+                height: 598,
+                maxWidth: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Sym
                 value={c.end.mascot}
                 size="100%"
-                style={c.end.mascot.image ? { filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.25))' } : { fontSize: 300 }}
+                style={
+                  c.end.mascot.image
+                    ? { filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.25))' }
+                    : { fontSize: 300 }
+                }
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28, alignItems: 'center' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: 28, alignItems: 'center' }}
+            >
               {c.end.ctaEnabled && ctaHref && (
-                <button type="button" style={button} onClick={() => window.open(ctaHref, '_blank', 'noopener,noreferrer')}>
+                <button
+                  type="button"
+                  style={button}
+                  onClick={() => window.open(ctaHref, '_blank', 'noopener,noreferrer')}
+                >
                   {c.end.ctaLabel}
                 </button>
               )}
               {c.end.replayEnabled && (
                 <button
                   type="button"
-                  style={{ ...button, background: 'transparent', boxShadow: 'none', fontSize: 38, padding: '12px 40px' }}
+                  style={{
+                    ...button,
+                    background: 'transparent',
+                    boxShadow: 'none',
+                    fontSize: 38,
+                    padding: '12px 40px',
+                  }}
                   onClick={begin}
                 >
                   {c.end.replayLabel}
@@ -768,4 +933,3 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
     </div>
   );
 }
-

@@ -86,8 +86,13 @@ export function resetModuleRegistry() {
  * phát hành) và nội dung cấu hình, nên khóa đệm là key@version + sha256 của cấu hình.
  * Không được sửa đối tượng trả về (dùng chung giữa các request).
  */
-export async function normalizeConfig(mod: ModuleVersion, config: unknown): Promise<Record<string, unknown>> {
-  const digest = createHash('sha256').update(JSON.stringify(config ?? null)).digest('base64url');
+export async function normalizeConfig(
+  mod: ModuleVersion,
+  config: unknown,
+): Promise<Record<string, unknown>> {
+  const digest = createHash('sha256')
+    .update(JSON.stringify(config ?? null))
+    .digest('base64url');
   const cacheKey = `${mod.key}@${mod.version}:${digest}`;
   const hit = normalized.get(cacheKey);
   if (hit) return hit;
@@ -97,7 +102,11 @@ export async function normalizeConfig(mod: ModuleVersion, config: unknown): Prom
 }
 
 /** Phiên bản của game: `version` cụ thể, hoặc bản phát hành mới nhất. */
-export async function getModuleVersion(db: Database, key: string, version?: string | null): Promise<ModuleVersion> {
+export async function getModuleVersion(
+  db: Database,
+  key: string,
+  version?: string | null,
+): Promise<ModuleVersion> {
   await ensureBuiltinModules(db);
   let wanted = version ?? null;
   if (!wanted) {
@@ -115,10 +124,26 @@ export async function getModuleVersion(db: Database, key: string, version?: stri
   const [row] = await db
     .select()
     .from(schema.gameModuleVersions)
-    .where(and(eq(schema.gameModuleVersions.moduleKey, key), eq(schema.gameModuleVersions.version, wanted)))
+    .where(
+      and(
+        eq(schema.gameModuleVersions.moduleKey, key),
+        eq(schema.gameModuleVersions.version, wanted),
+      ),
+    )
     .limit(1);
-  if (!row) throw new AppError(400, ErrorCode.MODULE_NOT_FOUND, `Không có loại game "${key}" phiên bản ${wanted}.`);
-  const found: ModuleVersion = { key, version: row.version, meta: row.meta, schemaJs: row.schemaJs, runtimeJs: row.runtimeJs };
+  if (!row)
+    throw new AppError(
+      400,
+      ErrorCode.MODULE_NOT_FOUND,
+      `Không có loại game "${key}" phiên bản ${wanted}.`,
+    );
+  const found: ModuleVersion = {
+    key,
+    version: row.version,
+    meta: row.meta,
+    schemaJs: row.schemaJs,
+    runtimeJs: row.runtimeJs,
+  };
   cache.set(cacheKey, found);
   return found;
 }
@@ -126,6 +151,8 @@ export async function getModuleVersion(db: Database, key: string, version?: stri
 /** Tên hiển thị của các game (để hiện trong danh sách template). */
 export async function moduleNames(db: Database): Promise<Map<string, string>> {
   await ensureBuiltinModules(db);
-  const rows = await db.select({ key: schema.gameModules.key, name: schema.gameModules.name }).from(schema.gameModules);
+  const rows = await db
+    .select({ key: schema.gameModules.key, name: schema.gameModules.name })
+    .from(schema.gameModules);
   return new Map(rows.map((r) => [r.key, r.name]));
 }

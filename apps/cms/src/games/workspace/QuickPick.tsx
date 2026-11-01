@@ -84,7 +84,13 @@ export function QuickPick({ open, placeholder, items, keepOrder, onPick, onClose
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" slotProps={{ paper: { sx: { position: 'absolute', top: 40, m: 0 } } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      slotProps={{ paper: { sx: { position: 'absolute', top: 40, m: 0 } } }}
+    >
       <InputBase
         autoFocus
         fullWidth
@@ -126,7 +132,16 @@ export function QuickPick({ open, placeholder, items, keepOrder, onPick, onClose
             {item.icon && <ListItemIcon sx={{ minWidth: 30 }}>{item.icon}</ListItemIcon>}
             <ListItemText primary={item.label} secondary={item.description} />
             {item.hint && (
-              <Box component="span" sx={{ ml: 2, fontSize: 12, color: 'text.secondary', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+              <Box
+                component="span"
+                sx={{
+                  ml: 2,
+                  fontSize: 12,
+                  color: 'text.secondary',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {item.hint}
               </Box>
             )}

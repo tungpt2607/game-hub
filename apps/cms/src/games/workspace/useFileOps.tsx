@@ -78,9 +78,23 @@ export interface FileOpsDeps {
  * Trả về các hàm để gọi từ cây, menu, bảng lệnh, và `dialogs` để đặt vào giao diện.
  */
 export function useFileOps(deps: FileOpsDeps) {
-  const { ws, tree, onChange, setFolders, uploadAssets, onNotice, openFile, reveal, onMoved, onDeleted } = deps;
+  const {
+    ws,
+    tree,
+    onChange,
+    setFolders,
+    uploadAssets,
+    onNotice,
+    openFile,
+    reveal,
+    onMoved,
+    onDeleted,
+  } = deps;
   const { files, assets } = ws;
-  const [menu, setMenu] = useState<{ path: string; position: { top: number; left: number } } | null>(null);
+  const [menu, setMenu] = useState<{
+    path: string;
+    position: { top: number; left: number };
+  } | null>(null);
   const [pathDialog, setPathDialog] = useState<PathDialogState>(null);
   const [moving, setMoving] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
@@ -88,7 +102,13 @@ export function useFileOps(deps: FileOpsDeps) {
   const uploadInput = useRef<HTMLInputElement>(null);
   const uploadFolder = useRef('');
 
-  const commitMove = (from: string, to: string, next: Ws, moves: Moves, updatedFiles?: GameFiles) => {
+  const commitMove = (
+    from: string,
+    to: string,
+    next: Ws,
+    moves: Moves,
+    updatedFiles?: GameFiles,
+  ) => {
     onChange(updatedFiles ?? next.files, next.assets);
     setFolders(() => next.folders);
     onMoved(from, to, moves);
@@ -106,7 +126,14 @@ export function useFileOps(deps: FileOpsDeps) {
     }
     const refs = updateReferences(ws, result.ws, result.moves);
     if (refs.changes.length) {
-      setPendingMove({ from, to, next: result.ws, moves: result.moves, updatedFiles: refs.files, changes: refs.changes });
+      setPendingMove({
+        from,
+        to,
+        next: result.ws,
+        moves: result.moves,
+        updatedFiles: refs.files,
+        changes: refs.changes,
+      });
     } else {
       commitMove(from, to, result.ws, result.moves);
     }
@@ -158,7 +185,8 @@ export function useFileOps(deps: FileOpsDeps) {
           if (firstAsset) reveal(joinPath(ASSETS_DIR, firstAsset));
         }
       }
-      if (rejected.length) onNotice(t('cms.workspace.uploadRejected', { list: rejected.join(', ') }), 'error');
+      if (rejected.length)
+        onNotice(t('cms.workspace.uploadRejected', { list: rejected.join(', ') }), 'error');
       else if (redirected) onNotice(t('cms.workspace.uploadRedirected'));
       else if (count) onNotice(t('cms.workspace.uploaded', { count }));
     } catch (e) {
@@ -173,7 +201,8 @@ export function useFileOps(deps: FileOpsDeps) {
 
   const newFile = (folder: string) => setPathDialog({ mode: 'newFile', folder });
   const newFolder = (folder: string) => setPathDialog({ mode: 'newFolder', folder });
-  const rename = (path: string) => path !== ASSETS_DIR && setPathDialog({ mode: 'rename', path, isFolder: !fileExists(ws, path) });
+  const rename = (path: string) =>
+    path !== ASSETS_DIR && setPathDialog({ mode: 'rename', path, isFolder: !fileExists(ws, path) });
   const askDelete = (path: string) => path !== ASSETS_DIR && setDeleting(path);
 
   // ---------- Menu ----------
@@ -183,7 +212,12 @@ export function useFileOps(deps: FileOpsDeps) {
     menuPath === null
       ? null
       : {
-          type: menuPath === '' ? ('root' as const) : fileExists(ws, menuPath) ? ('file' as const) : ('folder' as const),
+          type:
+            menuPath === ''
+              ? ('root' as const)
+              : fileExists(ws, menuPath)
+                ? ('file' as const)
+                : ('folder' as const),
           inAssets: menuPath === ASSETS_DIR || isAssetPath(menuPath),
           locked: menuPath === ASSETS_DIR,
         };
@@ -215,7 +249,9 @@ export function useFileOps(deps: FileOpsDeps) {
         void copyText(menuPath).then(() => onNotice(t('cms.workspace.copied')));
         break;
       case 'copyUsage':
-        void copyText(`asset('${assetKey(menuPath)}')`).then(() => onNotice(t('cms.workspace.copiedUsage')));
+        void copyText(`asset('${assetKey(menuPath)}')`).then(() =>
+          onNotice(t('cms.workspace.copiedUsage')),
+        );
         break;
       case 'delete':
         askDelete(menuPath);
@@ -237,7 +273,12 @@ export function useFileOps(deps: FileOpsDeps) {
         }}
       />
 
-      <EntryMenu position={menu?.position ?? null} target={menuTarget} onAction={onAction} onClose={() => setMenu(null)} />
+      <EntryMenu
+        position={menu?.position ?? null}
+        target={menuTarget}
+        onAction={onAction}
+        onClose={() => setMenu(null)}
+      />
 
       <PathDialog
         open={pathDialog !== null}
@@ -253,20 +294,36 @@ export function useFileOps(deps: FileOpsDeps) {
             ? t('cms.workspace.folderPath')
             : t('cms.workspace.filePath')
         }
-        initial={!pathDialog ? '' : pathDialog.mode === 'rename' ? pathDialog.path : pathDialog.folder ? `${pathDialog.folder}/` : ''}
+        initial={
+          !pathDialog
+            ? ''
+            : pathDialog.mode === 'rename'
+              ? pathDialog.path
+              : pathDialog.folder
+                ? `${pathDialog.folder}/`
+                : ''
+        }
         selection={(() => {
           if (pathDialog?.mode !== 'rename') return undefined;
           const start = pathDialog.path.lastIndexOf('/') + 1;
           const dot = pathDialog.isFolder ? -1 : pathDialog.path.lastIndexOf('.');
           return [start, dot > start ? dot : pathDialog.path.length] as [number, number];
         })()}
-        hint={pathDialog?.mode === 'newFile' ? t('cms.workspace.newFileHint') : t('cms.workspace.pathHint')}
-        confirmLabel={pathDialog?.mode === 'rename' ? t('cms.workspace.rename') : t('cms.workspace.create')}
+        hint={
+          pathDialog?.mode === 'newFile'
+            ? t('cms.workspace.newFileHint')
+            : t('cms.workspace.pathHint')
+        }
+        confirmLabel={
+          pathDialog?.mode === 'rename' ? t('cms.workspace.rename') : t('cms.workspace.create')
+        }
         validate={(value) => {
           if (!pathDialog) return null;
           if (pathDialog.mode === 'newFile') return checkFilePath(ws, value, 'code');
           if (pathDialog.mode === 'newFolder') return checkFolderPath(ws, value);
-          return pathDialog.isFolder ? checkFolderPath(ws, value, pathDialog.path) : checkFilePath(ws, value, kindOf(pathDialog.path), pathDialog.path);
+          return pathDialog.isFolder
+            ? checkFolderPath(ws, value, pathDialog.path)
+            : checkFilePath(ws, value, kindOf(pathDialog.path), pathDialog.path);
         }}
         onConfirm={(value) => {
           const d = pathDialog;
@@ -308,11 +365,19 @@ export function useFileOps(deps: FileOpsDeps) {
       <ReferenceUpdateDialog
         changes={pendingMove?.changes ?? null}
         onUpdate={() => {
-          if (pendingMove) commitMove(pendingMove.from, pendingMove.to, pendingMove.next, pendingMove.moves, pendingMove.updatedFiles);
+          if (pendingMove)
+            commitMove(
+              pendingMove.from,
+              pendingMove.to,
+              pendingMove.next,
+              pendingMove.moves,
+              pendingMove.updatedFiles,
+            );
           setPendingMove(null);
         }}
         onSkip={() => {
-          if (pendingMove) commitMove(pendingMove.from, pendingMove.to, pendingMove.next, pendingMove.moves);
+          if (pendingMove)
+            commitMove(pendingMove.from, pendingMove.to, pendingMove.next, pendingMove.moves);
           setPendingMove(null);
         }}
         onCancel={() => setPendingMove(null)}
@@ -323,7 +388,9 @@ export function useFileOps(deps: FileOpsDeps) {
         title={t('cms.workspace.deleteTitle', { name: deleting ? baseName(deleting) : '' })}
         text={
           deleting && !fileExists(ws, deleting)
-            ? t('cms.workspace.deleteFolderText', { count: allFiles(ws).filter((p) => p.startsWith(`${deleting}/`)).length })
+            ? t('cms.workspace.deleteFolderText', {
+                count: allFiles(ws).filter((p) => p.startsWith(`${deleting}/`)).length,
+              })
             : deleting && isAssetPath(deleting)
               ? t('cms.workspace.deleteAssetText')
               : t('cms.workspace.deleteFileText')
@@ -347,7 +414,8 @@ export function useFileOps(deps: FileOpsDeps) {
     newFolder,
     rename,
     askDelete,
-    openMenu: (path: string, position: { top: number; left: number }) => setMenu({ path, position }),
+    openMenu: (path: string, position: { top: number; left: number }) =>
+      setMenu({ path, position }),
     dialogs,
   };
 }

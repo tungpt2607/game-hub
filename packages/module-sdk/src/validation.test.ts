@@ -80,7 +80,9 @@ describe('validateConfig', () => {
 
   it('bỏ qua trường đang ẩn', () => {
     expect(validateConfig(fields, { ...valid, timerColor: 'sai' })).toEqual({});
-    expect(validateConfig(fields, { ...valid, showTimer: true, timerColor: 'sai' })).toHaveProperty('timerColor');
+    expect(validateConfig(fields, { ...valid, showTimer: true, timerColor: 'sai' })).toHaveProperty(
+      'timerColor',
+    );
   });
 });
 
@@ -96,7 +98,9 @@ describe('kiểm tra thêm (check)', () => {
     }),
   };
   it('báo lỗi khi điều kiện riêng của module không thỏa', () => {
-    expect(validateConfig(quizFields, { answers: [{ text: 'A', correct: false }] }).answers).toBe('Cần đúng một đáp án đúng');
+    expect(validateConfig(quizFields, { answers: [{ text: 'A', correct: false }] }).answers).toBe(
+      'Cần đúng một đáp án đúng',
+    );
     expect(validateConfig(quizFields, { answers: [{ text: 'A', correct: true }] })).toEqual({});
   });
 });
@@ -108,7 +112,9 @@ describe('định dạng link', () => {
     expect(validateConfig(linkFields, { url: '' })).toEqual({});
   });
   it('từ chối chữ không phải link', () => {
-    expect(validateConfig(linkFields, { url: 'opes.vn' }).url).toBe('Cần là link bắt đầu bằng https://');
+    expect(validateConfig(linkFields, { url: 'opes.vn' }).url).toBe(
+      'Cần là link bắt đầu bằng https://',
+    );
   });
 });
 

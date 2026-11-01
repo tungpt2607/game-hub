@@ -32,7 +32,10 @@ export function ReferenceUpdateDialog({ changes, onUpdate, onSkip, onCancel }: P
         <Box component="ul" sx={{ m: 0, pl: 2.5, fontFamily: 'monospace', fontSize: 13 }}>
           {(changes ?? []).map((c) => (
             <li key={c.file}>
-              {c.file} <Typography component="span" variant="caption" color="text.secondary">({t('cms.workspace.places', { count: c.count })})</Typography>
+              {c.file}{' '}
+              <Typography component="span" variant="caption" color="text.secondary">
+                ({t('cms.workspace.places', { count: c.count })})
+              </Typography>
             </li>
           ))}
         </Box>

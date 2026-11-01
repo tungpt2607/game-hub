@@ -16,7 +16,16 @@ import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import type { ReactNode } from 'react';
 import { t } from '@opes/i18n';
 
-export type EntryAction = 'open' | 'newFile' | 'newFolder' | 'upload' | 'rename' | 'move' | 'copyPath' | 'copyUsage' | 'delete';
+export type EntryAction =
+  | 'open'
+  | 'newFile'
+  | 'newFolder'
+  | 'upload'
+  | 'rename'
+  | 'move'
+  | 'copyPath'
+  | 'copyUsage'
+  | 'delete';
 
 interface Props {
   /** Vị trí mở menu; null = đóng. */
@@ -44,13 +53,30 @@ export function EntryMenu({ position, target, onAction, onClose }: Props) {
   const meta: Record<EntryAction, { icon: ReactNode; label: string; hint?: string }> = {
     open: { icon: <OpenInNewOutlined fontSize="small" />, label: t('cms.workspace.open') },
     newFile: { icon: <NoteAddOutlined fontSize="small" />, label: t('cms.workspace.newFile') },
-    newFolder: { icon: <CreateNewFolderOutlined fontSize="small" />, label: t('cms.workspace.newFolder') },
+    newFolder: {
+      icon: <CreateNewFolderOutlined fontSize="small" />,
+      label: t('cms.workspace.newFolder'),
+    },
     upload: { icon: <UploadFileOutlined fontSize="small" />, label: t('cms.workspace.upload') },
-    rename: { icon: <DriveFileRenameOutline fontSize="small" />, label: t('cms.workspace.rename'), hint: 'F2' },
+    rename: {
+      icon: <DriveFileRenameOutline fontSize="small" />,
+      label: t('cms.workspace.rename'),
+      hint: 'F2',
+    },
     move: { icon: <DriveFileMoveOutlined fontSize="small" />, label: t('cms.workspace.move') },
-    copyPath: { icon: <ContentCopyOutlined fontSize="small" />, label: t('cms.workspace.copyPath') },
-    copyUsage: { icon: <ContentCopyOutlined fontSize="small" />, label: t('cms.workspace.copyUsage') },
-    delete: { icon: <DeleteOutline fontSize="small" />, label: t('cms.workspace.delete'), hint: 'Delete' },
+    copyPath: {
+      icon: <ContentCopyOutlined fontSize="small" />,
+      label: t('cms.workspace.copyPath'),
+    },
+    copyUsage: {
+      icon: <ContentCopyOutlined fontSize="small" />,
+      label: t('cms.workspace.copyUsage'),
+    },
+    delete: {
+      icon: <DeleteOutline fontSize="small" />,
+      label: t('cms.workspace.delete'),
+      hint: 'Delete',
+    },
   };
 
   return (
@@ -75,10 +101,16 @@ export function EntryMenu({ position, target, onAction, onClose }: Props) {
               }}
               sx={item === 'delete' ? { color: 'error.main' } : undefined}
             >
-              <ListItemIcon sx={item === 'delete' ? { color: 'error.main' } : undefined}>{meta[item].icon}</ListItemIcon>
+              <ListItemIcon sx={item === 'delete' ? { color: 'error.main' } : undefined}>
+                {meta[item].icon}
+              </ListItemIcon>
               <ListItemText>{meta[item].label}</ListItemText>
               {meta[item].hint && (
-                <ListItemText sx={{ textAlign: 'right', ml: 3, color: 'text.secondary', flex: 'none' }}>{meta[item].hint}</ListItemText>
+                <ListItemText
+                  sx={{ textAlign: 'right', ml: 3, color: 'text.secondary', flex: 'none' }}
+                >
+                  {meta[item].hint}
+                </ListItemText>
               )}
             </MenuItem>
           ),

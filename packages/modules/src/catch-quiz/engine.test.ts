@@ -59,7 +59,10 @@ describe('CatchQuizEngine', () => {
   });
 
   it('dính vật xấu: dừng game, hiện câu hỏi; trả lời sai mất mạng, đúng thì chơi tiếp', () => {
-    const e = new CatchQuizEngine(config((c) => (c.quiz.correctBonus = 5)), seededRandom(1));
+    const e = new CatchQuizEngine(
+      config((c) => (c.quiz.correctBonus = 5)),
+      seededRandom(1),
+    );
     e.start(false);
     dropOn(e, 2);
     const events = e.step(0.2);
@@ -81,7 +84,10 @@ describe('CatchQuizEngine', () => {
   });
 
   it('trả lời sai khi còn 1 mạng thì kết thúc', () => {
-    const e = new CatchQuizEngine(config((c) => (c.rules.lives = 1)), seededRandom(1));
+    const e = new CatchQuizEngine(
+      config((c) => (c.rules.lives = 1)),
+      seededRandom(1),
+    );
     e.start(false);
     dropOn(e, 2);
     e.step(0.2);
@@ -106,7 +112,10 @@ describe('CatchQuizEngine', () => {
   });
 
   it('nhóm "mất mạng" trừ mạng ngay, không dừng game', () => {
-    const e = new CatchQuizEngine(config((c) => (c.groups[2]!.effect = 'life')), seededRandom(1));
+    const e = new CatchQuizEngine(
+      config((c) => (c.groups[2]!.effect = 'life')),
+      seededRandom(1),
+    );
     e.start(false);
     dropOn(e, 2);
     const events = e.step(0.2);
@@ -116,7 +125,10 @@ describe('CatchQuizEngine', () => {
   });
 
   it('hết giờ thì kết thúc', () => {
-    const e = new CatchQuizEngine(config((c) => (c.rules.duration = 3)), seededRandom(1));
+    const e = new CatchQuizEngine(
+      config((c) => (c.rules.duration = 3)),
+      seededRandom(1),
+    );
     e.start();
     e.catcherX = -10000; // không hứng gì
     const events = e.step(3.2);

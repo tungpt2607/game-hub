@@ -81,7 +81,13 @@ export const MediaCompleteRequestSchema = z.object({
   sizeBytes: z.number().int().positive(),
   width: dimension,
   height: dimension,
-  durationMs: z.number().int().nonnegative().max(24 * 3600 * 1000).nullable().optional(),
+  durationMs: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(24 * 3600 * 1000)
+    .nullable()
+    .optional(),
 });
 export type MediaCompleteRequest = z.infer<typeof MediaCompleteRequestSchema>;
 

@@ -69,13 +69,23 @@ export function StatusBar({
         scrollbarWidth: 'none',
       }}
     >
-      <Box component="button" type="button" onClick={onToggleProblems} sx={itemSx} aria-label={t('cms.editor.toggleProblems')}>
+      <Box
+        component="button"
+        type="button"
+        onClick={onToggleProblems}
+        sx={itemSx}
+        aria-label={t('cms.editor.toggleProblems')}
+      >
         <ErrorOutline sx={{ fontSize: 14 }} /> {errors}
         <WarningAmberOutlined sx={{ fontSize: 14, ml: 0.5 }} /> {warnings}
       </Box>
       <Box sx={{ ...itemSx, cursor: 'default', '&:hover': undefined }}>
         {compiling ? t('cms.editor.compiling') : ''}
-        {tsStatus === 'loading' ? ` ${t('cms.editor.tsLoading')}` : tsStatus === 'error' ? ` ${t('cms.editor.tsError')}` : ''}
+        {tsStatus === 'loading'
+          ? ` ${t('cms.editor.tsLoading')}`
+          : tsStatus === 'error'
+            ? ` ${t('cms.editor.tsError')}`
+            : ''}
       </Box>
       <Box sx={{ flexGrow: 1 }} />
       {cursor && (
@@ -83,7 +93,9 @@ export function StatusBar({
           <Box sx={{ ...itemSx, cursor: 'default', '&:hover': undefined }}>
             {t('cms.editor.lineColumn', { line: cursor.line, column: cursor.column + 1 })}
           </Box>
-          <Box sx={{ ...itemSx, cursor: 'default', '&:hover': undefined }}>{LANGUAGE[extOf(cursor.path)] ?? ''}</Box>
+          <Box sx={{ ...itemSx, cursor: 'default', '&:hover': undefined }}>
+            {LANGUAGE[extOf(cursor.path)] ?? ''}
+          </Box>
         </>
       )}
       <Tooltip title={t('cms.editor.formatOnSaveHint')}>

@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /** Một tùy chọn nhỏ nhớ trên trình duyệt (ví dụ tự định dạng khi lưu); lỗi localStorage thì dùng mặc định. */
-export function useLocalSetting(key: string, initial: boolean): [boolean, (value: boolean) => void] {
+export function useLocalSetting(
+  key: string,
+  initial: boolean,
+): [boolean, (value: boolean) => void] {
   const [value, setValue] = useState(initial);
   useEffect(() => {
     try {

@@ -12,7 +12,9 @@ const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
 const mediaOrigin = process.env.MEDIA_PROXY_ORIGIN?.replace(/\/+$/, '');
 
 // Các tên miền CMS được nhúng khung chạy game /embed (xem trước trong CMS). Nhiều địa chỉ cách nhau dấu phẩy.
-const cmsOrigins = (process.env.CMS_PUBLIC_URL || 'https://opes-gamehub-cms.vercel.app,http://localhost:3000')
+const cmsOrigins = (
+  process.env.CMS_PUBLIC_URL || 'https://opes-gamehub-cms.vercel.app,http://localhost:3000'
+)
   .split(',')
   .map((u) => u.trim())
   .filter(Boolean)
@@ -31,14 +33,18 @@ const nextConfig = {
     return [
       {
         source: '/embed',
-        headers: [{ key: 'Content-Security-Policy', value: `frame-ancestors ${cmsOrigins.join(' ')}` }],
+        headers: [
+          { key: 'Content-Security-Policy', value: `frame-ancestors ${cmsOrigins.join(' ')}` },
+        ],
       },
     ];
   },
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
-      ...(mediaOrigin ? [{ source: '/media/:path*', destination: `${mediaOrigin}/media/:path*` }] : []),
+      ...(mediaOrigin
+        ? [{ source: '/media/:path*', destination: `${mediaOrigin}/media/:path*` }]
+        : []),
     ];
   },
 };

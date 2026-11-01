@@ -89,5 +89,7 @@ export type TemplateSaveRequest = z.input<typeof TemplateSaveRequestSchema>;
 export const TemplatePublishRequestSchema = z.object({ baseRevision: z.number().int() });
 export type TemplatePublishRequest = z.infer<typeof TemplatePublishRequestSchema>;
 
-export const TemplateVersionResponseSchema = TemplateVersionInfoSchema.extend({ config: configSchema });
+export const TemplateVersionResponseSchema = TemplateVersionInfoSchema.extend({
+  config: configSchema,
+});
 export type TemplateVersionResponse = z.infer<typeof TemplateVersionResponseSchema>;

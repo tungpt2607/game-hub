@@ -1,6 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import type { EmojiOrImage, HostApi, RuntimeProps } from '@opes/module-sdk';
 import { useFont, useSound, type Sound } from '@opes/module-sdk/react';
 import type { CatchConfig } from './config';
@@ -104,11 +113,28 @@ class SpriteLayer {
 
 function ItemSymbol({ value, size }: { value: EmojiOrImage; size: number }) {
   if (value.image)
-    return <img src={value.image.url} alt="" style={{ width: size, height: size, objectFit: 'contain' }} draggable={false} />;
-  return <span style={{ fontSize: size * 0.85, lineHeight: 1, fontFamily: EMOJI_FONT }}>{value.emoji}</span>;
+    return (
+      <img
+        src={value.image.url}
+        alt=""
+        style={{ width: size, height: size, objectFit: 'contain' }}
+        draggable={false}
+      />
+    );
+  return (
+    <span style={{ fontSize: size * 0.85, lineHeight: 1, fontFamily: EMOJI_FONT }}>
+      {value.emoji}
+    </span>
+  );
 }
 
-export function CatchRuntime({ config, host, initialScreen, muted, storageKey }: RuntimeProps<CatchConfig>) {
+export function CatchRuntime({
+  config,
+  host,
+  initialScreen,
+  muted,
+  storageKey,
+}: RuntimeProps<CatchConfig>) {
   const fontFamily = useFont(config.look.font);
   const music = useSound(config.sound.music, { muted, loop: true, volume: 0.45 });
   const catchSound = useSound(config.sound.catch, { muted });
@@ -158,7 +184,9 @@ export function CatchRuntime({ config, host, initialScreen, muted, storageKey }:
     fontFamily,
     color: config.look.text,
     background: config.look.background,
-    backgroundImage: config.look.backgroundImage ? `url(${JSON.stringify(config.look.backgroundImage.url)})` : undefined,
+    backgroundImage: config.look.backgroundImage
+      ? `url(${JSON.stringify(config.look.backgroundImage.url)})`
+      : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     userSelect: 'none',
@@ -172,13 +200,22 @@ export function CatchRuntime({ config, host, initialScreen, muted, storageKey }:
       {screen === 'intro' && (
         <Centered>
           {config.content.logo && (
-            <img src={config.content.logo.url} alt="" style={{ maxWidth: '62%', maxHeight: 130, objectFit: 'contain' }} />
+            <img
+              src={config.content.logo.url}
+              alt=""
+              style={{ maxWidth: '62%', maxHeight: 130, objectFit: 'contain' }}
+            />
           )}
           <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.15 }}>{config.content.title}</h1>
           {config.content.intro && (
-            <p style={{ margin: 0, fontSize: 17, opacity: 0.92, whiteSpace: 'pre-line' }}>{config.content.intro}</p>
+            <p style={{ margin: 0, fontSize: 17, opacity: 0.92, whiteSpace: 'pre-line' }}>
+              {config.content.intro}
+            </p>
           )}
-          <BigButton config={config} onClick={() => (config.guide.enabled ? setScreen('guide') : play())}>
+          <BigButton
+            config={config}
+            onClick={() => (config.guide.enabled ? setScreen('guide') : play())}
+          >
             {config.content.startLabel}
           </BigButton>
         </Centered>
@@ -187,7 +224,13 @@ export function CatchRuntime({ config, host, initialScreen, muted, storageKey }:
       {screen === 'guide' && <GuideScreen config={config} onPlay={play} />}
 
       {screen === 'play' && (
-        <PlayScene key={runKey} config={config} host={host} sounds={{ catch: catchSound, bad: badSound }} onEnd={finish} />
+        <PlayScene
+          key={runKey}
+          config={config}
+          host={host}
+          sounds={{ catch: catchSound, bad: badSound }}
+          onEnd={finish}
+        />
       )}
 
       {screen === 'end' && <EndScreen config={config} result={result} onReplay={play} />}
@@ -262,15 +305,24 @@ function itemNote(item: CatchConfig['items'][number], usesLives: boolean): strin
 function GuideScreen({ config, onPlay }: { config: CatchConfig; onPlay: () => void }) {
   const usesLives = config.rules.endMode !== 'time';
   const usesTime = config.rules.endMode !== 'lives';
-  const rules = [usesTime ? `⏱ ${config.rules.duration} giây` : '', usesLives ? `❤️ ${config.rules.lives} mạng` : '']
+  const rules = [
+    usesTime ? `⏱ ${config.rules.duration} giây` : '',
+    usesLives ? `❤️ ${config.rules.lives} mạng` : '',
+  ]
     .filter(Boolean)
     .join('   ');
   return (
     <Centered>
       <h2 style={{ margin: 0, fontSize: 28 }}>Cách chơi</h2>
-      {config.guide.text && <p style={{ margin: 0, fontSize: 16, whiteSpace: 'pre-line' }}>{config.guide.text}</p>}
+      {config.guide.text && (
+        <p style={{ margin: 0, fontSize: 16, whiteSpace: 'pre-line' }}>{config.guide.text}</p>
+      )}
       {config.guide.image && (
-        <img src={config.guide.image.url} alt="" style={{ maxWidth: '80%', maxHeight: 160, objectFit: 'contain' }} />
+        <img
+          src={config.guide.image.url}
+          alt=""
+          style={{ maxWidth: '80%', maxHeight: 160, objectFit: 'contain' }}
+        />
       )}
       <div
         style={{
@@ -332,7 +384,12 @@ function PlayScene({
   onEndRef.current = onEnd;
 
   const [countdown, setCountdown] = useState(config.rules.countdown ? 3 : 0);
-  const [hud, setHud] = useState({ score: 0, lives: config.rules.lives, time: config.rules.duration, level: 1 });
+  const [hud, setHud] = useState({
+    score: 0,
+    lives: config.rules.lives,
+    time: config.rules.duration,
+    level: 1,
+  });
   const [banner, setBanner] = useState<{ id: number; text: string } | null>(null);
 
   const imageUrls = useMemo(
@@ -425,7 +482,8 @@ function PlayScene({
               id: popId++,
               x: ev.x,
               y: ev.y,
-              text: ev.lostLife && ev.points === 0 ? '-❤️' : `${ev.points > 0 ? '+' : ''}${ev.points}`,
+              text:
+                ev.lostLife && ev.points === 0 ? '-❤️' : `${ev.points > 0 ? '+' : ''}${ev.points}`,
               good: !bad,
               born: performance.now(),
             });
@@ -479,7 +537,14 @@ function PlayScene({
       const c = configRef.current;
       sprites?.begin();
 
-      const drawSymbol = (id: string, symbol: EmojiOrImage | undefined, x: number, y: number, w: number, h: number) => {
+      const drawSymbol = (
+        id: string,
+        symbol: EmojiOrImage | undefined,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+      ) => {
         if (!symbol) return;
         if (symbol.image) {
           sprites?.place(id, symbol.image.url, x, y, w, h);
@@ -492,11 +557,19 @@ function PlayScene({
       };
 
       const size = engine.itemSize;
-      for (const f of engine.falling) drawSymbol(`item-${f.id}`, c.items[f.itemIndex]?.symbol, f.x, f.y, size, size);
+      for (const f of engine.falling)
+        drawSymbol(`item-${f.id}`, c.items[f.itemIndex]?.symbol, f.x, f.y, size, size);
 
       const bw = engine.basketWidth;
       const bh = engine.basketHeight;
-      drawSymbol('basket', c.basket.symbol, engine.basketX, engine.basketTop + bh / 2, bw, c.basket.symbol.image ? bh : bw);
+      drawSymbol(
+        'basket',
+        c.basket.symbol,
+        engine.basketX,
+        engine.basketTop + bh / 2,
+        bw,
+        c.basket.symbol.image ? bh : bw,
+      );
       sprites?.end();
 
       // Điểm bay lên.
@@ -565,7 +638,11 @@ function PlayScene({
 
   const usesLives = config.rules.endMode !== 'time';
   const usesTime = config.rules.endMode !== 'lives';
-  const hudText: CSSProperties = { fontSize: 22, fontWeight: 800, textShadow: '0 2px 4px rgba(0,0,0,0.35)' };
+  const hudText: CSSProperties = {
+    fontSize: 22,
+    fontWeight: 800,
+    textShadow: '0 2px 4px rgba(0,0,0,0.35)',
+  };
 
   return (
     <div
@@ -579,8 +656,14 @@ function PlayScene({
         cursor: 'grab',
       }}
     >
-      <div ref={spriteRoot} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }} />
-      <canvas ref={canvas} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+      <div
+        ref={spriteRoot}
+        style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}
+      />
+      <canvas
+        ref={canvas}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      />
       <div
         style={{
           position: 'absolute',
@@ -595,10 +678,16 @@ function PlayScene({
         }}
       >
         <span style={hudText}>⭐ {hud.score}</span>
-        {config.difficulty.mode === 'levels' && <span style={{ ...hudText, fontSize: 16 }}>Màn {hud.level}</span>}
+        {config.difficulty.mode === 'levels' && (
+          <span style={{ ...hudText, fontSize: 16 }}>Màn {hud.level}</span>
+        )}
         <span style={{ ...hudText, display: 'flex', gap: 10 }}>
           {usesTime && <span>⏱ {hud.time}s</span>}
-          {usesLives && <span style={{ fontFamily: EMOJI_FONT }}>{'❤️'.repeat(Math.max(0, hud.lives)) || '🤍'}</span>}
+          {usesLives && (
+            <span style={{ fontFamily: EMOJI_FONT }}>
+              {'❤️'.repeat(Math.max(0, hud.lives)) || '🤍'}
+            </span>
+          )}
         </span>
       </div>
       {countdown > 0 && (
@@ -688,7 +777,18 @@ function Confetti({ colors }: { colors: string[] }) {
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi mở màn kết thúc.
   }, []);
-  return <canvas ref={canvas} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />;
+  return (
+    <canvas
+      ref={canvas}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+      }}
+    />
+  );
 }
 
 function EndScreen({
@@ -723,7 +823,14 @@ function EndScreen({
       <Confetti colors={[config.look.primary, config.look.text, '#FACC15', '#22C55E', '#EC4899']} />
       <Centered>
         <h1 style={{ margin: 0, fontSize: 32 }}>{config.end.title}</h1>
-        <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1, textShadow: '0 4px 12px rgba(0,0,0,0.25)' }}>
+        <div
+          style={{
+            fontSize: 76,
+            fontWeight: 800,
+            lineHeight: 1,
+            textShadow: '0 4px 12px rgba(0,0,0,0.25)',
+          }}
+        >
           {result.score}
         </div>
         {config.end.showBest && result.best !== null && (

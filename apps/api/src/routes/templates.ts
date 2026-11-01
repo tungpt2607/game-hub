@@ -24,7 +24,10 @@ type TemplateRow = typeof schema.templates.$inferSelect;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Phiên bản game mà template đang dùng; không còn thì lấy bản mới nhất. */
-async function moduleFor(db: Database, row: Pick<TemplateRow, 'moduleKey' | 'moduleVersion'>): Promise<ModuleVersion> {
+async function moduleFor(
+  db: Database,
+  row: Pick<TemplateRow, 'moduleKey' | 'moduleVersion'>,
+): Promise<ModuleVersion> {
   try {
     return await getModuleVersion(db, row.moduleKey, row.moduleVersion);
   } catch {
@@ -59,7 +62,11 @@ async function findTemplate(db: Database, id: string): Promise<TemplateRow> {
 
 function ensureActive(row: TemplateRow) {
   if (row.archivedAt) {
-    throw new AppError(409, ErrorCode.TEMPLATE_ARCHIVED, 'Template đã lưu trữ. Khôi phục để sửa tiếp.');
+    throw new AppError(
+      409,
+      ErrorCode.TEMPLATE_ARCHIVED,
+      'Template đã lưu trữ. Khôi phục để sửa tiếp.',
+    );
   }
 }
 
@@ -123,12 +130,16 @@ export function templateRoutes(deps: AppDeps) {
     const status = TemplateStatusSchema.safeParse(c.req.query('status') ?? 'active');
     if (!status.success) throw new AppError(400, ErrorCode.VALIDATION, 'Trạng thái không hợp lệ.');
     const filters: SQL[] = [
-      status.data === 'archived' ? isNotNull(schema.templates.archivedAt) : isNull(schema.templates.archivedAt),
+      status.data === 'archived'
+        ? isNotNull(schema.templates.archivedAt)
+        : isNull(schema.templates.archivedAt),
     ];
     const q = c.req.query('q')?.trim();
     if (q) {
       const like = `%${q.replace(/[%_\\]/g, '\\$&')}%`;
-      filters.push(or(ilike(schema.templates.name, like), ilike(schema.templates.brandName, like))!);
+      filters.push(
+        or(ilike(schema.templates.name, like), ilike(schema.templates.brandName, like))!,
+      );
     }
     const moduleKey = c.req.query('module');
     if (moduleKey) filters.push(eq(schema.templates.moduleKey, moduleKey));
@@ -155,7 +166,10 @@ export function templateRoutes(deps: AppDeps) {
       moduleKey = original.moduleKey;
       raw = original.config;
     }
-    if (!moduleKey) throw new AppError(400, ErrorCode.VALIDATION, 'Chọn loại game.', { fields: { moduleKey: 'Chọn loại game.' } });
+    if (!moduleKey)
+      throw new AppError(400, ErrorCode.VALIDATION, 'Chọn loại game.', {
+        fields: { moduleKey: 'Chọn loại game.' },
+      });
     const mod = await getModuleVersion(db, moduleKey);
     if (source.type === 'defaults') raw = mod.meta.defaults;
     if (source.type === 'config') raw = source.config;
@@ -214,7 +228,9 @@ export function templateRoutes(deps: AppDeps) {
         updatedAt: deps.now(),
       })
       // Chỉ ghi khi chưa ai lưu chen (tránh ghi đè thay đổi của người khác).
-      .where(and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)))
+      .where(
+        and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)),
+      )
       .returning();
     if (!saved) throw conflict((await findTemplate(db, row.id)).revision);
     return c.json({ template: await detail(db, saved!) });
@@ -228,7 +244,11 @@ export function templateRoutes(deps: AppDeps) {
     const now = deps.now();
     const id = (await findTemplate(db, c.req.param('id'))).id;
     const result = await db.transaction(async (tx) => {
-      const [row] = await tx.select().from(schema.templates).where(eq(schema.templates.id, id)).for('update');
+      const [row] = await tx
+        .select()
+        .from(schema.templates)
+        .where(eq(schema.templates.id, id))
+        .for('update');
       if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy template.');
       ensureActive(row);
       ensureRevision(row, input.baseRevision);
@@ -236,9 +256,14 @@ export function templateRoutes(deps: AppDeps) {
       const errors = await sandbox.validate(mod.schemaJs, row.config);
       const count = Object.keys(errors).length;
       if (count > 0) {
-        throw new AppError(422, ErrorCode.TEMPLATE_INVALID, `Còn ${count} lỗi cần sửa trước khi công bố.`, {
-          fields: errors,
-        });
+        throw new AppError(
+          422,
+          ErrorCode.TEMPLATE_INVALID,
+          `Còn ${count} lỗi cần sửa trước khi công bố.`,
+          {
+            fields: errors,
+          },
+        );
       }
       const version = row.publishedVersion + 1;
       await tx.insert(schema.templateVersions).values({
@@ -293,7 +318,9 @@ export function templateRoutes(deps: AppDeps) {
         updatedBy: c.get('user').id,
         updatedAt: deps.now(),
       })
-      .where(and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)))
+      .where(
+        and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)),
+      )
       .returning();
     if (!saved) throw conflict((await findTemplate(db, row.id)).revision);
     await audit(db, {
@@ -319,7 +346,12 @@ export function templateRoutes(deps: AppDeps) {
           })
           .from(schema.templateVersions)
           .leftJoin(schema.users, eq(schema.users.id, schema.templateVersions.publishedBy))
-          .where(and(eq(schema.templateVersions.templateId, templateId), eq(schema.templateVersions.version, version)))
+          .where(
+            and(
+              eq(schema.templateVersions.templateId, templateId),
+              eq(schema.templateVersions.version, version),
+            ),
+          )
           .limit(1)
       : [];
     if (!v) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy phiên bản này.');
@@ -358,7 +390,9 @@ export function templateRoutes(deps: AppDeps) {
         updatedBy: c.get('user').id,
         updatedAt: deps.now(),
       })
-      .where(and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)))
+      .where(
+        and(eq(schema.templates.id, row.id), eq(schema.templates.revision, input.baseRevision)),
+      )
       .returning();
     if (!saved) throw conflict((await findTemplate(db, row.id)).revision);
     await audit(db, {
@@ -380,7 +414,13 @@ export function templateRoutes(deps: AppDeps) {
       .set({ archivedAt: row.archivedAt ?? deps.now() })
       .where(eq(schema.templates.id, row.id))
       .returning();
-    await audit(db, { userId: c.get('user').id, action: 'template.archive', entity: 'template', entityId: row.id, data: { name: row.name } });
+    await audit(db, {
+      userId: c.get('user').id,
+      action: 'template.archive',
+      entity: 'template',
+      entityId: row.id,
+      data: { name: row.name },
+    });
     return c.json({ template: await detail(db, saved!) });
   });
 
@@ -392,7 +432,13 @@ export function templateRoutes(deps: AppDeps) {
       .set({ archivedAt: null })
       .where(eq(schema.templates.id, row.id))
       .returning();
-    await audit(db, { userId: c.get('user').id, action: 'template.unarchive', entity: 'template', entityId: row.id, data: { name: row.name } });
+    await audit(db, {
+      userId: c.get('user').id,
+      action: 'template.unarchive',
+      entity: 'template',
+      entityId: row.id,
+      data: { name: row.name },
+    });
     return c.json({ template: await detail(db, saved!) });
   });
 
@@ -401,10 +447,20 @@ export function templateRoutes(deps: AppDeps) {
     const db = c.get('db');
     const row = await findTemplate(db, c.req.param('id'));
     if (!row.archivedAt) {
-      throw new AppError(409, ErrorCode.TEMPLATE_NOT_ARCHIVED, 'Lưu trữ template trước rồi mới xóa hẳn được.');
+      throw new AppError(
+        409,
+        ErrorCode.TEMPLATE_NOT_ARCHIVED,
+        'Lưu trữ template trước rồi mới xóa hẳn được.',
+      );
     }
     await db.delete(schema.templates).where(eq(schema.templates.id, row.id));
-    await audit(db, { userId: c.get('user').id, action: 'template.delete', entity: 'template', entityId: row.id, data: { name: row.name } });
+    await audit(db, {
+      userId: c.get('user').id,
+      action: 'template.delete',
+      entity: 'template',
+      entityId: row.id,
+      data: { name: row.name },
+    });
     return c.body(null, 204);
   });
 

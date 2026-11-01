@@ -190,9 +190,25 @@ export const catchFields = {
         step: 0.1,
         unit: 'giây',
       }),
-      fallEnd: field.number({ label: 'Thời gian rơi lúc khó nhất', min: 0.6, max: 10, step: 0.1, unit: 'giây' }),
-      spawnStart: field.number({ label: 'Số vật phẩm mỗi giây lúc đầu', min: 0.2, max: 6, step: 0.1 }),
-      spawnEnd: field.number({ label: 'Số vật phẩm mỗi giây lúc khó nhất', min: 0.2, max: 6, step: 0.1 }),
+      fallEnd: field.number({
+        label: 'Thời gian rơi lúc khó nhất',
+        min: 0.6,
+        max: 10,
+        step: 0.1,
+        unit: 'giây',
+      }),
+      spawnStart: field.number({
+        label: 'Số vật phẩm mỗi giây lúc đầu',
+        min: 0.2,
+        max: 6,
+        step: 0.1,
+      }),
+      spawnEnd: field.number({
+        label: 'Số vật phẩm mỗi giây lúc khó nhất',
+        min: 0.2,
+        max: 6,
+        step: 0.1,
+      }),
       rampSeconds: field.number({
         label: 'Sau bao lâu thì khó nhất',
         min: 5,
@@ -221,7 +237,13 @@ export const catchFields = {
     label: 'Vật phẩm rơi',
     min: 1,
     max: 10,
-    newItem: { symbol: { emoji: '⭐', image: null }, points: 1, weight: 5, loseLifeOnCatch: false, loseLifeOnMiss: false },
+    newItem: {
+      symbol: { emoji: '⭐', image: null },
+      points: 1,
+      weight: 5,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
     itemLabel: (item, i) => {
       const symbol = item.symbol.image ? '🖼️' : item.symbol.emoji;
       const tags = [
@@ -281,7 +303,12 @@ export const catchFields = {
         itemLabel: (m) => `Từ ${m.minScore} điểm: ${m.message || '…'}`,
         item: {
           minScore: field.number({ label: 'Từ số điểm', min: -1000, max: 100000, integer: true }),
-          message: field.text({ label: 'Lời nhắn', required: true, multiline: true, maxLength: 200 }),
+          message: field.text({
+            label: 'Lời nhắn',
+            required: true,
+            multiline: true,
+            maxLength: 200,
+          }),
         },
       }),
       showBest: field.boolean({ label: 'Hiện điểm cao nhất trên máy người chơi' }),
@@ -345,10 +372,34 @@ export const catchDefaults: CatchConfig = {
     maxLevel: 8,
   },
   items: [
-    { symbol: { emoji: '🎁', image: null }, points: 3, weight: 4, loseLifeOnCatch: false, loseLifeOnMiss: false },
-    { symbol: { emoji: '⭐', image: null }, points: 1, weight: 8, loseLifeOnCatch: false, loseLifeOnMiss: false },
-    { symbol: { emoji: '💎', image: null }, points: 10, weight: 1, loseLifeOnCatch: false, loseLifeOnMiss: false },
-    { symbol: { emoji: '💣', image: null }, points: 0, weight: 3, loseLifeOnCatch: true, loseLifeOnMiss: false },
+    {
+      symbol: { emoji: '🎁', image: null },
+      points: 3,
+      weight: 4,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '⭐', image: null },
+      points: 1,
+      weight: 8,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '💎', image: null },
+      points: 10,
+      weight: 1,
+      loseLifeOnCatch: false,
+      loseLifeOnMiss: false,
+    },
+    {
+      symbol: { emoji: '💣', image: null },
+      points: 0,
+      weight: 3,
+      loseLifeOnCatch: true,
+      loseLifeOnMiss: false,
+    },
   ],
   sound: { music: null, catch: null, bad: null, end: null },
   end: {

@@ -6,14 +6,14 @@ import { createSandboxHost, type ModuleDefinition } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { loadGame } from '../../../lib/load-game';
 
-type State =
-  | { kind: 'loading' }
-  | { kind: 'network' }
-  | { kind: 'response'; data: TryResponse };
+type State = { kind: 'loading' } | { kind: 'network' } | { kind: 'response'; data: TryResponse };
 
 async function fetchTry(token: string): Promise<TryResponse | null> {
   try {
-    const res = await fetch(`/api/public/try/${encodeURIComponent(token)}`, { cache: 'no-store', credentials: 'same-origin' });
+    const res = await fetch(`/api/public/try/${encodeURIComponent(token)}`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
     return (await res.json()) as TryResponse;
   } catch {
     return null;
@@ -31,7 +31,15 @@ function Message({ title, text }: { title: string; text?: string }) {
   );
 }
 
-function PasswordForm({ token, title, onUnlocked }: { token: string; title: string; onUnlocked: () => void }) {
+function PasswordForm({
+  token,
+  title,
+  onUnlocked,
+}: {
+  token: string;
+  title: string;
+  onUnlocked: () => void;
+}) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,7 +100,8 @@ function PasswordForm({ token, title, onUnlocked }: { token: string; title: stri
   );
 }
 
-type GameState = { kind: 'loading' } | { kind: 'ready'; mod: ModuleDefinition<unknown> } | { kind: 'error' };
+type GameState =
+  { kind: 'loading' } | { kind: 'ready'; mod: ModuleDefinition<unknown> } | { kind: 'error' };
 
 function Game({
   token,
@@ -125,7 +134,8 @@ function Game({
     };
   }, [moduleKey, moduleVersion]);
   if (game.kind === 'loading') return <Loading />;
-  if (game.kind === 'error') return <Message title={t('play.try.gameErrorTitle')} text={t('play.try.gameErrorText')} />;
+  if (game.kind === 'error')
+    return <Message title={t('play.try.gameErrorTitle')} text={t('play.try.gameErrorText')} />;
   const Runtime = game.mod.Runtime;
   return (
     <div className="game-backdrop">
@@ -170,7 +180,8 @@ export function TryClient({ token }: { token: string }) {
   }, [load]);
 
   if (state.kind === 'loading') return <Loading />;
-  if (state.kind === 'network') return <Message title={t('play.try.networkTitle')} text={t('play.try.network')} />;
+  if (state.kind === 'network')
+    return <Message title={t('play.try.networkTitle')} text={t('play.try.network')} />;
 
   const data = state.data;
   switch (data.status) {
@@ -191,7 +202,9 @@ export function TryClient({ token }: { token: string }) {
     case 'disabled':
       return <Message title={t('play.try.disabledTitle')} text={t('play.try.askSender')} />;
     case 'not_published':
-      return <Message title={t('play.try.notPublishedTitle')} text={t('play.try.notPublishedText')} />;
+      return (
+        <Message title={t('play.try.notPublishedTitle')} text={t('play.try.notPublishedText')} />
+      );
     default:
       return <Message title={t('play.try.notFoundTitle')} text={t('play.try.notFoundText')} />;
   }

@@ -61,7 +61,6 @@ const fromTemplate = (tpl: TemplateDetail): Draft => ({
   config: tpl.config,
 });
 
-
 /** Màn chỉnh template: form trái, xem trước phải; Lưu nháp, Công bố, lịch sử công bố. */
 export default function TemplateEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -88,7 +87,10 @@ export default function TemplateEditorPage() {
   const moduleKey = template?.moduleKey;
   const moduleVersion = template?.moduleVersion;
   const source = useMemo<GameSource | null>(
-    () => (moduleKey && moduleVersion ? { kind: 'version', key: moduleKey, version: moduleVersion } : null),
+    () =>
+      moduleKey && moduleVersion
+        ? { kind: 'version', key: moduleKey, version: moduleVersion }
+        : null,
     [moduleKey, moduleVersion],
   );
   const game = useGameForm(source, draft?.config);
@@ -201,7 +203,9 @@ export default function TemplateEditorPage() {
   async function viewVersion(version: number) {
     if (!template) return;
     try {
-      setViewing(await api<TemplateVersionResponse>(`/templates/${template.id}/versions/${version}`));
+      setViewing(
+        await api<TemplateVersionResponse>(`/templates/${template.id}/versions/${version}`),
+      );
     } catch (e) {
       fail(e);
     }
@@ -211,10 +215,13 @@ export default function TemplateEditorPage() {
     if (!template || restoreVersion === null) return;
     setBusy('restore');
     try {
-      const res = await api<{ template: TemplateDetail }>(`/templates/${template.id}/versions/${restoreVersion}/restore`, {
-        method: 'POST',
-        body: { baseRevision: template.revision },
-      });
+      const res = await api<{ template: TemplateDetail }>(
+        `/templates/${template.id}/versions/${restoreVersion}/restore`,
+        {
+          method: 'POST',
+          body: { baseRevision: template.revision },
+        },
+      );
       apply(res.template);
       setToast(t('cms.templates.restoredToast', { version: restoreVersion }));
       setRestoreVersion(null);
@@ -244,9 +251,12 @@ export default function TemplateEditorPage() {
 
   const archived = template.status === 'archived';
   const checked = game.check !== null;
-  const canPublish = checked && !archived && errorCount === 0 && (dirty || template.hasUnpublishedChanges);
+  const canPublish =
+    checked && !archived && errorCount === 0 && (dirty || template.hasUnpublishedChanges);
   const canUpgrade =
-    !archived && template.latestModuleVersion !== null && template.latestModuleVersion !== template.moduleVersion;
+    !archived &&
+    template.latestModuleVersion !== null &&
+    template.latestModuleVersion !== template.moduleVersion;
   const publishHint = archived
     ? t('cms.templates.archivedHint')
     : errorCount > 0
@@ -259,8 +269,14 @@ export default function TemplateEditorPage() {
 
   const statusLine = (
     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-      <StatusChip template={{ ...template, hasUnpublishedChanges: template.hasUnpublishedChanges || dirty }} />
-      {dirty && <Typography variant="body2" color="warning.main">{t('cms.templates.unsaved')}</Typography>}
+      <StatusChip
+        template={{ ...template, hasUnpublishedChanges: template.hasUnpublishedChanges || dirty }}
+      />
+      {dirty && (
+        <Typography variant="body2" color="warning.main">
+          {t('cms.templates.unsaved')}
+        </Typography>
+      )}
       {template.publishedAt && (
         <Typography variant="body2" color="text.secondary">
           {t('cms.templates.lastPublished', { date: formatDateTime(template.publishedAt) })}
@@ -275,7 +291,9 @@ export default function TemplateEditorPage() {
     <LinearProgress />
   ) : (
     <Stack spacing={2}>
-      {errorCount > 0 && <Alert severity="info">{t('cms.playground.invalid', { count: errorCount })}</Alert>}
+      {errorCount > 0 && (
+        <Alert severity="info">{t('cms.playground.invalid', { count: errorCount })}</Alert>
+      )}
       <SchemaForm
         key={formKey}
         fields={game.schema.fields}
@@ -291,9 +309,19 @@ export default function TemplateEditorPage() {
 
   return (
     <Stack spacing={2.5}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ md: 'flex-start' }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        justifyContent="space-between"
+        alignItems={{ md: 'flex-start' }}
+      >
         <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
-          <IconButton component={Link} href="/templates" aria-label={t('cms.templates.backToList')} sx={{ mt: 0.25 }}>
+          <IconButton
+            component={Link}
+            href="/templates"
+            aria-label={t('cms.templates.backToList')}
+            sx={{ mt: 0.25 }}
+          >
             <ArrowBackIcon />
           </IconButton>
           <Box sx={{ minWidth: 0 }}>
@@ -302,13 +330,19 @@ export default function TemplateEditorPage() {
                 {draft.name}
               </Typography>
               {!archived && (
-                <IconButton size="small" onClick={() => setInfoOpen(true)} aria-label={t('cms.templates.editInfo')}>
+                <IconButton
+                  size="small"
+                  onClick={() => setInfoOpen(true)}
+                  aria-label={t('cms.templates.editInfo')}
+                >
                   <EditOutlined fontSize="small" />
                 </IconButton>
               )}
             </Stack>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {[draft.brandName, `${template.moduleName} v${template.moduleVersion}`].filter(Boolean).join(' · ')}
+              {[draft.brandName, `${template.moduleName} v${template.moduleVersion}`]
+                .filter(Boolean)
+                .join(' · ')}
             </Typography>
             {statusLine}
           </Box>
@@ -352,12 +386,20 @@ export default function TemplateEditorPage() {
         <Alert
           severity="info"
           action={
-            <Button color="inherit" size="small" onClick={() => setUpgradeOpen(true)} disabled={busy !== null}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setUpgradeOpen(true)}
+              disabled={busy !== null}
+            >
               {t('cms.templates.upgrade')}
             </Button>
           }
         >
-          {t('cms.templates.upgradeHint', { current: template.moduleVersion, latest: template.latestModuleVersion ?? '' })}
+          {t('cms.templates.upgradeHint', {
+            current: template.moduleVersion,
+            latest: template.latestModuleVersion ?? '',
+          })}
         </Alert>
       )}
       {conflict && (
@@ -389,7 +431,12 @@ export default function TemplateEditorPage() {
         </Grid>
       ) : (
         <Box>
-          <Tabs value={tab} onChange={(_, v: 'form' | 'preview') => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v: 'form' | 'preview') => setTab(v)}
+            variant="fullWidth"
+            sx={{ mb: 2 }}
+          >
             <Tab value="form" label={t('cms.playground.tabForm')} />
             <Tab value="preview" label={t('cms.playground.tabPreview')} />
           </Tabs>
@@ -407,7 +454,11 @@ export default function TemplateEditorPage() {
         }}
       />
 
-      <PreviewLinksDialog open={linksOpen} template={template} onClose={() => setLinksOpen(false)} />
+      <PreviewLinksDialog
+        open={linksOpen}
+        template={template}
+        onClose={() => setLinksOpen(false)}
+      />
 
       <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{t('cms.templates.historyTitle')}</DialogTitle>
@@ -435,7 +486,9 @@ export default function TemplateEditorPage() {
                 >
                   <ListItemText
                     primary={`${t('cms.templates.versionLabel', { version: v.version })}${
-                      v.version === template.publishedVersion ? ` · ${t('cms.templates.current')}` : ''
+                      v.version === template.publishedVersion
+                        ? ` · ${t('cms.templates.current')}`
+                        : ''
                     }`}
                     secondary={`${formatDateTime(v.publishedAt)}${v.publishedByName ? ` · ${v.publishedByName}` : ''}`}
                     sx={{ pr: 18 }}
@@ -498,7 +551,12 @@ export default function TemplateEditorPage() {
         onClose={() => setUpgradeOpen(false)}
       />
       <LeaveGuard when={dirty} />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast(null)} message={toast} />
+      <Snackbar
+        open={Boolean(toast)}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        message={toast}
+      />
     </Stack>
   );
 }
@@ -557,7 +615,11 @@ function InfoDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="contained" disabled={!name.trim()} onClick={() => onApply({ name: name.trim(), brandName, note })}>
+        <Button
+          variant="contained"
+          disabled={!name.trim()}
+          onClick={() => onApply({ name: name.trim(), brandName, note })}
+        >
           {t('cms.templates.applyInfo')}
         </Button>
       </DialogActions>

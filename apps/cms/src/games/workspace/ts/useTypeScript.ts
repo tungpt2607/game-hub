@@ -14,7 +14,12 @@ const OUTLINE_DELAY = 400;
  * TypeScript cho khu sửa code: một worker cho mỗi khu, đồng bộ file, lỗi kiểu của mọi file (bảng Vấn đề)
  * và danh sách hàm của file đang mở (thanh đường dẫn, Ctrl+Shift+O). Các việc nặng đều chờ ngừng gõ.
  */
-export function useTypeScript(files: GameFiles, assets: GameAssets, activePath: string | null, activeText: string | null) {
+export function useTypeScript(
+  files: GameFiles,
+  assets: GameAssets,
+  activePath: string | null,
+  activeText: string | null,
+) {
   const client = useMemo(() => new TsClient(), []);
   const [status, setStatus] = useState<TsStatus>('loading');
   const [diagnostics, setDiagnostics] = useState<Record<string, TsDiagnostic[]>>({});
@@ -52,7 +57,11 @@ export function useTypeScript(files: GameFiles, assets: GameAssets, activePath: 
     return () => clearTimeout(timer);
   }, [syncAndCheck, files, assetPaths]);
 
-  const loadOutline = useMemo(() => latestOnly((path: string, text: string) => client.request({ type: 'outline', path, text })), [client]);
+  const loadOutline = useMemo(
+    () =>
+      latestOnly((path: string, text: string) => client.request({ type: 'outline', path, text })),
+    [client],
+  );
   useEffect(() => {
     if (!activePath || activeText === null || !isTsPath(activePath)) {
       setOutline([]);

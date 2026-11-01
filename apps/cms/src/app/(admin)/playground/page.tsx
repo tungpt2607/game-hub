@@ -58,7 +58,8 @@ export default function PlaygroundPage() {
   }, []);
 
   const source = useMemo<GameSource | null>(
-    () => (mod?.latestVersion ? { kind: 'version', key: mod.key, version: mod.latestVersion } : null),
+    () =>
+      mod?.latestVersion ? { kind: 'version', key: mod.key, version: mod.latestVersion } : null,
     [mod?.key, mod?.latestVersion],
   );
   const stored = mod ? configs[mod.key] : undefined;
@@ -163,7 +164,11 @@ export default function PlaygroundPage() {
           >
             {t('cms.playground.createTemplate')}
           </Button>
-          <Menu anchorEl={presetMenu} open={Boolean(presetMenu)} onClose={() => setPresetMenu(null)}>
+          <Menu
+            anchorEl={presetMenu}
+            open={Boolean(presetMenu)}
+            onClose={() => setPresetMenu(null)}
+          >
             {(mod.presets ?? []).map((p) => (
               <MenuItem
                 key={p.id}
@@ -181,7 +186,10 @@ export default function PlaygroundPage() {
                 setPendingPreset('');
               }}
             >
-              <ListItemText primary={t('cms.playground.defaults')} secondary={t('cms.playground.defaultsHint')} />
+              <ListItemText
+                primary={t('cms.playground.defaults')}
+                secondary={t('cms.playground.defaultsHint')}
+              />
             </MenuItem>
           </Menu>
         </Stack>
@@ -202,7 +210,12 @@ export default function PlaygroundPage() {
         </Grid>
       ) : (
         <Box>
-          <Tabs value={tab} onChange={(_, v: 'form' | 'preview') => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v: 'form' | 'preview') => setTab(v)}
+            variant="fullWidth"
+            sx={{ mb: 2 }}
+          >
             <Tab value="form" label={t('cms.playground.tabForm')} />
             <Tab value="preview" label={t('cms.playground.tabPreview')} />
           </Tabs>
@@ -212,7 +225,11 @@ export default function PlaygroundPage() {
 
       <CreateTemplateDialog
         open={createOpen}
-        mode={{ type: 'config', moduleKey: mod.key, config: (config ?? {}) as Record<string, unknown> }}
+        mode={{
+          type: 'config',
+          moduleKey: mod.key,
+          config: (config ?? {}) as Record<string, unknown>,
+        }}
         onClose={() => setCreateOpen(false)}
       />
       <ConfirmDialog

@@ -9,7 +9,8 @@ export const vi = {
     close: 'Đóng',
     copy: 'Sao chép',
     copied: 'Đã sao chép',
-    copyFailed: 'Trình duyệt không cho sao chép tự động. Chạm vào ô phía trên để chọn rồi bấm Sao chép của máy.',
+    copyFailed:
+      'Trình duyệt không cho sao chép tự động. Chạm vào ô phía trên để chọn rồi bấm Sao chép của máy.',
     loading: 'Đang tải…',
     retry: 'Thử lại',
     loadMore: 'Tải thêm',
@@ -101,7 +102,8 @@ export const vi = {
       resetConfirmText:
         '{name} sẽ bị đăng xuất khỏi mọi thiết bị và phải đăng nhập bằng mật khẩu tạm mới.',
       disableConfirmTitle: 'Vô hiệu hóa tài khoản?',
-      disableConfirmText: '{name} sẽ bị đăng xuất ngay và không đăng nhập được nữa cho đến khi được bật lại.',
+      disableConfirmText:
+        '{name} sẽ bị đăng xuất ngay và không đăng nhập được nữa cho đến khi được bật lại.',
     },
     media: {
       heading: 'Media',
@@ -154,7 +156,8 @@ export const vi = {
       unarchive: 'Khôi phục',
       delete: 'Xóa hẳn',
       deleteTitle: 'Xóa hẳn template?',
-      deleteText: 'Template "{name}" cùng lịch sử công bố và mọi link chơi thử sẽ bị xóa vĩnh viễn.',
+      deleteText:
+        'Template "{name}" cùng lịch sử công bố và mọi link chơi thử sẽ bị xóa vĩnh viễn.',
       deleted: 'Đã xóa "{name}".',
       archivedToast: 'Đã lưu trữ "{name}". Link chơi thử của nó ngừng hoạt động.',
       unarchivedToast: 'Đã khôi phục "{name}".',
@@ -177,8 +180,10 @@ export const vi = {
       view: 'Xem',
       restore: 'Khôi phục',
       restoreTitle: 'Khôi phục lần công bố {version} vào bản nháp?',
-      restoreText: 'Bản nháp sẽ được thay bằng cấu hình của lần công bố này. Link chơi thử chỉ đổi khi bạn bấm Công bố.',
-      restoreTextDirty: 'Bạn có thay đổi chưa lưu; chúng sẽ bị bỏ. Bản nháp sẽ được thay bằng cấu hình của lần công bố này.',
+      restoreText:
+        'Bản nháp sẽ được thay bằng cấu hình của lần công bố này. Link chơi thử chỉ đổi khi bạn bấm Công bố.',
+      restoreTextDirty:
+        'Bạn có thay đổi chưa lưu; chúng sẽ bị bỏ. Bản nháp sẽ được thay bằng cấu hình của lần công bố này.',
       restoredToast: 'Đã khôi phục lần công bố {version} vào bản nháp.',
       upgrade: 'Nâng lên bản mới',
       upgradeHint: 'Game có phiên bản mới {latest} (template đang dùng {current}).',
@@ -199,7 +204,8 @@ export const vi = {
       fixBeforePublish: 'Còn {count} lỗi, sửa xong mới công bố được',
       nothingToPublish: 'Không có thay đổi mới để công bố',
       archivedHint: 'Template đã lưu trữ: chỉ xem được. Khôi phục trong Thư viện để sửa tiếp.',
-      conflict: 'Template vừa được lưu ở nơi khác (đồng nghiệp hoặc thẻ khác). Tải lại để xem bản mới nhất; thay đổi chưa lưu ở đây sẽ mất.',
+      conflict:
+        'Template vừa được lưu ở nơi khác (đồng nghiệp hoặc thẻ khác). Tải lại để xem bản mới nhất; thay đổi chưa lưu ở đây sẽ mất.',
       reload: 'Tải lại',
     },
     links: {
@@ -209,8 +215,10 @@ export const vi = {
       createTitle: 'Tạo link chơi thử',
       createSubmit: 'Tạo link',
       empty: 'Chưa có link nào. Bấm "Tạo link" để có link gửi cho khách chơi thử.',
-      notPublished: 'Template chưa công bố: link "Luôn mới nhất" chỉ chơi được sau khi bấm Công bố. Link "Bản chụp" có thể chụp từ bản nháp.',
-      archived: 'Template đã lưu trữ nên mọi link đều ngừng hoạt động. Khôi phục template để dùng lại.',
+      notPublished:
+        'Template chưa công bố: link "Luôn mới nhất" chỉ chơi được sau khi bấm Công bố. Link "Bản chụp" có thể chụp từ bản nháp.',
+      archived:
+        'Template đã lưu trữ nên mọi link đều ngừng hoạt động. Khôi phục template để dùng lại.',
       unnamed: 'Link không tên',
       label: 'Tên link',
       labelHint: 'Để bạn nhận ra, ví dụ "Gửi chị Lan – Sữa Sen". Người chơi không thấy tên này.',
@@ -252,11 +260,13 @@ export const vi = {
       copyLink: 'Sao chép link',
       downloadQr: 'Tải ảnh QR',
       copied: 'Đã sao chép link.',
-      copyFailed: 'Trình duyệt không cho sao chép tự động. Hãy chọn địa chỉ link và sao chép bằng tay, hoặc mở Mã QR.',
+      copyFailed:
+        'Trình duyệt không cho sao chép tự động. Hãy chọn địa chỉ link và sao chép bằng tay, hoặc mở Mã QR.',
       edit: 'Sửa link',
       delete: 'Xóa link',
       deleteTitle: 'Xóa link?',
-      deleteText: 'Link "{name}" sẽ ngừng hoạt động ngay và không khôi phục được. Muốn tạm dừng thì dùng công tắc Tắt.',
+      deleteText:
+        'Link "{name}" sẽ ngừng hoạt động ngay và không khôi phục được. Muốn tạm dừng thì dùng công tắc Tắt.',
     },
     playground: {
       heading: 'Phòng thử module',
@@ -312,7 +322,8 @@ export const vi = {
       readingZip: 'Đang đọc file .zip…',
       creating: 'Đang tạo game…',
       uploadingTitle: 'Đang tải game lên',
-      keyExists: 'Đã có game "{key}". Mở game đó rồi bấm "Tải lên .zip" để thay code, hoặc đổi key trong schema.ts.',
+      keyExists:
+        'Đã có game "{key}". Mở game đó rồi bấm "Tải lên .zip" để thay code, hoặc đổi key trong schema.ts.',
       compileFailed: 'Gói game còn lỗi biên dịch:',
       unpublished: 'Chưa phát hành',
       hasDraft: 'Có bản nháp',
@@ -341,7 +352,8 @@ export const vi = {
       current: 'đang dùng cho template mới',
       useAsDraft: 'Lấy làm bản nháp',
       useAsDraftTitle: 'Lấy code v{version} làm bản nháp?',
-      useAsDraftText: 'Code và file kèm của phiên bản này thay cho bản nháp đang mở (chưa lưu). Bấm Lưu nháp để giữ lại.',
+      useAsDraftText:
+        'Code và file kèm của phiên bản này thay cho bản nháp đang mở (chưa lưu). Bấm Lưu nháp để giữ lại.',
       discard: 'Bỏ bản nháp',
       discardTitle: 'Bỏ bản nháp?',
       discardText: 'Mọi thay đổi chưa phát hành sẽ mất; code quay về phiên bản v{version}.',
@@ -353,16 +365,19 @@ export const vi = {
       publishing: 'Đang phát hành…',
       publishTitle: 'Phát hành phiên bản v{version}?',
       publishTextFirst: 'Sau khi phát hành, game xuất hiện khi tạo template mới.',
-      publishTextUpdate: 'Template mới sẽ dùng phiên bản này. Template đang có giữ phiên bản cũ (v{latest}) cho tới khi bấm "Nâng lên bản mới" ở từng template.',
+      publishTextUpdate:
+        'Template mới sẽ dùng phiên bản này. Template đang có giữ phiên bản cũ (v{latest}) cho tới khi bấm "Nâng lên bản mới" ở từng template.',
       publishTemplates: 'Hiện có {count} template dùng game này.',
       publishedToast: 'Đã phát hành v{version}.',
       notes: 'Ghi chú thay đổi (không bắt buộc)',
       fixBeforePublish: 'Sửa hết lỗi biên dịch và lỗi khi chạy trước khi phát hành.',
       nothingToPublish: 'Chưa có thay đổi để phát hành.',
-      versionNotNewer: 'Bản nháp đang ghi version {version}, chưa lớn hơn bản mới nhất v{latest}. Tăng version trong schema.ts trước khi phát hành.',
+      versionNotNewer:
+        'Bản nháp đang ghi version {version}, chưa lớn hơn bản mới nhất v{latest}. Tăng version trong schema.ts trước khi phát hành.',
       runtimeError: 'Game bị lỗi khi chạy thử: {message}',
       templateCount: '{count} template đang dùng game này.',
-      conflict: 'Bản nháp vừa được lưu ở nơi khác (đồng nghiệp hoặc thẻ khác). Tải lại để xem bản mới nhất; thay đổi chưa lưu ở đây sẽ mất.',
+      conflict:
+        'Bản nháp vừa được lưu ở nơi khác (đồng nghiệp hoặc thẻ khác). Tải lại để xem bản mới nhất; thay đổi chưa lưu ở đây sẽ mất.',
       reload: 'Tải lại',
       restoredToast: 'Đã lấy code v{version} làm bản nháp. Bấm Lưu nháp để giữ lại.',
       zipLoaded: 'Đã nạp code từ file .zip. Bấm Lưu nháp để giữ lại.',
@@ -380,7 +395,8 @@ export const vi = {
     },
     localDraft: {
       text: 'Có thay đổi chưa lưu nháp từ lần sửa trước ({count} file, lúc {time}), còn giữ trên trình duyệt này.',
-      outdated: 'Bản nháp trên máy chủ đã được lưu sau lần đó (có thể bởi đồng nghiệp); khôi phục sẽ thay nội dung đang mở.',
+      outdated:
+        'Bản nháp trên máy chủ đã được lưu sau lần đó (có thể bởi đồng nghiệp); khôi phục sẽ thay nội dung đang mở.',
       restore: 'Khôi phục',
       discard: 'Bỏ đi',
     },
@@ -498,8 +514,10 @@ export const vi = {
       copiedUsage: 'Đã chép. Dán vào code, ví dụ trong presets.ts.',
       delete: 'Xóa',
       deleteTitle: 'Xóa "{name}"?',
-      deleteFileText: 'File bị xóa khỏi bản nháp. Bấm Lưu nháp để giữ thay đổi; bấm Bỏ bản nháp để lấy lại.',
-      deleteAssetText: 'File kèm bị bỏ khỏi bản nháp (phiên bản đã phát hành vẫn giữ file). Code còn dùng file này sẽ báo lỗi khi chạy.',
+      deleteFileText:
+        'File bị xóa khỏi bản nháp. Bấm Lưu nháp để giữ thay đổi; bấm Bỏ bản nháp để lấy lại.',
+      deleteAssetText:
+        'File kèm bị bỏ khỏi bản nháp (phiên bản đã phát hành vẫn giữ file). Code còn dùng file này sẽ báo lỗi khi chạy.',
       deleteFolderText: 'Thư mục và {count} file bên trong bị xóa khỏi bản nháp.',
       filePath: 'Đường dẫn file',
       folderPath: 'Đường dẫn thư mục',
@@ -507,13 +525,15 @@ export const vi = {
       pathHint: 'Có thể đổi cả thư mục, ví dụ tet/hoa-mai.png → le-hoi/hoa-mai.png.',
       create: 'Tạo',
       updateRefsTitle: 'Cập nhật các chỗ trỏ tới?',
-      updateRefsText: 'Các file sau đang import hoặc dùng asset(…) trỏ tới file vừa đổi tên/di chuyển. Cập nhật luôn để code không bị lỗi?',
+      updateRefsText:
+        'Các file sau đang import hoặc dùng asset(…) trỏ tới file vừa đổi tên/di chuyển. Cập nhật luôn để code không bị lỗi?',
       updateRefsConfirm: 'Cập nhật',
       updateRefsSkip: 'Không cập nhật',
       places: '{count} chỗ',
       uploaded: 'Đã thêm {count} file.',
       uploadRedirected: 'Ảnh, âm thanh, font được đặt vào thư mục assets/.',
-      uploadRejected: 'Không thêm được: {list} (loại file không hỗ trợ, hoặc tên có dấu cách/dấu tiếng Việt).',
+      uploadRejected:
+        'Không thêm được: {list} (loại file không hỗ trợ, hoặc tên có dấu cách/dấu tiếng Việt).',
       closeTab: 'Đóng {name}',
       more: 'Thao tác với {name}',
       fullscreen: 'Xem toàn màn hình',

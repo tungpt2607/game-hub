@@ -6,7 +6,6 @@ import Stack from '@mui/material/Stack';
 import { t } from '@opes/i18n';
 import { formatDateTime } from '../lib/format';
 
-
 /**
  * Hỏi khôi phục bản tạm trên trình duyệt (thay đổi chưa lưu nháp từ lần sửa trước).
  * `outdated` = bản nháp trên máy chủ đã được lưu sau lần sửa đó (có thể bởi đồng nghiệp).

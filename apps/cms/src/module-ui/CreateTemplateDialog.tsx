@@ -38,7 +38,15 @@ interface Choice {
 }
 
 /** Hộp tạo template: chọn loại game và điểm bắt đầu (mẫu, mặc định, Phòng thử), hoặc nhân bản. */
-export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; mode: CreateMode; onClose: () => void }) {
+export function CreateTemplateDialog({
+  open,
+  mode,
+  onClose,
+}: {
+  open: boolean;
+  mode: CreateMode;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -74,7 +82,8 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
   const mod = modules?.find((m) => m.key === moduleKey) ?? (moduleKey ? undefined : modules?.[0]);
   const selectedKey = mod?.key ?? moduleKey;
   useEffect(() => {
-    if (open && mode.type === 'new' && selectedKey) setPlayground(readPlaygroundConfig(selectedKey));
+    if (open && mode.type === 'new' && selectedKey)
+      setPlayground(readPlaygroundConfig(selectedKey));
   }, [open, mode.type, selectedKey]);
 
   // Giữ cùng một mảng giữa các lần render để effect chọn mặc định bên dưới không chạy lại vô ích.
@@ -127,7 +136,13 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
     try {
       const res = await api<{ template: TemplateDetail }>('/templates', {
         method: 'POST',
-        body: { name, brandName, note, moduleKey: mode.type === 'duplicate' ? undefined : selectedKey, source },
+        body: {
+          name,
+          brandName,
+          note,
+          moduleKey: mode.type === 'duplicate' ? undefined : selectedKey,
+          source,
+        },
       });
       router.push(`/templates/${res.template.id}`);
     } catch (err) {
@@ -148,7 +163,13 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
         : t('cms.templates.createTitle');
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
+    <Dialog
+      open={open}
+      onClose={busy ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={fullScreen}
+    >
       <form onSubmit={submit} noValidate>
         <DialogTitle>{title}</DialogTitle>
         <DialogContent dividers>
@@ -227,7 +248,12 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
                                 {c.title}
                               </Typography>
                               {c.subtitle && (
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ display: 'block' }}
+                                  noWrap
+                                >
                                   {c.subtitle}
                                 </Typography>
                               )}
@@ -241,8 +267,19 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
               </>
             )}
             {mode.type !== 'new' && (
-              <Box sx={{ maxWidth: 220, borderRadius: 2, overflow: 'hidden', border: 1, borderColor: 'divider' }}>
-                <TemplateThumb config={mode.type === 'duplicate' ? mode.template.config : mode.config} height={120} />
+              <Box
+                sx={{
+                  maxWidth: 220,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <TemplateThumb
+                  config={mode.type === 'duplicate' ? mode.template.config : mode.config}
+                  height={120}
+                />
               </Box>
             )}
           </Stack>

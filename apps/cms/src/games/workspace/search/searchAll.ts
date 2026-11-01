@@ -55,7 +55,12 @@ export function searchFiles(files: GameFiles, opts: SearchOptions): SearchResult
   try {
     pattern = buildPattern(opts);
   } catch (e) {
-    return { files: [], total: 0, truncated: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      files: [],
+      total: 0,
+      truncated: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
   if (!pattern) return { files: [], total: 0, truncated: false };
   const out: FileMatches[] = [];
@@ -126,7 +131,9 @@ export function replaceInFiles(
       if (match === '') return match;
       count++;
       // Biểu thức chính quy: hỗ trợ $1, $2… như VS Code; chữ thường thì thay nguyên văn.
-      return opts.regexp ? match.replace(new RegExp(pattern.source, pattern.flags.replace('g', '')), replacement) : replacement;
+      return opts.regexp
+        ? match.replace(new RegExp(pattern.source, pattern.flags.replace('g', '')), replacement)
+        : replacement;
     });
     if (replaced !== text) next[path] = replaced;
   }

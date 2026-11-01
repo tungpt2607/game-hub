@@ -35,7 +35,10 @@ export interface SoundOptions {
  * Âm thanh của module. Trả về hàm `play()`; với nhạc nền (`loop`), gọi `play()` một lần sau
  * thao tác đầu tiên của người chơi (trình duyệt chặn tự phát trước đó), và `stop()` khi kết thúc.
  */
-export function useSound(ref: MediaRef | null, { muted, loop = false, volume = 1 }: SoundOptions): Sound {
+export function useSound(
+  ref: MediaRef | null,
+  { muted, loop = false, volume = 1 }: SoundOptions,
+): Sound {
   const audio = useRef<HTMLAudioElement | null>(null);
   const mutedRef = useRef(muted);
   mutedRef.current = muted;

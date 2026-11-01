@@ -119,7 +119,10 @@ export const field = {
   color: (o: Omit<ColorField, 'type'>): ColorField => ({ type: 'color', ...o }),
   image: (o: Omit<ImageField, 'type'>): ImageField => ({ type: 'image', ...o }),
   audio: (o: Omit<AudioField, 'type'>): AudioField => ({ type: 'audio', ...o }),
-  emojiOrImage: (o: Omit<EmojiOrImageField, 'type'>): EmojiOrImageField => ({ type: 'emojiOrImage', ...o }),
+  emojiOrImage: (o: Omit<EmojiOrImageField, 'type'>): EmojiOrImageField => ({
+    type: 'emojiOrImage',
+    ...o,
+  }),
   font: (o: Omit<FontField, 'type'>): FontField => ({ type: 'font', ...o }),
   list: <Item extends Record<string, unknown>>(
     o: Omit<ListField, 'type' | 'newItem' | 'itemLabel'> & {

@@ -32,7 +32,6 @@ import { CreateTemplateDialog, type CreateMode } from '../../../module-ui/Create
 import { StatusChip } from '../../../module-ui/StatusChip';
 import { TemplateThumb } from '../../../module-ui/TemplateThumb';
 
-
 export default function TemplatesPage() {
   const [status, setStatus] = useState<TemplateStatus>('active');
   const [query, setQuery] = useState('');
@@ -108,7 +107,11 @@ export default function TemplatesPage() {
           <Typography color="text.secondary">{t('cms.templates.lead')}</Typography>
         </Box>
         <Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreate({ type: 'new' })}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreate({ type: 'new' })}
+          >
             {t('cms.templates.create')}
           </Button>
         </Box>
@@ -158,8 +161,20 @@ export default function TemplatesPage() {
       <Grid container spacing={2}>
         {items?.map((item) => (
           <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              <CardActionArea component={Link} href={`/templates/${item.id}`} sx={{ flexGrow: 1, alignItems: 'stretch' }}>
+            <Card
+              variant="outlined"
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+              }}
+            >
+              <CardActionArea
+                component={Link}
+                href={`/templates/${item.id}`}
+                sx={{ flexGrow: 1, alignItems: 'stretch' }}
+              >
                 <TemplateThumb config={item.config} height={150} />
                 <CardContent sx={{ pb: 1.5 }}>
                   <Typography fontWeight={700} noWrap sx={{ pr: 3 }}>
@@ -190,38 +205,62 @@ export default function TemplatesPage() {
       </Grid>
 
       <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
-        {menu && menu.item.status === 'active' && [
-          <MenuItem
-            key="dup"
-            onClick={() => {
-              setCreate({ type: 'duplicate', template: menu.item });
-              setMenu(null);
-            }}
-          >
-            {t('cms.templates.duplicate')}
-          </MenuItem>,
-          <MenuItem key="archive" onClick={() => void action(menu.item, 'archive', t('cms.templates.archivedToast', { name: menu.item.name }))}>
-            {t('cms.templates.archive')}
-          </MenuItem>,
-        ]}
-        {menu && menu.item.status === 'archived' && [
-          <MenuItem key="restore" onClick={() => void action(menu.item, 'unarchive', t('cms.templates.unarchivedToast', { name: menu.item.name }))}>
-            {t('cms.templates.unarchive')}
-          </MenuItem>,
-          <MenuItem
-            key="delete"
-            sx={{ color: 'error.main' }}
-            onClick={() => {
-              setToDelete(menu.item);
-              setMenu(null);
-            }}
-          >
-            {t('cms.templates.delete')}
-          </MenuItem>,
-        ]}
+        {menu &&
+          menu.item.status === 'active' && [
+            <MenuItem
+              key="dup"
+              onClick={() => {
+                setCreate({ type: 'duplicate', template: menu.item });
+                setMenu(null);
+              }}
+            >
+              {t('cms.templates.duplicate')}
+            </MenuItem>,
+            <MenuItem
+              key="archive"
+              onClick={() =>
+                void action(
+                  menu.item,
+                  'archive',
+                  t('cms.templates.archivedToast', { name: menu.item.name }),
+                )
+              }
+            >
+              {t('cms.templates.archive')}
+            </MenuItem>,
+          ]}
+        {menu &&
+          menu.item.status === 'archived' && [
+            <MenuItem
+              key="restore"
+              onClick={() =>
+                void action(
+                  menu.item,
+                  'unarchive',
+                  t('cms.templates.unarchivedToast', { name: menu.item.name }),
+                )
+              }
+            >
+              {t('cms.templates.unarchive')}
+            </MenuItem>,
+            <MenuItem
+              key="delete"
+              sx={{ color: 'error.main' }}
+              onClick={() => {
+                setToDelete(menu.item);
+                setMenu(null);
+              }}
+            >
+              {t('cms.templates.delete')}
+            </MenuItem>,
+          ]}
       </Menu>
 
-      <CreateTemplateDialog open={create !== null} mode={create ?? { type: 'new' }} onClose={() => setCreate(null)} />
+      <CreateTemplateDialog
+        open={create !== null}
+        mode={create ?? { type: 'new' }}
+        onClose={() => setCreate(null)}
+      />
       <ConfirmDialog
         open={Boolean(toDelete)}
         title={t('cms.templates.deleteTitle')}
@@ -232,7 +271,12 @@ export default function TemplatesPage() {
         onConfirm={confirmDelete}
         onClose={() => setToDelete(null)}
       />
-      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast(null)} message={toast} />
+      <Snackbar
+        open={Boolean(toast)}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        message={toast}
+      />
     </Stack>
   );
 }

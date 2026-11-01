@@ -6,7 +6,9 @@ import type { GameAssets, GameFiles, PendingAsset } from './types';
 
 export class CompileFailed extends Error {
   constructor(readonly errors: BuildError[]) {
-    super(errors.map((e) => (e.file ? `${e.file}:${e.line}:${e.column} ${e.text}` : e.text)).join('\n'));
+    super(
+      errors.map((e) => (e.file ? `${e.file}:${e.line}:${e.column} ${e.text}` : e.text)).join('\n'),
+    );
   }
 }
 

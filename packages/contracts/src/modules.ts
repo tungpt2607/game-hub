@@ -7,11 +7,18 @@ export const GameModuleSummarySchema = z.object({
   description: z.string(),
   latestVersion: z.string().nullable(),
   builtin: z.boolean(),
-  versions: z.array(z.object({ version: z.string(), publishedAt: z.string(), notes: z.string().nullable() })),
+  versions: z.array(
+    z.object({ version: z.string(), publishedAt: z.string(), notes: z.string().nullable() }),
+  ),
   /** Cấu hình mặc định và các mẫu của bản phát hành mới nhất (để tạo template). */
   defaults: z.record(z.unknown()),
   presets: z.array(
-    z.object({ id: z.string(), name: z.string(), description: z.string().optional(), config: z.record(z.unknown()) }),
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().optional(),
+      config: z.record(z.unknown()),
+    }),
   ),
   /** Có bản nháp code chưa phát hành. */
   hasDraft: z.boolean(),

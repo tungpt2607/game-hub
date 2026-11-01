@@ -33,28 +33,42 @@ type ModuleRow = typeof schema.gameModules.$inferSelect;
 const KEY_FORMAT = /^(game|leaderboard|reward)\.[a-z][a-z0-9-]{0,47}$/;
 
 const invalid = (message: string, details?: unknown) =>
-  new AppError(422, ErrorCode.MODULE_INVALID, message, details === undefined ? undefined : { details });
+  new AppError(
+    422,
+    ErrorCode.MODULE_INVALID,
+    message,
+    details === undefined ? undefined : { details },
+  );
 
-const extOf = (path: string) => (path.includes('.') ? path.slice(path.lastIndexOf('.') + 1).toLowerCase() : '');
+const extOf = (path: string) =>
+  path.includes('.') ? path.slice(path.lastIndexOf('.') + 1).toLowerCase() : '';
 
 /** Kiểm tra mã nguồn: đường dẫn, loại file, dung lượng; bắt buộc có schema.ts và index.ts. */
 function checkFiles(files: Record<string, string>) {
   const paths = Object.keys(files);
-  if (paths.length > GAME_LIMITS.maxFiles) throw invalid(`Tối đa ${GAME_LIMITS.maxFiles} file code.`);
+  if (paths.length > GAME_LIMITS.maxFiles)
+    throw invalid(`Tối đa ${GAME_LIMITS.maxFiles} file code.`);
   let total = 0;
   for (const path of paths) {
     if (!GAME_PATH.test(path)) {
-      throw invalid(`Tên file "${path}" không hợp lệ (chỉ dùng chữ không dấu, số, - _ . /; không có dấu cách).`);
+      throw invalid(
+        `Tên file "${path}" không hợp lệ (chỉ dùng chữ không dấu, số, - _ . /; không có dấu cách).`,
+      );
     }
-    if (path.startsWith('assets/')) throw invalid(`File "${path}" thuộc thư mục assets/ phải tải lên dạng file kèm.`);
+    if (path.startsWith('assets/'))
+      throw invalid(`File "${path}" thuộc thư mục assets/ phải tải lên dạng file kèm.`);
     if (!GAME_CODE_EXTENSIONS.includes(extOf(path))) {
-      throw invalid(`File "${path}": chỉ nhận ${GAME_CODE_EXTENSIONS.map((e) => '.' + e).join(', ')} ngoài thư mục assets/.`);
+      throw invalid(
+        `File "${path}": chỉ nhận ${GAME_CODE_EXTENSIONS.map((e) => '.' + e).join(', ')} ngoài thư mục assets/.`,
+      );
     }
     const size = Buffer.byteLength(files[path]!, 'utf8');
-    if (size > GAME_LIMITS.maxFileBytes) throw invalid(`File "${path}" quá lớn (tối đa ${GAME_LIMITS.maxFileBytes / 1024}KB).`);
+    if (size > GAME_LIMITS.maxFileBytes)
+      throw invalid(`File "${path}" quá lớn (tối đa ${GAME_LIMITS.maxFileBytes / 1024}KB).`);
     total += size;
   }
-  if (total > GAME_LIMITS.maxTotalCodeBytes) throw invalid('Tổng dung lượng code quá lớn (tối đa 2MB).');
+  if (total > GAME_LIMITS.maxTotalCodeBytes)
+    throw invalid('Tổng dung lượng code quá lớn (tối đa 2MB).');
   for (const required of ['schema', 'index']) {
     if (!['ts', 'tsx', 'js'].some((ext) => files[`${required}.${ext}`] !== undefined)) {
       throw invalid(`Thiếu file ${required}.ts.`);
@@ -63,12 +77,15 @@ function checkFiles(files: Record<string, string>) {
 }
 
 /** Đường dẫn trên kho của một file kèm: theo nội dung (sha256), nên file giống nhau chỉ lưu một lần. */
-const assetStorageKey = (moduleKey: string, sha256: string, ext: string) => `game-assets/${moduleKey}/${sha256}.${ext}`;
+const assetStorageKey = (moduleKey: string, sha256: string, ext: string) =>
+  `game-assets/${moduleKey}/${sha256}.${ext}`;
 
 function assetExt(path: string, mime: string): string {
   const kind = mediaKindOf(mime);
   if (!kind) {
-    throw invalid(`File kèm "${path}": loại file không được hỗ trợ (ảnh PNG/JPG/WebP/GIF/SVG, âm thanh MP3/M4A/OGG/WAV, font).`);
+    throw invalid(
+      `File kèm "${path}": loại file không được hỗ trợ (ảnh PNG/JPG/WebP/GIF/SVG, âm thanh MP3/M4A/OGG/WAV, font).`,
+    );
   }
   return MEDIA_RULES[kind].mimes[mime]!;
 }
@@ -76,45 +93,66 @@ function assetExt(path: string, mime: string): string {
 /** Kiểm tra danh sách file kèm; địa chỉ phải là file của chính game này trên kho. Trả về bản chuẩn hóa. */
 function checkAssets(moduleKey: string, assets: GameAssets, storage: Storage | null): GameAssets {
   const paths = Object.keys(assets);
-  if (paths.length > GAME_LIMITS.maxAssets) throw invalid(`Tối đa ${GAME_LIMITS.maxAssets} file kèm.`);
+  if (paths.length > GAME_LIMITS.maxAssets)
+    throw invalid(`Tối đa ${GAME_LIMITS.maxAssets} file kèm.`);
   if (paths.length > 0 && !storage) {
-    throw new AppError(503, ErrorCode.STORAGE_NOT_CONFIGURED, 'Kho media chưa được cấu hình nên chưa lưu được file kèm.');
+    throw new AppError(
+      503,
+      ErrorCode.STORAGE_NOT_CONFIGURED,
+      'Kho media chưa được cấu hình nên chưa lưu được file kèm.',
+    );
   }
   let total = 0;
   const out: GameAssets = {};
   for (const path of paths) {
     const a = assets[path]!;
     if (!GAME_PATH.test(path)) {
-      throw invalid(`Tên file kèm "${path}" không hợp lệ (chỉ dùng chữ không dấu, số, - _ . /; không có dấu cách).`);
+      throw invalid(
+        `Tên file kèm "${path}" không hợp lệ (chỉ dùng chữ không dấu, số, - _ . /; không có dấu cách).`,
+      );
     }
     const ext = assetExt(path, a.mime);
     const rule = MEDIA_RULES[mediaKindOf(a.mime)!];
     if (a.size > Math.min(rule.maxBytes, GAME_LIMITS.maxAssetBytes)) {
-      throw invalid(`File kèm "${path}" quá lớn (tối đa ${Math.min(rule.maxBytes, GAME_LIMITS.maxAssetBytes) / 1024 / 1024}MB).`);
+      throw invalid(
+        `File kèm "${path}" quá lớn (tối đa ${Math.min(rule.maxBytes, GAME_LIMITS.maxAssetBytes) / 1024 / 1024}MB).`,
+      );
     }
     total += a.size;
     // Địa chỉ luôn tính lại từ nội dung file (CMS có thể gửi dạng /media/... khi bật MEDIA_PROXY).
     const url = storage!.publicUrl(assetStorageKey(moduleKey, a.sha256, ext));
     out[path] = { url, size: a.size, mime: a.mime, sha256: a.sha256 };
   }
-  if (total > GAME_LIMITS.maxTotalAssetBytes) throw invalid('Tổng dung lượng file kèm quá lớn (tối đa 60MB).');
+  if (total > GAME_LIMITS.maxTotalAssetBytes)
+    throw invalid('Tổng dung lượng file kèm quá lớn (tối đa 60MB).');
   return out;
 }
 
 /** Đọc mô tả game trong hộp cách ly; kiểm tra key và loại. */
 async function readMeta(schemaJs: string, expectedKey?: string): Promise<GameModuleMeta> {
   const meta = await sandbox.meta(schemaJs);
-  if (!meta || typeof meta.key !== 'string' || !KEY_FORMAT.test(meta.key) || !meta.key.startsWith(`${meta.kind}.`)) {
-    throw invalid('key trong schema.ts cần có dạng "game.ten-game" (chữ thường, số, dấu -), khớp với kind.');
+  if (
+    !meta ||
+    typeof meta.key !== 'string' ||
+    !KEY_FORMAT.test(meta.key) ||
+    !meta.key.startsWith(`${meta.kind}.`)
+  ) {
+    throw invalid(
+      'key trong schema.ts cần có dạng "game.ten-game" (chữ thường, số, dấu -), khớp với kind.',
+    );
   }
   if (expectedKey && meta.key !== expectedKey) {
-    throw invalid(`key trong schema.ts phải giữ là "${expectedKey}" (đang là "${meta.key}"). Muốn làm game khác thì tải lên dạng game mới.`);
+    throw invalid(
+      `key trong schema.ts phải giữ là "${expectedKey}" (đang là "${meta.key}"). Muốn làm game khác thì tải lên dạng game mới.`,
+    );
   }
-  if (typeof meta.name !== 'string' || !meta.name.trim()) throw invalid('Thiếu name (tên game) trong schema.ts.');
+  if (typeof meta.name !== 'string' || !meta.name.trim())
+    throw invalid('Thiếu name (tên game) trong schema.ts.');
   if (typeof meta.version !== 'string' || !SEMVER.test(meta.version)) {
     throw invalid('version trong schema.ts cần có dạng 1.0.0.');
   }
-  if (!Array.isArray(meta.screens) || meta.screens.length === 0) throw invalid('Cần ít nhất một màn hình trong screens.');
+  if (!Array.isArray(meta.screens) || meta.screens.length === 0)
+    throw invalid('Cần ít nhất một màn hình trong screens.');
   return meta;
 }
 
@@ -122,13 +160,18 @@ async function readMeta(schemaJs: string, expectedKey?: string): Promise<GameMod
 async function checkConfigs(schemaJs: string, meta: GameModuleMeta) {
   const problems: string[] = [];
   const defaults = await sandbox.validate(schemaJs, meta.defaults);
-  for (const [path, msg] of Object.entries(defaults)) problems.push(`Cấu hình mặc định › ${path}: ${msg}`);
+  for (const [path, msg] of Object.entries(defaults))
+    problems.push(`Cấu hình mặc định › ${path}: ${msg}`);
   for (const preset of meta.presets ?? []) {
     const errors = await sandbox.validate(schemaJs, preset.config);
-    for (const [path, msg] of Object.entries(errors)) problems.push(`Mẫu "${preset.name}" › ${path}: ${msg}`);
+    for (const [path, msg] of Object.entries(errors))
+      problems.push(`Mẫu "${preset.name}" › ${path}: ${msg}`);
   }
   if (problems.length) {
-    throw invalid(`Còn ${problems.length} lỗi trong cấu hình mặc định hoặc mẫu: ${problems.slice(0, 5).join('; ')}`, { problems });
+    throw invalid(
+      `Còn ${problems.length} lỗi trong cấu hình mặc định hoặc mẫu: ${problems.slice(0, 5).join('; ')}`,
+      { problems },
+    );
   }
 }
 
@@ -173,7 +216,10 @@ export function moduleRoutes(deps: AppDeps) {
         .leftJoin(schema.users, eq(schema.users.id, schema.gameModuleVersions.publishedBy))
         .where(eq(schema.gameModuleVersions.moduleKey, row.key))
         .orderBy(desc(schema.gameModuleVersions.publishedAt)),
-      db.select({ n: count() }).from(schema.templates).where(eq(schema.templates.moduleKey, row.key)),
+      db
+        .select({ n: count() })
+        .from(schema.templates)
+        .where(eq(schema.templates.moduleKey, row.key)),
       row.draftUpdatedBy
         ? db
             .select({ name: schema.users.name })
@@ -231,7 +277,12 @@ export function moduleRoutes(deps: AppDeps) {
         .from(m)
         .orderBy(asc(m.createdAt), asc(m.key)),
       db
-        .select({ moduleKey: v.moduleKey, version: v.version, publishedAt: v.publishedAt, notes: v.notes })
+        .select({
+          moduleKey: v.moduleKey,
+          version: v.version,
+          publishedAt: v.publishedAt,
+          notes: v.notes,
+        })
         .from(v)
         .orderBy(desc(v.publishedAt)),
       db
@@ -311,9 +362,19 @@ export function moduleRoutes(deps: AppDeps) {
       .onConflictDoNothing({ target: schema.gameModules.key })
       .returning();
     if (!row) {
-      throw new AppError(409, ErrorCode.MODULE_EXISTS, `Đã có game "${meta.key}". Mở game đó để tải bản mới lên, hoặc đổi key trong schema.ts.`);
+      throw new AppError(
+        409,
+        ErrorCode.MODULE_EXISTS,
+        `Đã có game "${meta.key}". Mở game đó để tải bản mới lên, hoặc đổi key trong schema.ts.`,
+      );
     }
-    await audit(db, { userId: user.id, action: 'module.create', entity: 'module', entityId: row.key, data: { name: row.name } });
+    await audit(db, {
+      userId: user.id,
+      action: 'module.create',
+      entity: 'module',
+      entityId: row.key,
+      data: { name: row.name },
+    });
     return c.json({ module: await detail(db, row) }, 201);
   });
 
@@ -337,7 +398,12 @@ export function moduleRoutes(deps: AppDeps) {
       })
       .from(schema.gameModuleVersions)
       .leftJoin(schema.users, eq(schema.users.id, schema.gameModuleVersions.publishedBy))
-      .where(and(eq(schema.gameModuleVersions.moduleKey, row.key), eq(schema.gameModuleVersions.version, c.req.param('version'))))
+      .where(
+        and(
+          eq(schema.gameModuleVersions.moduleKey, row.key),
+          eq(schema.gameModuleVersions.version, c.req.param('version')),
+        ),
+      )
       .limit(1);
     if (!v) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy phiên bản này.');
     const body: GameVersionDetail = {
@@ -358,13 +424,21 @@ export function moduleRoutes(deps: AppDeps) {
     const input = parseInput(GameAssetUploadRequestSchema, await readJson(c.req));
     const storage = deps.getStorage();
     if (!storage) {
-      throw new AppError(503, ErrorCode.STORAGE_NOT_CONFIGURED, 'Kho media chưa được cấu hình. Xem hướng dẫn trong docs/huong-dan/r2.md.');
+      throw new AppError(
+        503,
+        ErrorCode.STORAGE_NOT_CONFIGURED,
+        'Kho media chưa được cấu hình. Xem hướng dẫn trong docs/huong-dan/r2.md.',
+      );
     }
     // Kiểm tra như khi lưu nháp (tên, loại, dung lượng).
     checkAssets(key, { [input.path]: { url: '', ...input } }, storage);
     const storageKey = assetStorageKey(key, input.sha256, assetExt(input.path, input.mime));
     const signed = await storage.presignPut(storageKey, input.mime);
-    const body: GameAssetUploadResponse = { uploadUrl: signed.url, headers: signed.headers, url: storage.publicUrl(storageKey) };
+    const body: GameAssetUploadResponse = {
+      uploadUrl: signed.url,
+      headers: signed.headers,
+      url: storage.publicUrl(storageKey),
+    };
     return c.json(body);
   });
 
@@ -400,7 +474,8 @@ export function moduleRoutes(deps: AppDeps) {
   app.delete('/:key/draft', async (c) => {
     const db = c.get('db');
     const row = await findModule(db, c.req.param('key'));
-    if (!row.latestVersion) throw invalid('Game chưa phát hành lần nào nên không bỏ bản nháp được.');
+    if (!row.latestVersion)
+      throw invalid('Game chưa phát hành lần nào nên không bỏ bản nháp được.');
     const [saved] = await db
       .update(schema.gameModules)
       .set(CLEARED_DRAFT)
@@ -419,16 +494,23 @@ export function moduleRoutes(deps: AppDeps) {
     const row = await findModule(db, c.req.param('key'));
     if (iso(row.draftUpdatedAt) !== input.baseUpdatedAt) throw conflict();
     if (!row.draftFiles || !row.draftUpdatedAt) throw invalid('Không có bản nháp để phát hành.');
-    if (!row.draftSchemaJs || !row.draftRuntimeJs) throw invalid('Bản nháp còn lỗi biên dịch. Sửa lỗi rồi lưu lại trước khi phát hành.');
+    if (!row.draftSchemaJs || !row.draftRuntimeJs)
+      throw invalid('Bản nháp còn lỗi biên dịch. Sửa lỗi rồi lưu lại trước khi phát hành.');
     const meta = await readMeta(row.draftSchemaJs, row.key);
     if (row.latestVersion && compareVersions(meta.version, row.latestVersion) <= 0) {
-      throw invalid(`Phiên bản ${meta.version} không lớn hơn bản mới nhất ${row.latestVersion}. Tăng version trong schema.ts (ví dụ lên ${bump(row.latestVersion)}).`);
+      throw invalid(
+        `Phiên bản ${meta.version} không lớn hơn bản mới nhất ${row.latestVersion}. Tăng version trong schema.ts (ví dụ lên ${bump(row.latestVersion)}).`,
+      );
     }
     await checkConfigs(row.draftSchemaJs, meta);
     const user = c.get('user');
     const now = deps.now();
     const published = await db.transaction(async (tx) => {
-      const [locked] = await tx.select().from(schema.gameModules).where(eq(schema.gameModules.key, row.key)).for('update');
+      const [locked] = await tx
+        .select()
+        .from(schema.gameModules)
+        .where(eq(schema.gameModules.key, row.key))
+        .for('update');
       if (!locked || iso(locked.draftUpdatedAt) !== input.baseUpdatedAt) throw conflict();
       const inserted = await tx
         .insert(schema.gameModuleVersions)
@@ -446,7 +528,8 @@ export function moduleRoutes(deps: AppDeps) {
         })
         .onConflictDoNothing()
         .returning({ id: schema.gameModuleVersions.id });
-      if (inserted.length === 0) throw invalid(`Đã có phiên bản ${meta.version}. Tăng version trong schema.ts.`);
+      if (inserted.length === 0)
+        throw invalid(`Đã có phiên bản ${meta.version}. Tăng version trong schema.ts.`);
       const [saved] = await tx
         .update(schema.gameModules)
         .set({

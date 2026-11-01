@@ -34,7 +34,10 @@ function LoginForm() {
     let alive = true;
     api<MeResponse>('/auth/me')
       .then(({ user }) => {
-        if (alive) router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next')));
+        if (alive)
+          router.replace(
+            user.mustChangePassword ? '/change-password' : safeNext(params.get('next')),
+          );
       })
       .catch(async () => {
         const s = await api<SetupStatus>('/auth/setup-status').catch(() => null);
@@ -52,7 +55,10 @@ function LoginForm() {
     setBusy(true);
     setError(null);
     try {
-      const { user } = await api<MeResponse>('/auth/login', { method: 'POST', body: { email, password } });
+      const { user } = await api<MeResponse>('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+      });
       router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next')));
     } catch (e) {
       setError(errorMessage(e));
@@ -93,7 +99,12 @@ function LoginForm() {
           required
           fullWidth
         />
-        <Button type="submit" variant="contained" size="large" disabled={busy || !email || !password}>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={busy || !email || !password}
+        >
           {t('cms.login.submit')}
         </Button>
         <Typography variant="body2" color="text.secondary">

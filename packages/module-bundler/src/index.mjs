@@ -98,7 +98,11 @@ function virtualFiles(files, { externals, sdkPrefix, assets }) {
           const base = args.kind === 'entry-point' ? '' : dirname(args.importer);
           const found = find(args.kind === 'entry-point' ? args.path : `${base}/${args.path}`);
           if (found) return { path: found, namespace: 'opes' };
-          return { errors: [{ text: `Không tìm thấy file "${args.path}" (từ "${args.importer || 'điểm vào'}")` }] };
+          return {
+            errors: [
+              { text: `Không tìm thấy file "${args.path}" (từ "${args.importer || 'điểm vào'}")` },
+            ],
+          };
         }
         return {
           errors: [
@@ -156,7 +160,9 @@ const SCHEMA_BANNER =
  * @param {{ errors?: Array<{ text: string, location?: { file: string, line: number, column: number } | null }> }} failure
  */
 export function formatBuildErrors(failure) {
-  return buildErrors(failure).map((e) => (e.file ? `${e.file}:${e.line}:${e.column} ${e.text}` : e.text));
+  return buildErrors(failure).map((e) =>
+    e.file ? `${e.file}:${e.line}:${e.column} ${e.text}` : e.text,
+  );
 }
 
 /**
@@ -165,7 +171,8 @@ export function formatBuildErrors(failure) {
  */
 export function buildErrors(failure) {
   const errors = failure?.errors ?? [];
-  if (!errors.length) return [{ file: null, line: 0, column: 0, text: String(failure?.message ?? failure) }];
+  if (!errors.length)
+    return [{ file: null, line: 0, column: 0, text: String(failure?.message ?? failure) }];
   return errors.map((e) => ({
     file: e.location ? e.location.file.replace(/^opes:/, '') : null,
     line: e.location?.line ?? 0,
@@ -188,13 +195,23 @@ export async function bundleGame(esbuild, { files, sdkCore, assets }) {
   for (const [path, content] of Object.entries(files)) source[normalizePath(path)] = content;
   for (const required of ['schema', 'index']) {
     if (!['.ts', '.tsx', '.js'].some((ext) => source[required + ext] !== undefined)) {
-      throw Object.assign(new Error(`Thiếu file ${required}.ts`), { errors: [{ text: `Thiếu file ${required}.ts` }] });
+      throw Object.assign(new Error(`Thiếu file ${required}.ts`), {
+        errors: [{ text: `Thiếu file ${required}.ts` }],
+      });
     }
   }
   const sdk = {};
-  for (const [path, content] of Object.entries(sdkCore)) sdk[`__sdk/${normalizePath(path)}`] = content;
+  for (const [path, content] of Object.entries(sdkCore))
+    sdk[`__sdk/${normalizePath(path)}`] = content;
 
-  const common = { bundle: true, write: false, logLevel: 'silent', charset: 'utf8', jsx: 'automatic', legalComments: 'none' };
+  const common = {
+    bundle: true,
+    write: false,
+    logLevel: 'silent',
+    charset: 'utf8',
+    jsx: 'automatic',
+    legalComments: 'none',
+  };
 
   const schema = await esbuild.build({
     ...common,
@@ -203,7 +220,10 @@ export async function bundleGame(esbuild, { files, sdkCore, assets }) {
     target: 'es2020',
     banner: { js: SCHEMA_BANNER },
     plugins: [
-      virtualFiles({ ...source, ...sdk, '__schema_entry.ts': SCHEMA_ENTRY }, { externals: [], sdkPrefix: '__sdk', assets }),
+      virtualFiles(
+        { ...source, ...sdk, '__schema_entry.ts': SCHEMA_ENTRY },
+        { externals: [], sdkPrefix: '__sdk', assets },
+      ),
     ],
   });
 
@@ -212,7 +232,12 @@ export async function bundleGame(esbuild, { files, sdkCore, assets }) {
     entryPoints: ['__runtime_entry.ts'],
     format: 'cjs',
     target: 'es2020',
-    plugins: [virtualFiles({ ...source, '__runtime_entry.ts': RUNTIME_ENTRY }, { externals: RUNTIME_EXTERNALS, assets })],
+    plugins: [
+      virtualFiles(
+        { ...source, '__runtime_entry.ts': RUNTIME_ENTRY },
+        { externals: RUNTIME_EXTERNALS, assets },
+      ),
+    ],
   });
 
   return { schemaJs: schema.outputFiles[0].text, runtimeJs: runtime.outputFiles[0].text };

@@ -63,7 +63,12 @@ export function Breadcrumbs({
       {chain.map((item, i) => (
         <Fragment key={`${item.name}-${i}`}>
           {sep}
-          <Box component="button" type="button" onClick={onShowOutline} sx={{ all: 'unset', cursor: 'pointer', '&:hover': { color: '#FFF' } }}>
+          <Box
+            component="button"
+            type="button"
+            onClick={onShowOutline}
+            sx={{ all: 'unset', cursor: 'pointer', '&:hover': { color: '#FFF' } }}
+          >
             {item.name}
           </Box>
         </Fragment>

@@ -19,15 +19,28 @@ import { t } from '@opes/i18n';
 
 const MAX_COUNT = 9999;
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, attrs: Record<string, string> = {}): HTMLElementTagNameMap[K] {
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className: string,
+  attrs: Record<string, string> = {},
+): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   node.className = className;
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
   return node;
 }
 
-function iconButton(className: string, label: string, text: string, onClick: () => void): HTMLButtonElement {
-  const b = el('button', `vf-btn ${className}`, { type: 'button', title: label, 'aria-label': label });
+function iconButton(
+  className: string,
+  label: string,
+  text: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const b = el('button', `vf-btn ${className}`, {
+    type: 'button',
+    title: label,
+    'aria-label': label,
+  });
   b.textContent = text;
   // Giữ con trỏ trong ô nhập khi bấm nút.
   b.addEventListener('mousedown', (e) => e.preventDefault());
@@ -35,7 +48,11 @@ function iconButton(className: string, label: string, text: string, onClick: () 
   return b;
 }
 
-function toggleButton(label: string, text: string, onToggle: (on: boolean) => void): HTMLButtonElement {
+function toggleButton(
+  label: string,
+  text: string,
+  onToggle: (on: boolean) => void,
+): HTMLButtonElement {
   const b = iconButton('vf-toggle', label, text, () => {
     const on = b.getAttribute('aria-pressed') !== 'true';
     b.setAttribute('aria-pressed', String(on));
@@ -53,7 +70,9 @@ export function createSearchPanel(view: EditorView): Panel {
   let regexp = initial.regexp;
 
   const dom = el('div', `vf-panel${narrow ? ' vf-narrow' : ''}`, { role: 'search' });
-  const expand = iconButton('vf-expand', t('cms.editor.toggleReplace'), '›', () => setExpanded(!expanded));
+  const expand = iconButton('vf-expand', t('cms.editor.toggleReplace'), '›', () =>
+    setExpanded(!expanded),
+  );
   const rows = el('div', 'vf-rows');
   const findRow = el('div', 'vf-row');
   const replaceRow = el('div', 'vf-row vf-replace-row');
@@ -68,8 +87,16 @@ export function createSearchPanel(view: EditorView): Panel {
     autocomplete: 'off',
   });
   findInput.value = initial.search;
-  const caseBtn = toggleButton(t('cms.editor.matchCase'), 'Aa', (on) => ((caseSensitive = on), commit()));
-  const wordBtn = toggleButton(t('cms.editor.wholeWord'), 'ab', (on) => ((wholeWord = on), commit()));
+  const caseBtn = toggleButton(
+    t('cms.editor.matchCase'),
+    'Aa',
+    (on) => ((caseSensitive = on), commit()),
+  );
+  const wordBtn = toggleButton(
+    t('cms.editor.wholeWord'),
+    'ab',
+    (on) => ((wholeWord = on), commit()),
+  );
   const regexBtn = toggleButton(t('cms.editor.regex'), '.*', (on) => ((regexp = on), commit()));
   caseBtn.setAttribute('aria-pressed', String(caseSensitive));
   wordBtn.setAttribute('aria-pressed', String(wholeWord));
@@ -109,7 +136,13 @@ export function createSearchPanel(view: EditorView): Panel {
   setExpanded(expanded);
 
   function query() {
-    return new SearchQuery({ search: findInput.value, replace: replaceInput.value, caseSensitive, wholeWord, regexp });
+    return new SearchQuery({
+      search: findInput.value,
+      replace: replaceInput.value,
+      caseSensitive,
+      wholeWord,
+      regexp,
+    });
   }
   function commit() {
     const q = query();
@@ -182,7 +215,8 @@ export function createSearchPanel(view: EditorView): Panel {
         if (findInput.value !== q.search) findInput.value = q.search;
         if (replaceInput.value !== q.replace) replaceInput.value = q.replace;
       }
-      if (update.docChanged || update.selectionSet || !q.eq(getSearchQuery(update.startState))) updateCount();
+      if (update.docChanged || update.selectionSet || !q.eq(getSearchQuery(update.startState)))
+        updateCount();
     },
   };
 }
@@ -256,9 +290,18 @@ export const searchPanelTheme = EditorView.theme({
   '.vf-narrow .vf-btn': { minWidth: '32px', height: '32px', fontSize: '14px' },
   '.vf-btn:hover': { backgroundColor: 'rgba(90, 93, 94, 0.5)' },
   '.vf-toggle': { fontFamily: 'monospace' },
-  '.vf-toggle[aria-pressed="true"]': { backgroundColor: 'rgba(0, 127, 212, 0.4)', borderColor: '#007FD4' },
+  '.vf-toggle[aria-pressed="true"]': {
+    backgroundColor: 'rgba(0, 127, 212, 0.4)',
+    borderColor: '#007FD4',
+  },
   '.vf-expand': { alignSelf: 'stretch', height: 'auto', fontSize: '14px' },
-  '.vf-count': { minWidth: '64px', padding: '0 4px', fontSize: '12px', whiteSpace: 'nowrap', opacity: '0.85' },
+  '.vf-count': {
+    minWidth: '64px',
+    padding: '0 4px',
+    fontSize: '12px',
+    whiteSpace: 'nowrap',
+    opacity: '0.85',
+  },
   '.vf-none .vf-count': { color: '#F48771' },
   '.vf-invalid .vf-count': { color: '#F48771' },
 });

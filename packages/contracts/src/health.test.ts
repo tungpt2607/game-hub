@@ -15,9 +15,9 @@ describe('HealthResponseSchema', () => {
   });
 
   it('chấp nhận trạng thái degraded khi cơ sở dữ liệu lỗi', () => {
-    expect(HealthResponseSchema.parse({ ...valid, status: 'degraded', database: 'down' }).status).toBe(
-      'degraded',
-    );
+    expect(
+      HealthResponseSchema.parse({ ...valid, status: 'degraded', database: 'down' }).status,
+    ).toBe('degraded');
   });
 
   it('từ chối thời điểm sai định dạng', () => {

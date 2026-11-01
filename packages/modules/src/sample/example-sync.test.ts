@@ -12,9 +12,10 @@ const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.met
 describe('gói mẫu game-mau khớp với game.sample', () => {
   for (const file of ['Runtime.tsx', 'config.ts']) {
     it(file, () => {
-      expect(read(`../../examples/game-mau/${file}`), `examples/game-mau/${file} khác src/sample/${file}`).toBe(
-        read(`./${file}`),
-      );
+      expect(
+        read(`../../examples/game-mau/${file}`),
+        `examples/game-mau/${file} khác src/sample/${file}`,
+      ).toBe(read(`./${file}`));
     });
   }
 });

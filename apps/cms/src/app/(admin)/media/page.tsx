@@ -246,7 +246,10 @@ export default function MediaPage() {
       <Grid container spacing={2}>
         {items?.map((item) => (
           <Grid key={item.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-            <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card
+              variant="outlined"
+              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
               <Box
                 sx={{
                   position: 'relative',
@@ -283,11 +286,18 @@ export default function MediaPage() {
                     {item.originalName}
                   </Typography>
                 </Tooltip>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={1}
+                >
                   <Typography variant="caption" color="text.secondary" noWrap>
                     {formatSize(item.sizeBytes)}
                     {item.kind === 'image' && item.width ? ` · ${item.width}×${item.height}` : ''}
-                    {item.kind === 'audio' && item.durationMs !== null ? ` · ${formatDuration(item.durationMs)}` : ''}
+                    {item.kind === 'audio' && item.durationMs !== null
+                      ? ` · ${formatDuration(item.durationMs)}`
+                      : ''}
                   </Typography>
                   <IconButton
                     size="small"
@@ -297,7 +307,9 @@ export default function MediaPage() {
                     <DeleteOutline fontSize="small" />
                   </IconButton>
                 </Stack>
-                {item.kind !== 'image' && <Chip size="small" label={item.mime.split('/')[1]} sx={{ mt: 0.5 }} />}
+                {item.kind !== 'image' && (
+                  <Chip size="small" label={item.mime.split('/')[1]} sx={{ mt: 0.5 }} />
+                )}
               </CardContent>
             </Card>
           </Grid>

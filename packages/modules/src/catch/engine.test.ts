@@ -36,10 +36,13 @@ describe('CatchEngine', () => {
   });
 
   it('vật phẩm rơi ngoài giỏ thì tính là để rơi', () => {
-    const e = new CatchEngine(base({ difficulty: { ...catchDefaults.difficulty, spawnStart: 0.2, spawnEnd: 0.2 } }));
+    const e = new CatchEngine(
+      base({ difficulty: { ...catchDefaults.difficulty, spawnStart: 0.2, spawnEnd: 0.2 } }),
+    );
     const f = dropOne(e, false);
     let missed = false;
-    for (let i = 0; i < 200 && !missed; i++) missed = e.step(0.05).some((ev) => ev.type === 'miss' && ev.x === f.x);
+    for (let i = 0; i < 200 && !missed; i++)
+      missed = e.step(0.05).some((ev) => ev.type === 'miss' && ev.x === f.x);
     expect(missed).toBe(true);
     expect(e.score).toBe(0);
   });
@@ -61,7 +64,10 @@ describe('CatchEngine', () => {
 
   it('chế độ chỉ tính giờ thì không mất mạng', () => {
     const e = new CatchEngine(
-      base({ endMode: 'time', items: [{ points: 0, weight: 1, loseLifeOnCatch: true, loseLifeOnMiss: true }] }),
+      base({
+        endMode: 'time',
+        items: [{ points: 0, weight: 1, loseLifeOnCatch: true, loseLifeOnMiss: true }],
+      }),
     );
     dropOne(e, true);
     e.step(0.5);
@@ -89,7 +95,9 @@ describe('CatchEngine', () => {
 
   it('chế độ theo màn: đủ điểm thì lên màn', () => {
     const e = new CatchEngine(
-      base({ difficulty: { ...catchDefaults.difficulty, mode: 'levels', pointsPerLevel: 4, maxLevel: 5 } }),
+      base({
+        difficulty: { ...catchDefaults.difficulty, mode: 'levels', pointsPerLevel: 4, maxLevel: 5 },
+      }),
     );
     expect(e.progress).toBe(0);
     dropOne(e, true);
@@ -105,7 +113,13 @@ describe('CatchEngine', () => {
     const e = new CatchEngine(
       base({
         duration: 1000,
-        difficulty: { ...catchDefaults.difficulty, spawnStart: 5, spawnEnd: 5, fallStart: 100, fallEnd: 100 },
+        difficulty: {
+          ...catchDefaults.difficulty,
+          spawnStart: 5,
+          spawnEnd: 5,
+          fallStart: 100,
+          fallEnd: 100,
+        },
         items: [
           { points: 1, weight: 9, loseLifeOnCatch: false, loseLifeOnMiss: false },
           { points: 1, weight: 1, loseLifeOnCatch: false, loseLifeOnMiss: false },

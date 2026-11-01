@@ -47,7 +47,13 @@ interface InputProps<F, V> {
 
 const helper = (error: string | undefined, help: string | undefined) => error ?? help;
 
-export function TextInput({ id, field, value, error, onChange }: InputProps<TextFieldDef, unknown>) {
+export function TextInput({
+  id,
+  field,
+  value,
+  error,
+  onChange,
+}: InputProps<TextFieldDef, unknown>) {
   const text = typeof value === 'string' ? value : '';
   const counter = field.maxLength ? `${text.length}/${field.maxLength}` : undefined;
   return (
@@ -68,7 +74,13 @@ export function TextInput({ id, field, value, error, onChange }: InputProps<Text
   );
 }
 
-export function NumberInput({ id, field, value, error, onChange }: InputProps<NumberField, unknown>) {
+export function NumberInput({
+  id,
+  field,
+  value,
+  error,
+  onChange,
+}: InputProps<NumberField, unknown>) {
   // Giữ chuỗi đang gõ (ví dụ "-" hoặc "") để không nhảy giá trị khi người dùng đang nhập.
   const [draft, setDraft] = useState(typeof value === 'number' ? String(value) : '');
   useEffect(() => {
@@ -93,26 +105,48 @@ export function NumberInput({ id, field, value, error, onChange }: InputProps<Nu
       fullWidth
       size="small"
       slotProps={{
-        htmlInput: { min: field.min, max: field.max, step: field.step ?? (field.integer ? 1 : 'any') },
-        input: field.unit ? { endAdornment: <InputAdornment position="end">{field.unit}</InputAdornment> } : undefined,
+        htmlInput: {
+          min: field.min,
+          max: field.max,
+          step: field.step ?? (field.integer ? 1 : 'any'),
+        },
+        input: field.unit
+          ? { endAdornment: <InputAdornment position="end">{field.unit}</InputAdornment> }
+          : undefined,
       }}
     />
   );
 }
 
-export function BooleanInput({ id, field, value, error, onChange }: InputProps<BooleanField, unknown>) {
+export function BooleanInput({
+  id,
+  field,
+  value,
+  error,
+  onChange,
+}: InputProps<BooleanField, unknown>) {
   return (
     <FormControl error={Boolean(error)}>
       <FormControlLabel
-        control={<Switch id={id} checked={value === true} onChange={(e) => onChange(e.target.checked)} />}
+        control={
+          <Switch id={id} checked={value === true} onChange={(e) => onChange(e.target.checked)} />
+        }
         label={field.label}
       />
-      {helper(error, field.help) && <FormHelperText sx={{ mt: -0.5 }}>{helper(error, field.help)}</FormHelperText>}
+      {helper(error, field.help) && (
+        <FormHelperText sx={{ mt: -0.5 }}>{helper(error, field.help)}</FormHelperText>
+      )}
     </FormControl>
   );
 }
 
-export function SelectInput({ id, field, value, error, onChange }: InputProps<SelectField, unknown>) {
+export function SelectInput({
+  id,
+  field,
+  value,
+  error,
+  onChange,
+}: InputProps<SelectField, unknown>) {
   return (
     <FormControl fullWidth size="small" error={Boolean(error)}>
       <InputLabel id={`${id}-label`}>{field.label}</InputLabel>
@@ -162,7 +196,10 @@ export function ColorInput({ id, field, value, error, onChange }: InputProps<Col
       fullWidth
       size="small"
       slotProps={{
-        htmlInput: { spellCheck: false, style: { fontFamily: 'monospace', textTransform: 'uppercase' } },
+        htmlInput: {
+          spellCheck: false,
+          style: { fontFamily: 'monospace', textTransform: 'uppercase' },
+        },
         input: {
           startAdornment: (
             <InputAdornment position="start">
@@ -171,7 +208,9 @@ export function ColorInput({ id, field, value, error, onChange }: InputProps<Col
                 type="color"
                 aria-label={`${field.label} – bảng màu`}
                 value={swatch.toLowerCase()}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value.toUpperCase())}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  onChange(e.target.value.toUpperCase())
+                }
                 sx={{
                   width: 28,
                   height: 28,
@@ -231,7 +270,11 @@ export function MediaInput({
           }}
         >
           {value && kind === 'image' && (
-            <img src={value.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img
+              src={value.url}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           )}
           {value && kind === 'audio' && <AudiotrackOutlined color="action" />}
         </Box>
@@ -251,8 +294,12 @@ export function MediaInput({
           </Stack>
         </Box>
       </Stack>
-      {value && kind === 'audio' && <audio controls preload="none" src={value.url} style={{ width: '100%', marginTop: 8 }} />}
-      {helper(error, field.help ?? hint) && <FormHelperText sx={{ mx: 0 }}>{helper(error, field.help ?? hint)}</FormHelperText>}
+      {value && kind === 'audio' && (
+        <audio controls preload="none" src={value.url} style={{ width: '100%', marginTop: 8 }} />
+      )}
+      {helper(error, field.help ?? hint) && (
+        <FormHelperText sx={{ mx: 0 }}>{helper(error, field.help ?? hint)}</FormHelperText>
+      )}
       <MediaPickerDialog
         open={open}
         kind={kind}
@@ -286,7 +333,12 @@ export function EmojiOrImageInput({
     bgcolor: 'action.hover',
   } as const;
   const caption = (text: string) => (
-    <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5, textAlign: 'center' }}>
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      component="div"
+      sx={{ mt: 0.5, textAlign: 'center' }}
+    >
       {text}
     </Typography>
   );
@@ -305,10 +357,22 @@ export function EmojiOrImageInput({
           minWidth: 0,
         }}
       >
-        <Typography component="legend" variant="caption" color={error ? 'error' : 'text.secondary'} sx={{ px: 0.5 }}>
+        <Typography
+          component="legend"
+          variant="caption"
+          color={error ? 'error' : 'text.secondary'}
+          sx={{ px: 0.5 }}
+        >
           {field.label}
         </Typography>
-        <Stack direction="row" alignItems="flex-start" flexWrap="wrap" useFlexGap columnGap={2} rowGap={1.5}>
+        <Stack
+          direction="row"
+          alignItems="flex-start"
+          flexWrap="wrap"
+          useFlexGap
+          columnGap={2}
+          rowGap={1.5}
+        >
           <Box>
             <Box
               component="input"
@@ -317,7 +381,9 @@ export function EmojiOrImageInput({
               value={v.emoji}
               maxLength={16}
               disabled={Boolean(v.image)}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => onChange({ ...v, emoji: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onChange({ ...v, emoji: e.target.value })
+              }
               sx={{
                 ...tile,
                 display: 'block',
@@ -336,21 +402,36 @@ export function EmojiOrImageInput({
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: '56px' }}>
             {t('cms.moduleForm.or')}
           </Typography>
-          <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ minWidth: 0, flex: '1 1 180px' }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="flex-start"
+            sx={{ minWidth: 0, flex: '1 1 180px' }}
+          >
             <Box>
               <Box sx={{ ...tile, position: 'relative', overflow: 'hidden' }}>
                 {v.image && (
                   <img
                     src={v.image.url}
                     alt=""
-                    style={{ position: 'absolute', inset: 4, width: 'calc(100% - 8px)', height: 'calc(100% - 8px)', objectFit: 'contain' }}
+                    style={{
+                      position: 'absolute',
+                      inset: 4,
+                      width: 'calc(100% - 8px)',
+                      height: 'calc(100% - 8px)',
+                      objectFit: 'contain',
+                    }}
                   />
                 )}
               </Box>
               {caption(t('cms.moduleForm.image'))}
             </Box>
             <Box sx={{ minWidth: 0, pt: 0.5 }}>
-              <Typography variant="body2" noWrap color={v.image ? 'text.primary' : 'text.secondary'}>
+              <Typography
+                variant="body2"
+                noWrap
+                color={v.image ? 'text.primary' : 'text.secondary'}
+              >
                 {v.image ? (v.image.name ?? v.image.id) : t('cms.moduleForm.none')}
               </Typography>
               <Stack direction="row" spacing={1}>
@@ -358,7 +439,11 @@ export function EmojiOrImageInput({
                   {v.image ? t('cms.moduleForm.change') : t('cms.moduleForm.choose')}
                 </Button>
                 {v.image && (
-                  <Button size="small" color="inherit" onClick={() => onChange({ ...v, image: null })}>
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => onChange({ ...v, image: null })}
+                  >
                     {t('cms.moduleForm.clear')}
                   </Button>
                 )}
@@ -367,7 +452,9 @@ export function EmojiOrImageInput({
           </Stack>
         </Stack>
       </Box>
-      <FormHelperText sx={{ mx: 0 }}>{helper(error, field.help) ?? t('cms.moduleForm.emojiOrImageHelp')}</FormHelperText>
+      <FormHelperText sx={{ mx: 0 }}>
+        {helper(error, field.help) ?? t('cms.moduleForm.emojiOrImageHelp')}
+      </FormHelperText>
       <MediaPickerDialog
         open={open}
         kind="image"
@@ -404,8 +491,14 @@ export function FontInput({
       .then((res) => setCustom(res.items.map(toMediaRef)))
       .catch(() => setCustom([]));
   };
-  const fontOf = (ref: MediaRef): FontValue => ({ family: (ref.name ?? 'Font riêng').replace(/\.[^.]+$/, ''), media: ref });
-  const customList = [...(v.media ? [v.media] : []), ...(custom ?? []).filter((r) => r.id !== v.media?.id)];
+  const fontOf = (ref: MediaRef): FontValue => ({
+    family: (ref.name ?? 'Font riêng').replace(/\.[^.]+$/, ''),
+    media: ref,
+  });
+  const customList = [
+    ...(v.media ? [v.media] : []),
+    ...(custom ?? []).filter((r) => r.id !== v.media?.id),
+  ];
   const selected = v.media ? `media:${v.media.id}` : v.family;
 
   return (
@@ -456,7 +549,9 @@ export function FontInput({
       </Select>
       <FormHelperText>{helper(error, field.help) ?? t('cms.moduleForm.fontHelp')}</FormHelperText>
       {v.family && (
-        <Typography sx={{ mt: 0.5, fontFamily: cssFontStack(v), fontSize: 18 }}>{t('cms.moduleForm.fontSample')}</Typography>
+        <Typography sx={{ mt: 0.5, fontFamily: cssFontStack(v), fontSize: 18 }}>
+          {t('cms.moduleForm.fontSample')}
+        </Typography>
       )}
       <MediaPickerDialog
         open={pickerOpen}
