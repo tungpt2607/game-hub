@@ -136,6 +136,15 @@ Thứ tự ưu tiên khi phải đánh đổi: **đúng → an toàn → perform
 
 ### 3.5. CMS và game (`apps/cms`, `packages/modules`)
 
+- **Code game đang chạy nằm trong cơ sở dữ liệu**, không phải trong repo. Các game có sẵn trong `packages/modules/src`
+  (`catch`, `catch-quiz`, `sample`) chỉ là bản nạp ban đầu: API nạp mỗi game một lần vào cơ sở dữ liệu mới (khi key
+  chưa có). Vì vậy:
+  - Sửa mã nguồn game trong repo (kể cả tăng `version`) **không** thay đổi game trên môi trường đang chạy; chỉ cơ sở
+    dữ liệu mới (máy dev mới, môi trường test, CI) nhận bản mới.
+  - Muốn đổi game đang chạy: sửa trong CMS (mục Game) hoặc tải gói `.zip` lên, tăng `version`, rồi phát hành.
+  - Sửa game trong CMS không ghi ngược về repo, nên bản trong repo có thể khác bản đang chạy. Khi sửa game trong repo,
+    ghi rõ trong mô tả thay đổi là chỉ ảnh hưởng cơ sở dữ liệu mới.
+
 - Component nhiều trạng thái (khoảng trên 10 `useState`): tách logic ra custom hook (`useXxx`).
 - Logic game (engine) tách khỏi giao diện và có kiểm thử với số ngẫu nhiên cố định (`seededRandom`).
 

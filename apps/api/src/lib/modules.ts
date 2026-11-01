@@ -8,8 +8,12 @@ import { LruCache } from './lru';
 import { sandbox } from './module-sandbox';
 
 /**
- * Danh sách game lấy từ cơ sở dữ liệu (Bước 7). Game có sẵn trong code được nạp vào lần đầu
- * (chỉ khi chưa có trong cơ sở dữ liệu; sửa trong CMS thì không bị ghi đè).
+ * Danh sách game lấy từ cơ sở dữ liệu (Bước 7): trang chơi và CMS luôn chạy code game lưu ở đây.
+ *
+ * Game có sẵn trong repo (packages/modules/src) chỉ là bản nạp ban đầu cho cơ sở dữ liệu mới: mỗi game
+ * được nạp đúng một lần, khi key chưa có. Sau đó sửa mã nguồn trong repo (kể cả tăng version) không
+ * cập nhật cơ sở dữ liệu đã có; muốn đổi game đang chạy thì sửa và phát hành trong CMS (mục Game).
+ * Ngược lại, sửa game trong CMS cũng không ghi ngược về repo.
  */
 
 export interface ModuleVersion {

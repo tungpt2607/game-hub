@@ -56,7 +56,9 @@ Tài liệu thiết kế trong `docs/`.
 5. Thêm tính năng hoặc sửa lỗi thì thêm kiểm thử tương ứng (engine game: `*.test.ts` cạnh file; API: `admin.integration.test.ts`).
 6. Sửa code mà tài liệu có trích dẫn (đặc biệt gói mẫu `packages/modules/examples/game-mau` trong `docs/huong-dan/viet-game.md`):
    cập nhật tài liệu cùng lúc.
-7. Đổi lược đồ trong `packages/db/src/schema.ts`: chạy `pnpm db:generate` để sinh migration, không sửa tay migration cũ.
+7. Sửa game có sẵn trong `packages/modules/src`: nhớ đây chỉ là bản nạp ban đầu cho cơ sở dữ liệu mới, không cập nhật
+   game trên môi trường đang chạy (mục 3.5 quy ước code); nói rõ điều này khi báo cáo cho người dùng.
+8. Đổi lược đồ trong `packages/db/src/schema.ts`: chạy `pnpm db:generate` để sinh migration, không sửa tay migration cũ.
 
 **Commit**
 
