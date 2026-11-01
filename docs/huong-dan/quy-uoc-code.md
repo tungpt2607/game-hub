@@ -4,6 +4,8 @@ Mục tiêu: code chuyên nghiệp, dễ hiểu, dễ bảo trì, chạy nhanh, 
 
 Phần lớn quy ước dưới đây được **máy kiểm tra tự động**: vi phạm thì CI báo đỏ và không gộp được. Phần còn lại (mục 3) do người review kiểm tra.
 
+Claude Code cũng làm theo tài liệu này: `CLAUDE.md` ở thư mục gốc nhúng nguyên file này, kèm các quy tắc làm việc riêng cho Claude. Sửa quy ước ở đây là Claude áp dụng theo.
+
 ## 1. Trước khi đẩy code
 
 ```bash
