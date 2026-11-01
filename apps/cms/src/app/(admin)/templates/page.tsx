@@ -3,39 +3,38 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import SearchIcon from '@mui/icons-material/Search';
 import type { TemplateListResponse, TemplateStatus, TemplateSummary } from '@opes/contracts';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { api, handleAuthError, errorMessage } from '../../../lib/api';
 import { formatDateTime } from '../../../lib/format';
 import { CreateTemplateDialog, type CreateMode } from '../../../module-ui/CreateTemplateDialog';
 import { StatusChip } from '../../../module-ui/StatusChip';
 import { TemplateThumb } from '../../../module-ui/TemplateThumb';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { SearchField } from '../../../components/ui/SearchField';
+import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { Toast } from '../../../components/ui/Toast';
 
 export default function TemplatesPage() {
   const [status, setStatus] = useState<TemplateStatus>('active');
   const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebouncedValue(query.trim());
   const [items, setItems] = useState<TemplateSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [create, setCreate] = useState<CreateMode | null>(null);
@@ -43,11 +42,6 @@ export default function TemplatesPage() {
   const [toDelete, setToDelete] = useState<TemplateSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
@@ -99,23 +93,21 @@ export default function TemplatesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.templates.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.templates.lead')}</Typography>
-        </Box>
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreate({ type: 'new' })}
-          >
-            {t('cms.templates.create')}
-          </Button>
-        </Box>
-      </Stack>
+      <PageHeader
+        title={t('cms.templates.heading')}
+        description={t('cms.templates.lead')}
+        actions={
+          <>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreate({ type: 'new' })}
+            >
+              {t('cms.templates.create')}
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
@@ -128,22 +120,11 @@ export default function TemplatesPage() {
           <Tab value="active" label={t('cms.templates.tabActive')} />
           <Tab value="archived" label={t('cms.templates.tabArchived')} />
         </Tabs>
-        <TextField
-          size="small"
-          placeholder={t('cms.templates.search')}
+        <SearchField
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
+          placeholder={t('cms.templates.search')}
           sx={{ maxWidth: { sm: 320 } }}
-          fullWidth
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
         />
       </Stack>
 
@@ -271,12 +252,7 @@ export default function TemplatesPage() {
         onConfirm={confirmDelete}
         onClose={() => setToDelete(null)}
       />
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={4000}
-        onClose={() => setToast(null)}
-        message={toast}
-      />
+      <Toast message={toast} onClose={() => setToast(null)} />
     </Stack>
   );
 }

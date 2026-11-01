@@ -25,6 +25,7 @@ import type { GameModuleDetail, GameModuleListResponse, GameModuleSummary } from
 import { t } from '@opes/i18n';
 import { CompileFailed, prepareNewGame } from '../../../games/import';
 import { downloadBlob, exampleZip, readGameZip } from '../../../games/zip';
+import { PageHeader } from '../../../components/ui/PageHeader';
 
 /** Hướng dẫn viết game (repo công khai). */
 const GUIDE_URL = 'https://github.com/tungpt2607/game-hub/blob/main/docs/huong-dan/viet-game.md';
@@ -87,57 +88,49 @@ export default function GamesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.games.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.games.lead')}</Typography>
-        </Box>
-        <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          useFlexGap
-          sx={{ flexShrink: 0, alignItems: 'flex-start' }}
-        >
-          <Button
-            startIcon={<MenuBookOutlined />}
-            href={GUIDE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('cms.games.guide')}
-          </Button>
-          <Button
-            startIcon={<DownloadOutlined />}
-            onClick={() => {
-              void exampleZip().then(({ key, blob }) => downloadBlob(blob, `${key}.zip`));
-            }}
-          >
-            {t('cms.games.downloadExample')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<UploadFileOutlined />}
-            onClick={() => input.current?.click()}
-            disabled={step !== null}
-          >
-            {t('cms.games.uploadNew')}
-          </Button>
-          <input
-            ref={input}
-            type="file"
-            accept=".zip,application/zip"
-            hidden
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (file) void onZip(file);
-            }}
-          />
-        </Stack>
-      </Stack>
+      <PageHeader
+        title={t('cms.games.heading')}
+        description={t('cms.games.lead')}
+        actions={
+          <>
+            <Button
+              startIcon={<MenuBookOutlined />}
+              href={GUIDE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('cms.games.guide')}
+            </Button>
+            <Button
+              startIcon={<DownloadOutlined />}
+              onClick={() => {
+                void exampleZip().then(({ key, blob }) => downloadBlob(blob, `${key}.zip`));
+              }}
+            >
+              {t('cms.games.downloadExample')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<UploadFileOutlined />}
+              onClick={() => input.current?.click()}
+              disabled={step !== null}
+            >
+              {t('cms.games.uploadNew')}
+            </Button>
+            <input
+              ref={input}
+              type="file"
+              accept=".zip,application/zip"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) void onZip(file);
+              }}
+            />
+          </>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
       {importError && (

@@ -30,6 +30,31 @@ const OVERSIZED_FILES = {
   'packages/modules/src/catch-quiz/config.ts': 590,
 };
 
+/** Import bị cấm ở mã chạy trên trình duyệt (CMS, trang chơi) vì làm gói tải về lớn. */
+const BROWSER_IMPORTS = {
+  paths: [
+    {
+      name: '@mui/material',
+      message: "Import từng component: import Button from '@mui/material/Button'.",
+    },
+    {
+      name: '@mui/icons-material',
+      message: "Import từng icon: import AddIcon from '@mui/icons-material/Add'.",
+    },
+  ],
+  patterns: [
+    {
+      group: ['esbuild-wasm', 'prettier', 'prettier/*'],
+      allowTypeImports: true,
+      message: "Thư viện nặng: chỉ tải khi cần bằng `await import('…')`.",
+    },
+  ],
+};
+
+const UI_GENERIC_MESSAGE =
+  'components/ui chỉ chứa component tổng quát: nhận dữ liệu qua props, báo hành động qua callback; ' +
+  'không gọi API, không đọc router/kiểu nghiệp vụ/localStorage (mục 3.2 quy ước code).';
+
 const lineLimit = (max) => ['error', { max, skipBlankLines: true, skipComments: true }];
 
 export default tseslint.config(
@@ -63,28 +88,36 @@ export default tseslint.config(
   {
     // Performance phía trình duyệt: không kéo cả thư viện lớn vào gói tải lúc mở trang.
     files: ['apps/cms/src/**/*.{ts,tsx}', 'apps/play/src/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', BROWSER_IMPORTS] },
+  },
+  {
+    // Component giao diện tổng quát: không chứa nghiệp vụ (xem mục 3.2 quy ước code).
+    files: ['apps/cms/src/components/ui/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           paths: [
-            {
-              name: '@mui/material',
-              message: "Import từng component: import Button from '@mui/material/Button'.",
-            },
-            {
-              name: '@mui/icons-material',
-              message: "Import từng icon: import AddIcon from '@mui/icons-material/Add'.",
-            },
+            ...BROWSER_IMPORTS.paths,
+            ...['next/navigation', 'next/router', '@opes/contracts'].map((name) => ({
+              name,
+              message: UI_GENERIC_MESSAGE,
+            })),
           ],
           patterns: [
+            ...BROWSER_IMPORTS.patterns,
             {
-              group: ['esbuild-wasm', 'prettier', 'prettier/*'],
-              allowTypeImports: true,
-              message: "Thư viện nặng: chỉ tải khi cần bằng `await import('…')`.",
+              group: ['**/lib/api', '**/module-ui/**', '**/games/**'],
+              message: UI_GENERIC_MESSAGE,
             },
           ],
         },
+      ],
+      'no-restricted-globals': [
+        'error',
+        { name: 'localStorage', message: UI_GENERIC_MESSAGE },
+        { name: 'sessionStorage', message: UI_GENERIC_MESSAGE },
+        { name: 'fetch', message: UI_GENERIC_MESSAGE },
       ],
     },
   },

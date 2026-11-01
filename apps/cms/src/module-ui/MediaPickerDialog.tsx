@@ -10,21 +10,20 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
-import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import AudiotrackOutlined from '@mui/icons-material/AudiotrackOutlined';
-import SearchIcon from '@mui/icons-material/Search';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import type { MediaItem, MediaListResponse } from '@opes/contracts';
 import { loadFont, type MediaRef } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { api, handleAuthError, errorMessage } from '../lib/api';
 import { precheck, uploadFile } from '../lib/media-upload';
+import { SearchField } from '../components/ui/SearchField';
+import { useDebouncedValue } from '../lib/useDebouncedValue';
 
 const ACCEPT = {
   image: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
@@ -72,17 +71,12 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebouncedValue(query.trim());
   const [items, setItems] = useState<MediaItem[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
@@ -145,21 +139,10 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
       <DialogContent dividers>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder={t('cms.mediaPicker.search')}
+            <SearchField
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
+              onChange={setQuery}
+              placeholder={t('cms.mediaPicker.search')}
             />
             <input
               ref={fileInput}

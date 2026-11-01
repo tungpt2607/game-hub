@@ -34,7 +34,7 @@ import QrCode2Icon from '@mui/icons-material/QrCode2';
 import QRCode from 'qrcode';
 import type { PreviewLink, PreviewLinkListResponse, TemplateDetail } from '@opes/contracts';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../lib/api';
 import { formatDateTime, formatDay } from '../lib/format';
 import { copyText } from '../lib/clipboard';

@@ -19,7 +19,6 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -37,7 +36,7 @@ import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import { compareVersions, type GameModuleDetail, type GameVersionDetail } from '@opes/contracts';
 import type { GameSource, SerializedSchema } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../../components/ui/ConfirmDialog';
 import { uploadAssets } from '../../../../games/assets';
 import { compileGame, type CompileResult } from '../../../../games/compiler';
 import type { GameAssets, GameFiles, PendingAsset } from '../../../../games/types';
@@ -56,6 +55,7 @@ import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
 import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
+import { Toast } from '../../../../components/ui/Toast';
 
 type Compile = { state: 'idle' | 'compiling' } | ({ state: 'done' } & CompileResult);
 
@@ -699,12 +699,7 @@ export default function GameEditorPage() {
         onClose={() => setDiscardOpen(false)}
       />
       <LeaveGuard when={dirty} />
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={5000}
-        onClose={() => setToast(null)}
-        message={toast}
-      />
+      <Toast message={toast} onClose={() => setToast(null)} duration={5000} />
     </Stack>
   );
 }

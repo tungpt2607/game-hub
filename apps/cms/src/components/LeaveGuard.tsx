@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 
 /**
  * Hỏi trước khi rời trang khi còn thay đổi chưa lưu (`when`):

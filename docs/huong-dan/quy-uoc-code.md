@@ -36,6 +36,7 @@ Kiểm thử với PostgreSQL thật (CI luôn chạy): đặt `TEST_DATABASE_UR
 | CMS: không viết `e instanceof ApiRequestError ? … : …` | Xử lý lỗi API một chỗ | `errorMessage(e)` hoặc `toApiError(e)` trong `apps/cms/src/lib/api.ts` |
 | CMS, trang chơi: không import cả `@mui/material` / `@mui/icons-material` | Import cả thư viện làm gói tải về lớn và build chậm | `import Button from '@mui/material/Button'`, `import AddIcon from '@mui/icons-material/Add'` |
 | CMS, trang chơi: không import tĩnh `esbuild-wasm`, `prettier` (trừ `import type`) | Thư viện vài MB, chỉ cần ở vài màn hình | `const esbuild = await import('esbuild-wasm')` ngay chỗ cần |
+| `apps/cms/src/components/ui/`: không import `lib/api`, `next/navigation`, `next/router`, `@opes/contracts`, `module-ui/`, `games/`; không dùng `localStorage`, `sessionStorage`, `fetch` | Component tổng quát không chứa nghiệp vụ nên dùng lại được ở mọi nơi | Nhận dữ liệu qua props, báo hành động qua callback; phần gắn nghiệp vụ đặt ở `components/` hoặc `module-ui/` |
 | `examples/game-mau` và `src/sample` giữ `Runtime.tsx`, `config.ts` giống nhau (test) | Gói mẫu tải về phải tự đủ file nên không import chéo được | Sửa một bên thì chép sang bên kia |
 
 ### File đang dài hơn 400 dòng
@@ -73,7 +74,10 @@ Thứ tự ưu tiên khi phải đánh đổi: **đúng → an toàn → perform
 ### 3.2. Tách component để tái sử dụng
 
 - Trước khi viết component mới, tìm trong nơi chứa component dùng chung:
-  - `apps/cms/src/components/`: giao diện chung của CMS, không gắn nghiệp vụ (hộp xác nhận, khung trang, ô mật khẩu…).
+  - `apps/cms/src/components/ui/`: component giao diện tổng quát, không nghiệp vụ (ESLint kiểm tra): `ConfirmDialog`,
+    `PageHeader`, `SearchField`, `Toast`.
+  - `apps/cms/src/components/`: phần khung chung của CMS có gắn nghiệp vụ (khung trang quản trị, đăng nhập, cảnh báo rời trang…).
+  - `apps/cms/src/lib/`: hook và hàm dùng chung (`useDebouncedValue`, `formatDateTime`, `errorMessage`…).
   - `apps/cms/src/module-ui/`: giao diện liên quan game/template (form cấu hình, xem trước, chọn media…).
   - `@opes/module-sdk/react`: hook/thành phần dùng chung giữa các game (`useFont`, `useSound`…).
 - Một đoạn giao diện xuất hiện ở **chỗ thứ hai** thì tách thành component dùng chung, đặt vào thư mục ở trên; không chép thêm bản thứ ba.
@@ -84,7 +88,7 @@ Thứ tự ưu tiên khi phải đánh đổi: **đúng → an toàn → perform
 - Không tách quá nhỏ: component chỉ bọc một thẻ và chuyển tiếp props, dùng đúng một chỗ, thì giữ nguyên trong file cha.
 
 **Viết component dưới dạng tổng quát** để dùng lại được trong nhiều trường hợp. Ví dụ tốt có sẵn: `ConfirmDialog`
-(`apps/cms/src/components/ConfirmDialog.tsx`), một hộp xác nhận đang dùng cho đặt lại mật khẩu, vô hiệu hóa, xóa… ở 12 chỗ.
+(`apps/cms/src/components/ui/ConfirmDialog.tsx`), một hộp xác nhận đang dùng cho đặt lại mật khẩu, vô hiệu hóa, xóa… ở 12 chỗ.
 
 - **Đặt tên theo chức năng, không theo nơi dùng**: `ConfirmDialog`, `FileDropZone`, `SearchList`; không đặt
   `DeleteTemplateDialog`, `GameZipUpload`. Tên gắn nghiệp vụ chỉ dùng cho component ghép các component tổng quát lại cho

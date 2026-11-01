@@ -21,12 +21,13 @@ import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { PreviewFrame } from '../../../module-ui/PreviewFrame';
 import { SchemaForm } from '../../../module-ui/SchemaForm';
 import { CreateTemplateDialog } from '../../../module-ui/CreateTemplateDialog';
 import { readPlayground, writePlayground } from '../../../module-ui/playground-storage';
 import { useGameForm, useGameModules } from '../../../module-ui/useGame';
+import { PageHeader } from '../../../components/ui/PageHeader';
 
 /**
  * Phòng thử module: form cấu hình tự sinh bên trái, khung xem trước bên phải.
@@ -127,73 +128,71 @@ export default function PlaygroundPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.playground.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.playground.lead')}</Typography>
-        </Box>
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-          <TextField
-            select
-            size="small"
-            label={t('cms.playground.module')}
-            value={mod.key}
-            onChange={(e) => setModuleKey(e.target.value)}
-            sx={{ minWidth: 220 }}
-          >
-            {modules.map((m) => (
-              <MenuItem key={m.key} value={m.key}>
-                {m.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            startIcon={<AutoAwesomeOutlined />}
-            onClick={(e) => setPresetMenu(e.currentTarget)}
-            sx={{ flexShrink: 0 }}
-          >
-            {t('cms.playground.usePreset')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateOpen(true)}
-            sx={{ flexShrink: 0 }}
-          >
-            {t('cms.playground.createTemplate')}
-          </Button>
-          <Menu
-            anchorEl={presetMenu}
-            open={Boolean(presetMenu)}
-            onClose={() => setPresetMenu(null)}
-          >
-            {(mod.presets ?? []).map((p) => (
+      <PageHeader
+        title={t('cms.playground.heading')}
+        description={t('cms.playground.lead')}
+        actions={
+          <>
+            <TextField
+              select
+              size="small"
+              label={t('cms.playground.module')}
+              value={mod.key}
+              onChange={(e) => setModuleKey(e.target.value)}
+              sx={{ minWidth: 220 }}
+            >
+              {modules.map((m) => (
+                <MenuItem key={m.key} value={m.key}>
+                  {m.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Button
+              startIcon={<AutoAwesomeOutlined />}
+              onClick={(e) => setPresetMenu(e.currentTarget)}
+              sx={{ flexShrink: 0 }}
+            >
+              {t('cms.playground.usePreset')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateOpen(true)}
+              sx={{ flexShrink: 0 }}
+            >
+              {t('cms.playground.createTemplate')}
+            </Button>
+            <Menu
+              anchorEl={presetMenu}
+              open={Boolean(presetMenu)}
+              onClose={() => setPresetMenu(null)}
+            >
+              {(mod.presets ?? []).map((p) => (
+                <MenuItem
+                  key={p.id}
+                  onClick={() => {
+                    setPresetMenu(null);
+                    setPendingPreset(p.id);
+                  }}
+                >
+                  <ListItemText primary={p.name} secondary={p.description} />
+                </MenuItem>
+              ))}
               <MenuItem
-                key={p.id}
                 onClick={() => {
                   setPresetMenu(null);
-                  setPendingPreset(p.id);
+                  setPendingPreset('');
                 }}
               >
-                <ListItemText primary={p.name} secondary={p.description} />
+                <ListItemText
+                  primary={t('cms.playground.defaults')}
+                  secondary={t('cms.playground.defaultsHint')}
+                />
               </MenuItem>
-            ))}
-            <MenuItem
-              onClick={() => {
-                setPresetMenu(null);
-                setPendingPreset('');
-              }}
-            >
-              <ListItemText
-                primary={t('cms.playground.defaults')}
-                secondary={t('cms.playground.defaultsHint')}
-              />
-            </MenuItem>
-          </Menu>
-        </Stack>
-      </Stack>
+            </Menu>
+          </>
+        }
+      />
 
       <Typography variant="body2" color="text.secondary">
         {mod.description} · <code>{mod.key}</code> v{mod.latestVersion}

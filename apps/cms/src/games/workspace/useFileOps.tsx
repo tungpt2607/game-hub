@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { GAME_PATH } from '@opes/contracts';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { copyText } from '../../lib/clipboard';
 import type { GameAssets, GameFiles, PendingAsset } from '../types';
 import { assetMime, isCodePath } from '../zip';

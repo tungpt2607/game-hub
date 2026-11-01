@@ -9,24 +9,24 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
-import SearchIcon from '@mui/icons-material/Search';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import type { MediaItem, MediaListResponse } from '@opes/contracts';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../lib/api';
 import { precheck, uploadFile } from '../../../lib/media-upload';
 import { FontSample } from '../../../module-ui/MediaPickerDialog';
+import { PageHeader } from '../../../components/ui/PageHeader';
+import { SearchField } from '../../../components/ui/SearchField';
+import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { Toast } from '../../../components/ui/Toast';
 
 type KindFilter = 'all' | 'image' | 'audio' | 'font';
 
@@ -57,7 +57,7 @@ function formatDuration(ms: number | null) {
 export default function MediaPage() {
   const [kind, setKind] = useState<KindFilter>('all');
   const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebouncedValue(query.trim());
   const [items, setItems] = useState<MediaItem[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,11 +67,6 @@ export default function MediaPage() {
   const [toDelete, setToDelete] = useState<MediaItem | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
@@ -160,33 +155,31 @@ export default function MediaPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.media.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.media.lead')}</Typography>
-        </Box>
-        <Box>
-          <input
-            ref={fileInput}
-            id="media-file-input"
-            type="file"
-            accept={ACCEPT}
-            multiple
-            hidden
-            onChange={(e) => void handleFiles(e.target.files)}
-          />
-          <Button
-            variant="contained"
-            startIcon={<UploadFileIcon />}
-            onClick={() => fileInput.current?.click()}
-            disabled={Boolean(uploading) || notConfigured}
-          >
-            {t('cms.media.upload')}
-          </Button>
-        </Box>
-      </Stack>
+      <PageHeader
+        title={t('cms.media.heading')}
+        description={t('cms.media.lead')}
+        actions={
+          <>
+            <input
+              ref={fileInput}
+              id="media-file-input"
+              type="file"
+              accept={ACCEPT}
+              multiple
+              hidden
+              onChange={(e) => void handleFiles(e.target.files)}
+            />
+            <Button
+              variant="contained"
+              startIcon={<UploadFileIcon />}
+              onClick={() => fileInput.current?.click()}
+              disabled={Boolean(uploading) || notConfigured}
+            >
+              {t('cms.media.upload')}
+            </Button>
+          </>
+        }
+      />
 
       {notConfigured && <Alert severity="warning">{t('cms.media.notConfigured')}</Alert>}
       {error && (
@@ -216,23 +209,12 @@ export default function MediaPage() {
           <ToggleButton value="audio">{t('cms.media.audio')}</ToggleButton>
           <ToggleButton value="font">{t('cms.media.fonts')}</ToggleButton>
         </ToggleButtonGroup>
-        <TextField
+        <SearchField
           id="media-search"
-          size="small"
-          placeholder={t('cms.media.search')}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
+          placeholder={t('cms.media.search')}
           sx={{ maxWidth: { sm: 320 } }}
-          fullWidth
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
         />
       </Stack>
 
@@ -332,12 +314,7 @@ export default function MediaPage() {
         onConfirm={confirmDelete}
         onClose={() => setToDelete(null)}
       />
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={4000}
-        onClose={() => setToast(null)}
-        message={toast}
-      />
+      <Toast message={toast} onClose={() => setToast(null)} />
     </Stack>
   );
 }

@@ -18,10 +18,11 @@ Tài liệu thiết kế trong `docs/`.
 **Trước khi viết code**
 
 - Đọc code xung quanh và làm theo cách repo đang làm; không tự đưa vào thư viện hoặc kiểu viết mới khi chưa hỏi.
-- Tìm helper sẵn có trước khi viết mới: `apps/cms/src/lib/` (`api.ts`, `format.ts`, `clipboard.ts`), `apps/api/src/lib/`
+- Tìm helper sẵn có trước khi viết mới: `apps/cms/src/lib/` (`api.ts`, `format.ts`, `clipboard.ts`, `useDebouncedValue.ts`), `apps/api/src/lib/`
   (`errors.ts`, `lru.ts`, `rate-limit.ts`, `modules.ts`), `@opes/contracts`, `@opes/module-sdk`.
 - Thấy cùng một đoạn code lần thứ hai thì gom thành hàm dùng chung, không chép thêm bản thứ ba.
-- Giao diện: tìm component sẵn có trong `apps/cms/src/components/`, `apps/cms/src/module-ui/`, `@opes/module-sdk/react`
+- Giao diện: tìm component sẵn có trong `apps/cms/src/components/ui/` (tổng quát), `apps/cms/src/components/`,
+  `apps/cms/src/module-ui/`, `@opes/module-sdk/react`
   trước khi viết mới; đoạn giao diện dùng ở chỗ thứ hai thì tách thành component dùng chung (mục 3.2 quy ước code).
 - Component dùng chung viết dưới dạng tổng quát (mục 3.2): đặt tên theo chức năng, không chứa nghiệp vụ, chữ và nội dung
   nhận qua props / `children` / `renderItem`, kiểu tổng quát `<T>` cho danh sách; chỉ thêm tùy chọn khi có ít nhất hai nơi cần.

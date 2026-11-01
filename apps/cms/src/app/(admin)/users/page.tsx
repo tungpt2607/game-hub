@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -28,7 +27,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { TemporaryPasswordResponse, User, UserListResponse } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { useCurrentUser } from '../../../components/AuthContext';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import {
   api,
   type ApiRequestError,
@@ -38,6 +37,7 @@ import {
 } from '../../../lib/api';
 import { formatDateTime } from '../../../lib/format';
 import { copyText, selectAll } from '../../../lib/clipboard';
+import { PageHeader } from '../../../components/ui/PageHeader';
 
 const formatDate = (iso: string | null) => (iso ? formatDateTime(iso) : t('cms.users.never'));
 
@@ -97,19 +97,17 @@ export default function UsersPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            {t('cms.users.heading')}
-          </Typography>
-          <Typography color="text.secondary">{t('cms.users.lead')}</Typography>
-        </Box>
-        <Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            {t('cms.users.add')}
-          </Button>
-        </Box>
-      </Stack>
+      <PageHeader
+        title={t('cms.users.heading')}
+        description={t('cms.users.lead')}
+        actions={
+          <>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              {t('cms.users.add')}
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>

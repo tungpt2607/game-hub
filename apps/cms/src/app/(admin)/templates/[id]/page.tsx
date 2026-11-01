@@ -17,7 +17,6 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -35,7 +34,7 @@ import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import type { TemplateDetail, TemplateVersionResponse } from '@opes/contracts';
 import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
-import { ConfirmDialog } from '../../../../components/ConfirmDialog';
+import { ConfirmDialog } from '../../../../components/ui/ConfirmDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
 import { formatDateTime } from '../../../../lib/format';
@@ -44,6 +43,7 @@ import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
 import { SchemaForm } from '../../../../module-ui/SchemaForm';
 import { StatusChip } from '../../../../module-ui/StatusChip';
 import { useGameForm } from '../../../../module-ui/useGame';
+import { Toast } from '../../../../components/ui/Toast';
 
 type Config = Record<string, unknown>;
 
@@ -551,12 +551,7 @@ export default function TemplateEditorPage() {
         onClose={() => setUpgradeOpen(false)}
       />
       <LeaveGuard when={dirty} />
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={4000}
-        onClose={() => setToast(null)}
-        message={toast}
-      />
+      <Toast message={toast} onClose={() => setToast(null)} />
     </Stack>
   );
 }
