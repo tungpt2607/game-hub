@@ -17,7 +17,6 @@ const MAX_LINES = 400;
  * Dấu ( ) [ ] trong đường dẫn Next.js là ký tự đặc biệt của glob nên phải viết thoát bằng dấu \.
  */
 const OVERSIZED_FILES = {
-  'apps/cms/src/app/\\(admin\\)/games/\\[key\\]/page.tsx': 670,
   'apps/cms/src/app/\\(admin\\)/templates/\\[id\\]/page.tsx': 600,
   'apps/cms/src/games/workspace/Workspace.tsx': 860,
 };

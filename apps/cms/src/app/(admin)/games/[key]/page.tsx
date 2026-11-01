@@ -1,63 +1,43 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
-import { compareVersions, type GameModuleDetail, type GameVersionDetail } from '@opes/contracts';
+import { compareVersions } from '@opes/contracts';
 import type { GameSource, SerializedSchema } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ui/ConfirmDialog';
 import { uploadAssets } from '../../../../games/assets';
-import { compileGame, type CompileResult } from '../../../../games/compiler';
-import type { GameAssets, GameFiles, PendingAsset } from '../../../../games/types';
+import type { PendingAsset } from '../../../../games/types';
 import { Workspace, type WorkspaceHandle } from '../../../../games/workspace/Workspace';
-import { diffPackages, sameAssets, sameFiles } from '../../../../games/changes';
+import { diffPackages } from '../../../../games/changes';
 import { LocalDraftBanner } from '../../../../games/LocalDraftBanner';
-import {
-  clearLocalDraft,
-  readLocalDraft,
-  writeLocalDraft,
-  type LocalDraft,
-} from '../../../../games/localDraft';
 import { PublishDialog } from '../../../../games/PublishDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
-import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
-import { formatDateTime } from '../../../../lib/format';
-import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
+import { ApiRequestError, handleAuthError } from '../../../../lib/api';
 import { Toast } from '../../../../components/ui/Toast';
-
-type Compile = { state: 'idle' | 'compiling' } | ({ state: 'done' } & CompileResult);
+import { EditorHeader } from '../../../../components/ui/EditorHeader';
+import { SplitView } from '../../../../components/ui/SplitView';
+import { fetchGameVersion } from '../../../../games/game-api';
+import { useGameCompile } from '../../../../games/useGameCompile';
+import { useGameDraft } from '../../../../games/useGameDraft';
+import { GamePreviewPanel } from '../../../../games/GamePreviewPanel';
+import { GameStatusLine } from '../../../../games/GameStatusLine';
+import { GameHistoryDialog } from '../../../../games/GameHistoryDialog';
+import { LoadErrorView } from '../../../../components/ui/LoadErrorView';
 
 /** Màn sửa code một game: file code, file kèm, biên dịch tự động, chạy thử, lưu nháp, phát hành. */
 export default function GameEditorPage() {
@@ -66,85 +46,39 @@ export default function GameEditorPage() {
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('lg'));
 
-  const [mod, setMod] = useState<GameModuleDetail | null>(null);
-  const [files, setFiles] = useState<GameFiles>({});
-  const [assets, setAssets] = useState<GameAssets>({});
-  /** Code lúc lưu nháp gần nhất (đánh dấu ● file đã sửa). */
-  const [savedFiles, setSavedFiles] = useState<GameFiles>({});
-  const [savedAssets, setSavedAssets] = useState<GameAssets>({});
-  /** Bản tạm trên trình duyệt đang chờ hỏi Khôi phục / Bỏ đi. */
-  const [localOffer, setLocalOffer] = useState<LocalDraft | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const {
+    mod,
+    files,
+    assets,
+    savedFiles,
+    localOffer,
+    loadError,
+    conflict,
+    setConflict,
+    dirty,
+    serverBase,
+    load,
+    change,
+    restoreLocal,
+    discardLocal,
+    save,
+    publish,
+    discardDraft,
+  } = useGameDraft(moduleKey);
   const [error, setError] = useState<string | null>(null);
-  const [conflict, setConflict] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [compile, setCompile] = useState<Compile>({ state: 'idle' });
-  /** Gói chạy biên dịch thành công gần nhất (để xem trước). */
-  const [runtimeJs, setRuntimeJs] = useState<string | null>(null);
   const [schema, setSchema] = useState<SerializedSchema | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [presetId, setPresetId] = useState('');
-  const [tab, setTab] = useState<'code' | 'preview'>('code');
   const [publishOpen, setPublishOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoreVersion, setRestoreVersion] = useState<string | null>(null);
   const workspace = useRef<WorkspaceHandle>(null);
   const zipInput = useRef<HTMLInputElement>(null);
-
-  const apply = useCallback(async (next: GameModuleDetail) => {
-    let nextFiles: GameFiles = {};
-    let nextAssets: GameAssets = {};
-    if (next.draft) {
-      nextFiles = next.draft.files;
-      nextAssets = next.draft.assets;
-    } else if (next.latestVersion) {
-      const v = await api<GameVersionDetail>(
-        `/modules/${encodeURIComponent(next.key)}/versions/${encodeURIComponent(next.latestVersion)}`,
-      );
-      nextFiles = v.files;
-      nextAssets = v.assets;
-    }
-    setFiles(nextFiles);
-    setAssets(nextAssets);
-    setSavedFiles(nextFiles);
-    setSavedAssets(nextAssets);
-    setMod(next);
-    setConflict(false);
-    // Có bản tạm khác bản vừa tải: hỏi người dùng (không tự khôi phục).
-    const local = readLocalDraft(next.key);
-    if (local && !(sameFiles(local.files, nextFiles) && sameAssets(local.assets, nextAssets)))
-      setLocalOffer(local);
-    else {
-      setLocalOffer(null);
-      clearLocalDraft(next.key);
-    }
-  }, []);
-
-  /** "Chưa lưu" = khác bản đã lưu (gõ rồi xóa về như cũ thì không còn). */
-  const dirty = useMemo(
-    () => !sameFiles(files, savedFiles) || !sameAssets(assets, savedAssets),
-    [files, savedFiles, assets, savedAssets],
-  );
-  /** Bản nháp trên máy chủ mà bản tạm dựa vào. */
-  const serverBase = mod ? (mod.draft?.updatedAt ?? `v:${mod.latestVersion ?? ''}`) : '';
-
-  const load = useCallback(async () => {
-    try {
-      await apply(
-        (await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(moduleKey)}`))
-          .module,
-      );
-    } catch (e) {
-      if (handleAuthError(e)) return;
-      setLoadError(errorMessage(e));
-    }
-  }, [moduleKey, apply]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  /** Code sẽ lưu: qua "tự định dạng khi lưu" của trình sửa code nếu đang bật. */
+  const prepareSave = async () => workspace.current?.prepareSave();
 
   // Vừa tạo game từ .zip có file bị bỏ qua: báo một lần.
   useEffect(() => {
@@ -152,50 +86,7 @@ export default function GameEditorPage() {
     if (skipped) setToast(t('cms.games.skippedFiles', { count: skipped }));
   }, []);
 
-  // Biên dịch lại sau khi ngừng gõ một lúc.
-  useEffect(() => {
-    if (!mod) return;
-    let alive = true;
-    setCompile({ state: 'compiling' });
-    const timer = setTimeout(() => {
-      compileGame(files, assets).then(
-        (result) => {
-          if (!alive) return;
-          setCompile({ state: 'done', ...result });
-          if (result.ok) setRuntimeJs(result.runtimeJs);
-        },
-        (e: unknown) =>
-          alive &&
-          setCompile({
-            state: 'done',
-            ok: false,
-            errors: [{ file: null, line: 0, column: 0, text: String(e) }],
-          }),
-      );
-    }, 700);
-    return () => {
-      alive = false;
-      clearTimeout(timer);
-    };
-  }, [mod, files, assets]);
-
-  // Bản tạm trên trình duyệt: ghi sau khi ngừng sửa 1 giây; hết thay đổi thì xóa. Đang hỏi khôi phục thì để nguyên.
-  useEffect(() => {
-    if (!mod || localOffer) return;
-    if (!dirty) {
-      clearLocalDraft(mod.key);
-      return;
-    }
-    const timer = setTimeout(() => {
-      writeLocalDraft(mod.key, {
-        files,
-        assets,
-        base: serverBase,
-        savedAt: new Date().toISOString(),
-      });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [mod, localOffer, dirty, files, assets, serverBase]);
+  const { compile, runtimeJs } = useGameCompile(mod !== null, files, assets);
 
   const source = useMemo<GameSource | null>(
     () => (runtimeJs ? { kind: 'code', code: runtimeJs, label: moduleKey } : null),
@@ -219,38 +110,7 @@ export default function GameEditorPage() {
     setError(e instanceof Error ? e.message : t('common.networkError'));
   };
 
-  const change = (nextFiles: GameFiles, nextAssets: GameAssets = assets) => {
-    // Sửa tiếp mà không chọn khôi phục: bỏ bản tạm cũ.
-    if (localOffer) setLocalOffer(null);
-    setFiles(nextFiles);
-    setAssets(nextAssets);
-  };
-
-  /** Lưu nháp (kèm gói đã biên dịch nếu không lỗi). Bật "tự định dạng khi lưu" thì định dạng trước. */
-  async function save(): Promise<GameModuleDetail | null> {
-    if (!mod) return null;
-    const toSave = (await workspace.current?.prepareSave()) ?? files;
-    const compiled = await compileGame(toSave, assets);
-    const res = await api<{ module: GameModuleDetail }>(
-      `/modules/${encodeURIComponent(mod.key)}/draft`,
-      {
-        method: 'PUT',
-        body: {
-          files: toSave,
-          assets,
-          schemaJs: compiled.ok ? compiled.schemaJs : null,
-          runtimeJs: compiled.ok ? compiled.runtimeJs : null,
-          baseUpdatedAt: mod.draft?.updatedAt ?? null,
-        },
-      },
-    );
-    setMod(res.module);
-    setSavedFiles(toSave);
-    setSavedAssets(assets);
-    clearLocalDraft(mod.key);
-    return res.module;
-  }
-
+  /** Chạy một thao tác: đánh dấu đang bận, hiện lỗi nếu có. */
   async function run(label: string, fn: () => Promise<void>) {
     setBusy(label);
     setError(null);
@@ -265,39 +125,22 @@ export default function GameEditorPage() {
 
   const onSave = () =>
     run('save', async () => {
-      await save();
+      await save(prepareSave);
       setToast(t('cms.games.saved'));
     });
 
   const onPublish = (notes: string) =>
     run('publish', async () => {
-      const current = dirty || !mod?.draft ? await save() : mod;
-      if (!current) return;
-      const res = await api<{ module: GameModuleDetail }>(
-        `/modules/${encodeURIComponent(current.key)}/publish`,
-        {
-          method: 'POST',
-          body: {
-            notes: notes.trim() || undefined,
-            baseUpdatedAt: current.draft?.updatedAt ?? null,
-          },
-        },
-      );
+      const published = await publish(notes, prepareSave);
+      if (!published) return;
       setPublishOpen(false);
-      await apply(res.module);
-      setToast(t('cms.games.publishedToast', { version: res.module.latestVersion ?? '' }));
+      setToast(t('cms.games.publishedToast', { version: published.latestVersion ?? '' }));
     });
 
   const onDiscard = () =>
     run('discard', async () => {
-      if (!mod) return;
-      const res = await api<{ module: GameModuleDetail }>(
-        `/modules/${encodeURIComponent(mod.key)}/draft`,
-        { method: 'DELETE' },
-      );
-      clearLocalDraft(mod.key);
+      await discardDraft();
       setDiscardOpen(false);
-      await apply(res.module);
       setToast(t('cms.games.discarded'));
     });
 
@@ -307,9 +150,7 @@ export default function GameEditorPage() {
       let a = assets;
       let name = `${moduleKey}-${dirty || mod?.draft ? 'ban-nhap' : (mod?.latestVersion ?? '')}`;
       if (version) {
-        const v = await api<GameVersionDetail>(
-          `/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(version)}`,
-        );
+        const v = await fetchGameVersion(moduleKey, version);
         f = v.files;
         a = v.assets;
         name = `${moduleKey}-${version}`;
@@ -320,9 +161,7 @@ export default function GameEditorPage() {
   const onRestore = () =>
     run('restore', async () => {
       if (!restoreVersion) return;
-      const v = await api<GameVersionDetail>(
-        `/modules/${encodeURIComponent(moduleKey)}/versions/${encodeURIComponent(restoreVersion)}`,
-      );
+      const v = await fetchGameVersion(moduleKey, restoreVersion);
       change(v.files, v.assets);
       setRestoreVersion(null);
       setHistoryOpen(false);
@@ -350,14 +189,7 @@ export default function GameEditorPage() {
 
   if (loadError) {
     return (
-      <Stack spacing={2}>
-        <Alert severity="error">{loadError}</Alert>
-        <Box>
-          <Button component={Link} href="/games" startIcon={<ArrowBackIcon />}>
-            {t('cms.games.backToList')}
-          </Button>
-        </Box>
-      </Stack>
+      <LoadErrorView message={loadError} backHref="/games" backLabel={t('cms.games.backToList')} />
     );
   }
   if (!mod) return <LinearProgress />;
@@ -373,42 +205,7 @@ export default function GameEditorPage() {
   const canPublish = hasDraft && compiled && !previewError && !versionProblem && busy === null;
 
   const status = (
-    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-      <Chip size="small" variant="outlined" label={<code>{mod.key}</code>} />
-      <Chip
-        size="small"
-        color={mod.latestVersion ? 'success' : 'default'}
-        label={
-          mod.latestVersion
-            ? t('cms.games.latest', { version: mod.latestVersion })
-            : t('cms.games.unpublished')
-        }
-      />
-      {hasDraft && (
-        <Chip
-          size="small"
-          color="warning"
-          label={
-            draftVersion
-              ? t('cms.games.draftVersion', { version: draftVersion })
-              : t('cms.games.hasDraft')
-          }
-        />
-      )}
-      {dirty && (
-        <Typography variant="body2" color="warning.main">
-          {t('cms.games.unsaved')}
-        </Typography>
-      )}
-      {!dirty && mod.draft && (
-        <Typography variant="body2" color="text.secondary">
-          {t('cms.games.draftSavedAt', {
-            date: formatDateTime(mod.draft.updatedAt),
-            name: mod.draft.updatedByName ?? '',
-          })}
-        </Typography>
-      )}
-    </Stack>
+    <GameStatusLine mod={mod} dirty={dirty} hasDraft={hasDraft} draftVersion={draftVersion} />
   );
 
   const code = (
@@ -434,122 +231,88 @@ export default function GameEditorPage() {
   );
 
   const preview = (
-    <Stack spacing={1.5}>
-      <TextField
-        select
-        size="small"
-        label={t('cms.games.previewConfig')}
-        value={presetId}
-        onChange={(e) => setPresetId(e.target.value)}
-        disabled={!schema}
-      >
-        <MenuItem value="">{t('cms.games.defaults')}</MenuItem>
-        {(schema?.presets ?? []).map((p) => (
-          <MenuItem key={p.id} value={p.id}>
-            {p.name}
-          </MenuItem>
-        ))}
-      </TextField>
-      {source ? (
-        <PreviewFrame source={source} config={previewConfig} onSchema={onSchema} />
-      ) : (
-        <Alert severity="info">{t('cms.games.previewWaiting')}</Alert>
-      )}
-      {schema && (
-        <Typography variant="body2" color="text.secondary">
-          {schema.name} · v{schema.version}
-        </Typography>
-      )}
-    </Stack>
+    <GamePreviewPanel
+      schema={schema}
+      presetId={presetId}
+      onPresetChange={setPresetId}
+      source={source}
+      config={previewConfig}
+      onSchema={onSchema}
+    />
   );
 
   return (
     <Stack spacing={2}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        justifyContent="space-between"
-        alignItems={{ md: 'flex-start' }}
-      >
-        <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
-          <IconButton
-            component={Link}
-            href="/games"
-            aria-label={t('cms.games.backToList')}
-            sx={{ mt: 0.25 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h5" component="h1" fontWeight={700} noWrap>
-              {mod.name}
-            </Typography>
-            {status}
-          </Box>
-        </Stack>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
-          <Button
-            startIcon={<UploadFileOutlined />}
-            onClick={() => zipInput.current?.click()}
-            disabled={busy !== null}
-          >
-            {t('cms.games.uploadZip')}
-          </Button>
-          <input
-            ref={zipInput}
-            type="file"
-            accept=".zip,application/zip"
-            hidden
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (file) void onZip(file);
-            }}
-          />
-          <Button
-            startIcon={<DownloadOutlined />}
-            onClick={() => void onDownload()}
-            disabled={busy !== null}
-          >
-            {t('cms.games.downloadZip')}
-          </Button>
-          <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
-            {t('cms.games.history', { count: mod.versions.length })}
-          </Button>
-          {mod.draft && mod.latestVersion && (
-            <Button color="inherit" onClick={() => setDiscardOpen(true)} disabled={busy !== null}>
-              {t('cms.games.discard')}
+      <EditorHeader
+        backHref="/games"
+        backLabel={t('cms.games.backToList')}
+        title={mod.name}
+        status={status}
+        actions={
+          <>
+            <Button
+              startIcon={<UploadFileOutlined />}
+              onClick={() => zipInput.current?.click()}
+              disabled={busy !== null}
+            >
+              {t('cms.games.uploadZip')}
             </Button>
-          )}
-          <Button
-            variant="outlined"
-            startIcon={<SaveOutlined />}
-            onClick={() => void onSave()}
-            disabled={!dirty || busy !== null}
-          >
-            {busy === 'save' ? t('cms.games.saving') : t('cms.games.saveDraft')}
-          </Button>
-          <Tooltip
-            title={
-              canPublish
-                ? ''
-                : (versionProblem ??
-                  (hasDraft ? t('cms.games.fixBeforePublish') : t('cms.games.nothingToPublish')))
-            }
-          >
-            <span>
-              <Button
-                variant="contained"
-                startIcon={<PublishIcon />}
-                onClick={() => setPublishOpen(true)}
-                disabled={!canPublish}
-              >
-                {t('cms.games.publish')}
+            <input
+              ref={zipInput}
+              type="file"
+              accept=".zip,application/zip"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) void onZip(file);
+              }}
+            />
+            <Button
+              startIcon={<DownloadOutlined />}
+              onClick={() => void onDownload()}
+              disabled={busy !== null}
+            >
+              {t('cms.games.downloadZip')}
+            </Button>
+            <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
+              {t('cms.games.history', { count: mod.versions.length })}
+            </Button>
+            {mod.draft && mod.latestVersion && (
+              <Button color="inherit" onClick={() => setDiscardOpen(true)} disabled={busy !== null}>
+                {t('cms.games.discard')}
               </Button>
-            </span>
-          </Tooltip>
-        </Stack>
-      </Stack>
+            )}
+            <Button
+              variant="outlined"
+              startIcon={<SaveOutlined />}
+              onClick={() => void onSave()}
+              disabled={!dirty || busy !== null}
+            >
+              {busy === 'save' ? t('cms.games.saving') : t('cms.games.saveDraft')}
+            </Button>
+            <Tooltip
+              title={
+                canPublish
+                  ? ''
+                  : (versionProblem ??
+                    (hasDraft ? t('cms.games.fixBeforePublish') : t('cms.games.nothingToPublish')))
+              }
+            >
+              <span>
+                <Button
+                  variant="contained"
+                  startIcon={<PublishIcon />}
+                  onClick={() => setPublishOpen(true)}
+                  disabled={!canPublish}
+                >
+                  {t('cms.games.publish')}
+                </Button>
+              </span>
+            </Tooltip>
+          </>
+        }
+      />
 
       {busy?.startsWith('zip:') && (
         <Alert severity="info">{t('cms.games.uploadingAssets', { progress: busy.slice(4) })}</Alert>
@@ -560,16 +323,8 @@ export default function GameEditorPage() {
           savedAt={localOffer.savedAt}
           fileCount={diffPackages({ files, assets }, localOffer).length}
           outdated={localOffer.base !== serverBase}
-          onRestore={() => {
-            const local = localOffer;
-            setLocalOffer(null);
-            setFiles(local.files);
-            setAssets(local.assets);
-          }}
-          onDiscard={() => {
-            setLocalOffer(null);
-            clearLocalDraft(mod.key);
-          }}
+          onRestore={restoreLocal}
+          onDiscard={discardLocal}
         />
       )}
       {conflict && (
@@ -599,29 +354,15 @@ export default function GameEditorPage() {
         </Typography>
       )}
 
-      {wide ? (
-        <Grid container spacing={2} alignItems="flex-start">
-          <Grid size={{ lg: 8 }}>{code}</Grid>
-          <Grid size={{ lg: 4 }} sx={{ position: 'sticky', top: 88 }}>
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              {preview}
-            </Paper>
-          </Grid>
-        </Grid>
-      ) : (
-        <Box>
-          <Tabs
-            value={tab}
-            onChange={(_, v: 'code' | 'preview') => setTab(v)}
-            variant="fullWidth"
-            sx={{ mb: 2 }}
-          >
-            <Tab value="code" label={t('cms.games.tabCode')} />
-            <Tab value="preview" label={t('cms.games.tabPreview')} />
-          </Tabs>
-          {tab === 'code' ? code : preview}
-        </Box>
-      )}
+      <SplitView
+        wide={wide}
+        main={code}
+        side={preview}
+        mainLabel={t('cms.games.tabCode')}
+        sideLabel={t('cms.games.tabPreview')}
+        mainSize={{ lg: 8 }}
+        sideSize={{ lg: 4 }}
+      />
 
       <PublishDialog
         open={publishOpen}
@@ -636,48 +377,14 @@ export default function GameEditorPage() {
         onPublish={(notes) => void onPublish(notes)}
       />
 
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t('cms.games.historyTitle')}</DialogTitle>
-        <DialogContent dividers>
-          {mod.versions.length === 0 ? (
-            <Typography color="text.secondary">{t('cms.games.historyEmpty')}</Typography>
-          ) : (
-            <List disablePadding>
-              {mod.versions.map((v) => (
-                <ListItem
-                  key={v.version}
-                  disableGutters
-                  secondaryAction={
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        size="small"
-                        onClick={() => void onDownload(v.version)}
-                        disabled={busy !== null}
-                      >
-                        {t('cms.games.downloadShort')}
-                      </Button>
-                      <Button size="small" onClick={() => setRestoreVersion(v.version)}>
-                        {t('cms.games.useAsDraft')}
-                      </Button>
-                    </Stack>
-                  }
-                >
-                  <ListItemText
-                    primary={`v${v.version}${v.version === mod.latestVersion ? ` · ${t('cms.games.current')}` : ''}`}
-                    secondary={[formatDateTime(v.publishedAt), v.publishedByName, v.notes]
-                      .filter(Boolean)
-                      .join(' · ')}
-                    sx={{ pr: 22 }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setHistoryOpen(false)}>{t('common.close')}</Button>
-        </DialogActions>
-      </Dialog>
+      <GameHistoryDialog
+        open={historyOpen}
+        mod={mod}
+        busy={busy !== null}
+        onDownload={(version) => void onDownload(version)}
+        onUseAsDraft={setRestoreVersion}
+        onClose={() => setHistoryOpen(false)}
+      />
 
       <ConfirmDialog
         open={restoreVersion !== null}
