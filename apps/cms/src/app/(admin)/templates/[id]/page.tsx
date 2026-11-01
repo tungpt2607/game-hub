@@ -1,42 +1,27 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import LinkIcon from '@mui/icons-material/Link';
 import PublishIcon from '@mui/icons-material/Publish';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
-import type { TemplateDetail, TemplateVersionResponse } from '@opes/contracts';
+import type { TemplateVersionResponse } from '@opes/contracts';
 import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ui/ConfirmDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
-import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
+import { ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
 import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 import { PreviewLinksDialog } from '../../../../module-ui/preview-links/PreviewLinksDialog';
@@ -44,39 +29,39 @@ import { SchemaForm } from '../../../../module-ui/SchemaForm';
 import { StatusChip } from '../../../../module-ui/StatusChip';
 import { useGameForm } from '../../../../module-ui/useGame';
 import { Toast } from '../../../../components/ui/Toast';
-
-type Config = Record<string, unknown>;
-
-interface Draft {
-  name: string;
-  brandName: string;
-  note: string;
-  config: Config;
-}
-
-const fromTemplate = (tpl: TemplateDetail): Draft => ({
-  name: tpl.name,
-  brandName: tpl.brandName ?? '',
-  note: tpl.note ?? '',
-  config: tpl.config,
-});
+import { EditorHeader } from '../../../../components/ui/EditorHeader';
+import { LoadErrorView } from '../../../../components/ui/LoadErrorView';
+import { SplitView } from '../../../../components/ui/SplitView';
+import { TemplateHistoryDialog } from '../../../../templates/TemplateHistoryDialog';
+import { TemplateInfoDialog } from '../../../../templates/TemplateInfoDialog';
+import { TemplateVersionDialog } from '../../../../templates/TemplateVersionDialog';
+import { useTemplateDraft } from '../../../../templates/useTemplateDraft';
 
 /** Màn chỉnh template: form trái, xem trước phải; Lưu nháp, Công bố, lịch sử công bố. */
 export default function TemplateEditorPage() {
   const { id } = useParams<{ id: string }>();
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
-  const [template, setTemplate] = useState<TemplateDetail | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [formKey, setFormKey] = useState(0);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const {
+    template,
+    draft,
+    dirty,
+    formKey,
+    loadError,
+    conflict,
+    setConflict,
+    load,
+    update,
+    save,
+    publish,
+    upgrade,
+    restore,
+    fetchVersion,
+  } = useTemplateDraft(id);
   const [error, setError] = useState<string | null>(null);
-  const [conflict, setConflict] = useState(false);
   const [busy, setBusy] = useState<'save' | 'publish' | 'restore' | 'upgrade' | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [tab, setTab] = useState<'form' | 'preview'>('form');
   const [infoOpen, setInfoOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
@@ -95,28 +80,6 @@ export default function TemplateEditorPage() {
   );
   const game = useGameForm(source, draft?.config);
 
-  const apply = useCallback((tpl: TemplateDetail) => {
-    setTemplate(tpl);
-    setDraft(fromTemplate(tpl));
-    setDirty(false);
-    setConflict(false);
-    setFormKey((k) => k + 1);
-  }, []);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await api<{ template: TemplateDetail }>(`/templates/${id}`);
-      apply(res.template);
-    } catch (e) {
-      if (handleAuthError(e)) return;
-      setLoadError(errorMessage(e));
-    }
-  }, [id, apply]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   const errors = game.check?.errors ?? template?.errors ?? {};
   const errorCount = Object.keys(errors).length;
 
@@ -129,122 +92,72 @@ export default function TemplateEditorPage() {
     setError(errorMessage(e));
   };
 
-  const update = (patch: Partial<Draft>) => {
-    setDraft((d) => (d ? { ...d, ...patch } : d));
-    setDirty(true);
-  };
-
-  /** Lưu nháp; trả về bản mới (để Công bố dùng tiếp). */
-  async function save(): Promise<TemplateDetail | null> {
-    if (!template || !draft) return null;
-    const res = await api<{ template: TemplateDetail }>(`/templates/${template.id}`, {
-      method: 'PUT',
-      body: { ...draft, baseRevision: template.revision },
-    });
-    setTemplate(res.template);
-    setDirty(false);
-    return res.template;
-  }
-
-  async function onSave() {
-    setBusy('save');
+  /** Chạy một thao tác: đánh dấu đang bận, hiện lỗi nếu có; `after` luôn chạy khi xong. */
+  async function run(label: NonNullable<typeof busy>, fn: () => Promise<void>, after?: () => void) {
+    setBusy(label);
     setError(null);
     try {
+      await fn();
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(null);
+      after?.();
+    }
+  }
+
+  const onSave = () =>
+    run('save', async () => {
       await save();
       setToast(t('cms.templates.saved'));
-    } catch (e) {
-      fail(e);
-    } finally {
-      setBusy(null);
-    }
-  }
+    });
 
-  async function onPublish() {
-    if (!template) return;
-    setBusy('publish');
-    setError(null);
-    try {
-      const current = dirty ? await save() : template;
-      if (!current) return;
-      const res = await api<{ template: TemplateDetail }>(`/templates/${current.id}/publish`, {
-        method: 'POST',
-        body: { baseRevision: current.revision },
-      });
-      setTemplate(res.template);
-      setToast(t('cms.templates.publishedToast', { version: res.template.publishedVersion }));
-    } catch (e) {
-      fail(e);
-    } finally {
-      setBusy(null);
-    }
-  }
+  const onPublish = () =>
+    run('publish', async () => {
+      const next = await publish();
+      if (next) setToast(t('cms.templates.publishedToast', { version: next.publishedVersion }));
+    });
 
-  async function onUpgrade() {
-    if (!template) return;
-    setBusy('upgrade');
-    setError(null);
-    try {
-      const current = dirty ? await save() : template;
-      if (!current) return;
-      const res = await api<{ template: TemplateDetail }>(`/templates/${current.id}/upgrade`, {
-        method: 'POST',
-        body: { baseRevision: current.revision },
-      });
-      apply(res.template);
-      setToast(t('cms.templates.upgradedToast', { version: res.template.moduleVersion }));
-    } catch (e) {
-      fail(e);
-    } finally {
-      setBusy(null);
-      setUpgradeOpen(false);
-    }
-  }
+  const onUpgrade = () =>
+    run(
+      'upgrade',
+      async () => {
+        const next = await upgrade();
+        if (next) setToast(t('cms.templates.upgradedToast', { version: next.moduleVersion }));
+      },
+      () => setUpgradeOpen(false),
+    );
 
   async function viewVersion(version: number) {
-    if (!template) return;
     try {
-      setViewing(
-        await api<TemplateVersionResponse>(`/templates/${template.id}/versions/${version}`),
-      );
+      setViewing(await fetchVersion(version));
     } catch (e) {
       fail(e);
     }
   }
 
-  async function onRestore() {
-    if (!template || restoreVersion === null) return;
-    setBusy('restore');
-    try {
-      const res = await api<{ template: TemplateDetail }>(
-        `/templates/${template.id}/versions/${restoreVersion}/restore`,
-        {
-          method: 'POST',
-          body: { baseRevision: template.revision },
-        },
-      );
-      apply(res.template);
-      setToast(t('cms.templates.restoredToast', { version: restoreVersion }));
-      setRestoreVersion(null);
-      setViewing(null);
-      setHistoryOpen(false);
-    } catch (e) {
-      fail(e);
-      setRestoreVersion(null);
-    } finally {
-      setBusy(null);
-    }
-  }
+  const onRestore = () => {
+    if (restoreVersion === null) return;
+    const version = restoreVersion;
+    return run(
+      'restore',
+      async () => {
+        await restore(version);
+        setToast(t('cms.templates.restoredToast', { version }));
+        setViewing(null);
+        setHistoryOpen(false);
+      },
+      () => setRestoreVersion(null),
+    );
+  };
 
   if (loadError) {
     return (
-      <Stack spacing={2}>
-        <Alert severity="error">{loadError}</Alert>
-        <Box>
-          <Button component={Link} href="/templates" startIcon={<ArrowBackIcon />}>
-            {t('cms.templates.backToList')}
-          </Button>
-        </Box>
-      </Stack>
+      <LoadErrorView
+        message={loadError}
+        backHref="/templates"
+        backLabel={t('cms.templates.backToList')}
+      />
     );
   }
   if (!template || !draft || !source) return <LinearProgress />;
@@ -309,77 +222,68 @@ export default function TemplateEditorPage() {
 
   return (
     <Stack spacing={2.5}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        justifyContent="space-between"
-        alignItems={{ md: 'flex-start' }}
-      >
-        <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
-          <IconButton
-            component={Link}
-            href="/templates"
-            aria-label={t('cms.templates.backToList')}
-            sx={{ mt: 0.25 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Box sx={{ minWidth: 0 }}>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography variant="h5" component="h1" fontWeight={700} noWrap>
-                {draft.name}
-              </Typography>
-              {!archived && (
-                <IconButton
-                  size="small"
-                  onClick={() => setInfoOpen(true)}
-                  aria-label={t('cms.templates.editInfo')}
-                >
-                  <EditOutlined fontSize="small" />
-                </IconButton>
-              )}
-            </Stack>
+      <EditorHeader
+        backHref="/templates"
+        backLabel={t('cms.templates.backToList')}
+        title={draft.name}
+        titleAction={
+          !archived && (
+            <IconButton
+              size="small"
+              onClick={() => setInfoOpen(true)}
+              aria-label={t('cms.templates.editInfo')}
+            >
+              <EditOutlined fontSize="small" />
+            </IconButton>
+          )
+        }
+        status={
+          <>
             <Typography variant="body2" color="text.secondary" noWrap>
               {[draft.brandName, `${template.moduleName} v${template.moduleVersion}`]
                 .filter(Boolean)
                 .join(' · ')}
             </Typography>
             {statusLine}
-          </Box>
-        </Stack>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
-          <Button startIcon={<LinkIcon />} onClick={() => setLinksOpen(true)}>
-            {t('cms.links.button')}
-          </Button>
-          <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
-            {t('cms.templates.history', { count: template.versions.length })}
-          </Button>
-          {!archived && (
-            <Button
-              variant="outlined"
-              startIcon={<SaveOutlined />}
-              onClick={() => void onSave()}
-              disabled={!dirty || busy !== null}
-            >
-              {busy === 'save' ? t('cms.templates.saving') : t('cms.templates.saveDraft')}
+          </>
+        }
+        actions={
+          <>
+            <Button startIcon={<LinkIcon />} onClick={() => setLinksOpen(true)}>
+              {t('cms.links.button')}
             </Button>
-          )}
-          {!archived && (
-            <Tooltip title={publishHint}>
-              <span>
-                <Button
-                  variant="contained"
-                  startIcon={<PublishIcon />}
-                  onClick={() => void onPublish()}
-                  disabled={!canPublish || busy !== null}
-                >
-                  {busy === 'publish' ? t('cms.templates.publishing') : t('cms.templates.publish')}
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
-      </Stack>
+            <Button startIcon={<HistoryIcon />} onClick={() => setHistoryOpen(true)}>
+              {t('cms.templates.history', { count: template.versions.length })}
+            </Button>
+            {!archived && (
+              <Button
+                variant="outlined"
+                startIcon={<SaveOutlined />}
+                onClick={() => void onSave()}
+                disabled={!dirty || busy !== null}
+              >
+                {busy === 'save' ? t('cms.templates.saving') : t('cms.templates.saveDraft')}
+              </Button>
+            )}
+            {!archived && (
+              <Tooltip title={publishHint}>
+                <span>
+                  <Button
+                    variant="contained"
+                    startIcon={<PublishIcon />}
+                    onClick={() => void onPublish()}
+                    disabled={!canPublish || busy !== null}
+                  >
+                    {busy === 'publish'
+                      ? t('cms.templates.publishing')
+                      : t('cms.templates.publish')}
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
+          </>
+        }
+      />
 
       {archived && <Alert severity="warning">{t('cms.templates.archivedHint')}</Alert>}
       {canUpgrade && (
@@ -420,31 +324,18 @@ export default function TemplateEditorPage() {
         </Alert>
       )}
 
-      {wide ? (
-        <Grid container spacing={3} alignItems="flex-start">
-          <Grid size={{ md: 6, lg: 7 }}>{form}</Grid>
-          <Grid size={{ md: 6, lg: 5 }} sx={{ position: 'sticky', top: 88 }}>
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              {preview}
-            </Paper>
-          </Grid>
-        </Grid>
-      ) : (
-        <Box>
-          <Tabs
-            value={tab}
-            onChange={(_, v: 'form' | 'preview') => setTab(v)}
-            variant="fullWidth"
-            sx={{ mb: 2 }}
-          >
-            <Tab value="form" label={t('cms.playground.tabForm')} />
-            <Tab value="preview" label={t('cms.playground.tabPreview')} />
-          </Tabs>
-          {tab === 'form' ? form : preview}
-        </Box>
-      )}
+      <SplitView
+        wide={wide}
+        main={form}
+        side={preview}
+        mainLabel={t('cms.playground.tabForm')}
+        sideLabel={t('cms.playground.tabPreview')}
+        mainSize={{ md: 6, lg: 7 }}
+        sideSize={{ md: 6, lg: 5 }}
+        spacing={3}
+      />
 
-      <InfoDialog
+      <TemplateInfoDialog
         open={infoOpen}
         draft={draft}
         onClose={() => setInfoOpen(false)}
@@ -460,77 +351,22 @@ export default function TemplateEditorPage() {
         onClose={() => setLinksOpen(false)}
       />
 
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t('cms.templates.historyTitle')}</DialogTitle>
-        <DialogContent dividers>
-          {template.versions.length === 0 ? (
-            <Typography color="text.secondary">{t('cms.templates.historyEmpty')}</Typography>
-          ) : (
-            <List disablePadding>
-              {template.versions.map((v) => (
-                <ListItem
-                  key={v.version}
-                  disableGutters
-                  secondaryAction={
-                    <Stack direction="row" spacing={1}>
-                      <Button size="small" onClick={() => void viewVersion(v.version)}>
-                        {t('cms.templates.view')}
-                      </Button>
-                      {!archived && (
-                        <Button size="small" onClick={() => setRestoreVersion(v.version)}>
-                          {t('cms.templates.restore')}
-                        </Button>
-                      )}
-                    </Stack>
-                  }
-                >
-                  <ListItemText
-                    primary={`${t('cms.templates.versionLabel', { version: v.version })}${
-                      v.version === template.publishedVersion
-                        ? ` · ${t('cms.templates.current')}`
-                        : ''
-                    }`}
-                    secondary={`${formatDateTime(v.publishedAt)}${v.publishedByName ? ` · ${v.publishedByName}` : ''}`}
-                    sx={{ pr: 18 }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setHistoryOpen(false)}>{t('common.close')}</Button>
-        </DialogActions>
-      </Dialog>
+      <TemplateHistoryDialog
+        open={historyOpen}
+        template={template}
+        canRestore={!archived}
+        onView={(version) => void viewVersion(version)}
+        onRestore={setRestoreVersion}
+        onClose={() => setHistoryOpen(false)}
+      />
 
-      <Dialog open={viewing !== null} onClose={() => setViewing(null)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {viewing && t('cms.templates.versionLabel', { version: viewing.version })}
-          {viewing && (
-            <Typography variant="body2" color="text.secondary">
-              {formatDateTime(viewing.publishedAt)}
-              {viewing.publishedByName ? ` · ${viewing.publishedByName}` : ''}
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent dividers>
-          {viewing && (
-            <PreviewFrame
-              source={{ kind: 'version', key: template.moduleKey, version: viewing.moduleVersion }}
-              config={viewing.config}
-              maxHeight={560}
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewing(null)}>{t('common.close')}</Button>
-          {viewing && !archived && (
-            <Button variant="contained" onClick={() => setRestoreVersion(viewing.version)}>
-              {t('cms.templates.restore')}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      <TemplateVersionDialog
+        viewing={viewing}
+        moduleKey={template.moduleKey}
+        canRestore={!archived}
+        onRestore={setRestoreVersion}
+        onClose={() => setViewing(null)}
+      />
 
       <ConfirmDialog
         open={restoreVersion !== null}
@@ -553,71 +389,5 @@ export default function TemplateEditorPage() {
       <LeaveGuard when={dirty} />
       <Toast message={toast} onClose={() => setToast(null)} />
     </Stack>
-  );
-}
-
-function InfoDialog({
-  open,
-  draft,
-  onClose,
-  onApply,
-}: {
-  open: boolean;
-  draft: Draft;
-  onClose: () => void;
-  onApply: (info: Pick<Draft, 'name' | 'brandName' | 'note'>) => void;
-}) {
-  const [name, setName] = useState(draft.name);
-  const [brandName, setBrandName] = useState(draft.brandName);
-  const [note, setNote] = useState(draft.note);
-  useEffect(() => {
-    if (!open) return;
-    setName(draft.name);
-    setBrandName(draft.brandName);
-    setNote(draft.note);
-  }, [open, draft.name, draft.brandName, draft.note]);
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t('cms.templates.editInfo')}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ pt: 1 }}>
-          <TextField
-            label={t('cms.templates.name')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            error={!name.trim()}
-            slotProps={{ htmlInput: { maxLength: 120 } }}
-          />
-          <TextField
-            label={t('cms.templates.brandName')}
-            value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
-            slotProps={{ htmlInput: { maxLength: 120 } }}
-          />
-          <TextField
-            label={t('cms.templates.note')}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            multiline
-            minRows={3}
-            slotProps={{ htmlInput: { maxLength: 1000 } }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            {t('cms.templates.infoHint')}
-          </Typography>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t('common.cancel')}</Button>
-        <Button
-          variant="contained"
-          disabled={!name.trim()}
-          onClick={() => onApply({ name: name.trim(), brandName, note })}
-        >
-          {t('cms.templates.applyInfo')}
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }
