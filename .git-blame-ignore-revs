@@ -1,0 +1,5 @@
+# Các commit chỉ đổi định dạng, git blame bỏ qua để vẫn thấy đúng người viết từng dòng.
+# GitHub tự đọc file này. Trên máy: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Định dạng toàn bộ repo bằng Prettier
+97c1ec2c9808fd9c85e272aa41de3f229b8ed8f0
