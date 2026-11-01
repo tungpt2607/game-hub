@@ -8,6 +8,21 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { t } from '@opes/i18n';
 
+export interface ConfirmDialogProps {
+  open: boolean;
+  title: string;
+  text: string;
+  confirmLabel: string;
+  /** Chữ trên nút hủy; mặc định "Hủy". */
+  cancelLabel?: string;
+  /** Nút xác nhận màu đỏ, cho thao tác khó hoàn tác (xóa, vô hiệu hóa). */
+  danger?: boolean;
+  /** Đang xử lý: khóa các nút và không cho đóng hộp. */
+  busy?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
 /** Hộp xác nhận cho thao tác cần cân nhắc (đặt lại mật khẩu, vô hiệu hóa, xóa…). */
 export function ConfirmDialog({
   open,
@@ -19,18 +34,7 @@ export function ConfirmDialog({
   busy,
   onConfirm,
   onClose,
-}: {
-  open: boolean;
-  title: string;
-  text: string;
-  confirmLabel: string;
-  /** Chữ trên nút hủy; mặc định "Hủy". */
-  cancelLabel?: string;
-  danger?: boolean;
-  busy?: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
+}: ConfirmDialogProps) {
   return (
     <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="xs" fullWidth>
       <DialogTitle>{title}</DialogTitle>

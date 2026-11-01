@@ -23,6 +23,8 @@ Tài liệu thiết kế trong `docs/`.
 - Thấy cùng một đoạn code lần thứ hai thì gom thành hàm dùng chung, không chép thêm bản thứ ba.
 - Giao diện: tìm component sẵn có trong `apps/cms/src/components/`, `apps/cms/src/module-ui/`, `@opes/module-sdk/react`
   trước khi viết mới; đoạn giao diện dùng ở chỗ thứ hai thì tách thành component dùng chung (mục 3.2 quy ước code).
+- Component dùng chung viết dưới dạng tổng quát (mục 3.2): đặt tên theo chức năng, không chứa nghiệp vụ, chữ và nội dung
+  nhận qua props / `children` / `renderItem`, kiểu tổng quát `<T>` cho danh sách; chỉ thêm tùy chọn khi có ít nhất hai nơi cần.
 - Ưu tiên performance (mục 3.1): giữa hai cách cùng đúng và an toàn, chọn cách nhanh hơn; nghi chậm thì đo trước và sau,
   báo số đo cho người dùng.
 

@@ -83,6 +83,33 @@ Thứ tự ưu tiên khi phải đánh đổi: **đúng → an toàn → perform
 - Chuỗi hiển thị, màu, kích thước nhận qua props hoặc lấy từ `t('…')` / theme, không viết cứng, để dùng lại được ở chỗ khác.
 - Không tách quá nhỏ: component chỉ bọc một thẻ và chuyển tiếp props, dùng đúng một chỗ, thì giữ nguyên trong file cha.
 
+**Viết component dưới dạng tổng quát** để dùng lại được trong nhiều trường hợp. Ví dụ tốt có sẵn: `ConfirmDialog`
+(`apps/cms/src/components/ConfirmDialog.tsx`), một hộp xác nhận đang dùng cho đặt lại mật khẩu, vô hiệu hóa, xóa… ở 12 chỗ.
+
+- **Đặt tên theo chức năng, không theo nơi dùng**: `ConfirmDialog`, `FileDropZone`, `SearchList`; không đặt
+  `DeleteTemplateDialog`, `GameZipUpload`. Tên gắn nghiệp vụ chỉ dùng cho component ghép các component tổng quát lại cho
+  một màn hình cụ thể.
+- **Không chứa nghiệp vụ**: component tổng quát không gọi `api()`, không đọc router, context của trang hay
+  `localStorage`, không biết "template", "game", "link". Dữ liệu vào qua props, hành động ra qua callback
+  (`onConfirm`, `onChange`, `onSelect`…).
+- **Mọi chữ hiển thị nhận qua props** (`title`, `label`, `emptyText`…); chữ dùng ở hầu hết các nơi thì cho giá trị mặc
+  định lấy từ `t('…')` (như `cancelLabel` của `ConfirmDialog`).
+- **Nội dung thay đổi theo nơi dùng thì nhận `children` hoặc hàm hiển thị** (`renderItem`, `renderEmpty`) thay vì thêm cờ
+  `if` cho từng trường hợp. Thấy props kiểu `isTemplateMode`, `forUsersPage` là dấu hiệu component đang bị gắn vào nơi dùng.
+- **Danh sách, bảng, ô chọn dùng kiểu tổng quát**: `function SearchList<T>({ items, getKey, renderItem }: SearchListProps<T>)`,
+  không viết riêng cho từng loại dữ liệu.
+- **Ô nhập điều khiển từ ngoài**: nhận `value` + `onChange` (có thể thêm `defaultValue`), không giữ giá trị riêng mà nơi dùng
+  không đọc được.
+- **Cho phép chỉnh giao diện ở nơi dùng**: nhận `sx` (MUI) hoặc `className`, và các biến thể có hạn (`variant`, `size`,
+  `danger`) có giá trị mặc định hợp lý; không viết cứng màu, kích thước, khoảng cách theo một trang.
+- **Kiểu props đặt tên và xuất ra** (`export interface ConfirmDialogProps`), mỗi prop không hiển nhiên có chú thích ngắn;
+  đầu file có một dòng mô tả component dùng cho việc gì.
+- **Tổng quát vừa đủ**: chỉ thêm tùy chọn khi có ít nhất hai nơi cần, hoặc đã biết chắc sắp cần. Không thêm prop "phòng khi
+  cần" mà chưa ai dùng; component có quá nhiều cờ thì tách thành vài component nhỏ ghép lại.
+- **Tổng quát nhưng vẫn nhanh**: callback và object truyền vào component dùng chung nên ổn định (`useCallback`,
+  `useMemo`, hằng số ngoài component) để `memo` có tác dụng; component tổng quát không tự tạo hiệu ứng tốn kém mà nơi dùng
+  không tắt được.
+
 ### 3.3. Chung
 
 - Trước khi viết helper mới, tìm xem đã có chưa (`lib/` của từng ứng dụng, `@opes/contracts`, `@opes/module-sdk`). Thấy cùng một đoạn code ở chỗ thứ hai thì gom thành hàm dùng chung.
