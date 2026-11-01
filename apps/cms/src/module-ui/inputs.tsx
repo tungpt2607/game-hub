@@ -73,6 +73,7 @@ export function NumberInput({ id, field, value, error, onChange }: InputProps<Nu
   const [draft, setDraft] = useState(typeof value === 'number' ? String(value) : '');
   useEffect(() => {
     if (typeof value === 'number' && Number(draft) !== value) setDraft(String(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ đồng bộ khi giá trị bên ngoài đổi, không ghi đè chuỗi người dùng đang gõ.
   }, [value]);
   const range =
     field.min !== undefined && field.max !== undefined ? `${field.min}–${field.max}` : undefined;
@@ -394,6 +395,7 @@ export function FontInput({
   const [custom, setCustom] = useState<MediaRef[] | null>(null);
   useEffect(() => {
     if (v.family) void loadFont(v);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `v` là object mới ở mỗi lần render; font chỉ đổi khi family hoặc file đổi.
   }, [v.family, v.media?.id]);
 
   const loadCustom = () => {

@@ -48,7 +48,7 @@ export function useGameForm(source: GameSource | null, config: unknown) {
       client.current = null;
       frame.remove();
     };
-    // `key` đại diện cho `source` (object mới ở mỗi lần render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện cho `source` (object mới ở mỗi lần render).
   }, [key]);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function useGameFrame(frame: HTMLIFrameElement | null, source: GameSource
       current?.destroy();
       setClient(null);
     };
-    // `key` đại diện cho `source`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` đại diện cho `source` (object mới ở mỗi lần render).
   }, [frame, key]);
 
   return { schema, error, client };

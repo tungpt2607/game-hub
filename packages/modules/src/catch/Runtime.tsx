@@ -36,13 +36,14 @@ function writeBest(key: string, value: number) {
 
 /** Tải trước ảnh của vật phẩm/giỏ để khi xuất hiện không bị nháy. */
 function usePreload(urls: string[]) {
+  // Dùng chuỗi làm phụ thuộc: chỉ tải lại khi danh sách link thật sự đổi, không phải khi mảng mới được tạo.
   const key = urls.join('|');
   useEffect(() => {
-    for (const url of new Set(urls)) {
+    for (const url of new Set(key.split('|'))) {
+      if (!url) continue;
       const img = new Image();
       img.src = url;
     }
-    // Chỉ chạy lại khi danh sách link đổi.
   }, [key]);
 }
 
@@ -685,7 +686,7 @@ function Confetti({ colors }: { colors: string[] }) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-    // Chỉ chạy một lần khi mở màn kết thúc.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi mở màn kết thúc.
   }, []);
   return <canvas ref={canvas} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />;
 }

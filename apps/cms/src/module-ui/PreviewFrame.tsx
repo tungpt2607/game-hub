@@ -63,7 +63,7 @@ export function PreviewFrame({ source, config, maxHeight, onSchema }: Props) {
 
   useEffect(() => {
     onSchema?.(schema, error);
-    // Chỉ báo khi kết quả tải đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ báo khi kết quả tải đổi, không báo lại khi trang cha tạo hàm onSchema mới.
   }, [schema, error]);
 
   // Gửi cấu hình và trạng thái hiện tại sang khung mỗi khi đổi.

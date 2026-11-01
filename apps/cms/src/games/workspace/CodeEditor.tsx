@@ -132,7 +132,7 @@ export function CodeEditor({
       view.current = null;
       saved.clear();
     };
-    // Chỉ tạo khi gắn vào trang; đổi file và nội dung xử lý ở các effect bên dưới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ tạo khi gắn vào trang; đổi file và nội dung xử lý ở các effect bên dưới.
   }, []);
 
   // Đổi file: lưu trạng thái file cũ, mở trạng thái file mới (hoặc tạo mới).
@@ -144,6 +144,7 @@ export function CodeEditor({
     currentPath.current = path;
     v.setState(saved && saved.doc.toString() === value ? saved : makeState(path, value));
     reportCursor(v.state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi đổi file; nội dung đổi từ bên ngoài xử lý ở effect bên dưới.
   }, [path]);
 
   // Nội dung đổi từ bên ngoài (tải .zip, đổi tên ký hiệu, tìm và thay trong cả game…): thay nội dung, giữ lịch sử hoàn tác.

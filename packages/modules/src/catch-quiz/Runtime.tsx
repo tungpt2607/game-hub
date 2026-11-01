@@ -333,7 +333,7 @@ export function CatchQuizRuntime({ config, host, initialScreen, muted }: Runtime
       clearTimers();
       soundsRef.current.music.stop();
     };
-    // Chỉ chạy khi mở module (đổi màn hình thì khung xem trước tạo lại module).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi mở module (đổi màn hình thì khung xem trước tạo lại module).
   }, []);
 
   // Vòng lặp chính.

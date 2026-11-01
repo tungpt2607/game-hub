@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -13,6 +14,11 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    // Bắt lỗi gọi hook sai chỗ và thiếu phụ thuộc trong useEffect/useMemo/useCallback.
+    files: ['**/*.{ts,tsx}'],
+    ...reactHooks.configs['recommended-latest'],
+  },
   {
     files: ['**/*.{js,mjs,cjs}'],
     languageOptions: {

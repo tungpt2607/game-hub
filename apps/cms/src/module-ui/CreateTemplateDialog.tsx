@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -68,7 +68,7 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
       setNote('');
       if (mode.type === 'config') setModuleKey(mode.moduleKey);
     }
-    // Chỉ đặt lại khi mở hộp; `mode` có thể là object mới ở mỗi lần render của trang cha.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ đặt lại khi mở hộp; `mode` có thể là object mới ở mỗi lần render của trang cha.
   }, [open]);
 
   const mod = modules?.find((m) => m.key === moduleKey) ?? (moduleKey ? undefined : modules?.[0]);
@@ -77,35 +77,39 @@ export function CreateTemplateDialog({ open, mode, onClose }: { open: boolean; m
     if (open && mode.type === 'new' && selectedKey) setPlayground(readPlaygroundConfig(selectedKey));
   }, [open, mode.type, selectedKey]);
 
-  const choices: Choice[] =
-    mode.type === 'new' && mod
-      ? [
-          ...(mod.presets ?? []).map((p) => ({
-            id: `preset:${p.id}`,
-            title: p.name,
-            subtitle: p.description,
-            config: p.config,
-            source: { type: 'preset', presetId: p.id } as TemplateSource,
-          })),
-          {
-            id: 'defaults',
-            title: t('cms.templates.fromDefaults'),
-            config: mod.defaults,
-            source: { type: 'defaults' },
-          },
-          ...(playground
-            ? [
-                {
-                  id: 'playground',
-                  title: t('cms.templates.fromPlayground'),
-                  subtitle: t('cms.templates.fromPlaygroundHint'),
-                  config: playground,
-                  source: { type: 'config', config: playground } as TemplateSource,
-                },
-              ]
-            : []),
-        ]
-      : [];
+  // Giữ cùng một mảng giữa các lần render để effect chọn mặc định bên dưới không chạy lại vô ích.
+  const choices = useMemo<Choice[]>(
+    () =>
+      mode.type === 'new' && mod
+        ? [
+            ...(mod.presets ?? []).map((p) => ({
+              id: `preset:${p.id}`,
+              title: p.name,
+              subtitle: p.description,
+              config: p.config,
+              source: { type: 'preset', presetId: p.id } as TemplateSource,
+            })),
+            {
+              id: 'defaults',
+              title: t('cms.templates.fromDefaults'),
+              config: mod.defaults,
+              source: { type: 'defaults' },
+            },
+            ...(playground
+              ? [
+                  {
+                    id: 'playground',
+                    title: t('cms.templates.fromPlayground'),
+                    subtitle: t('cms.templates.fromPlaygroundHint'),
+                    config: playground,
+                    source: { type: 'config', config: playground } as TemplateSource,
+                  },
+                ]
+              : []),
+          ]
+        : [],
+    [mode.type, mod, playground],
+  );
 
   useEffect(() => {
     if (choices.length > 0 && !choices.some((c) => c.id === choiceId)) setChoiceId(choices[0]!.id);
