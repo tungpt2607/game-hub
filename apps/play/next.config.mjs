@@ -10,6 +10,12 @@ const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
 // tiếp tới kho, để người chơi không phụ thuộc tên miền của kho (một số mạng chặn r2.dev).
 // Đi cùng biến PLAY_MEDIA_PROXY=true ở API.
 const mediaOrigin = process.env.MEDIA_PROXY_ORIGIN?.replace(/\/+$/, '');
+/**
+ * Thư mục trên kho được chuyển tiếp (khi bật MEDIA_PROXY, API trả địa chỉ dạng "/<thư mục>/..."):
+ * media/ là thư viện Media, game-assets/ là file kèm của game (ảnh, âm thanh trong thư mục assets/ của gói).
+ * Thêm thư mục mới trên kho thì thêm vào đây, ở cả CMS và trang chơi.
+ */
+const MEDIA_PREFIXES = ['media', 'game-assets'];
 
 // Các tên miền CMS được nhúng khung chạy game /embed (xem trước trong CMS). Nhiều địa chỉ cách nhau dấu phẩy.
 const cmsOrigins = (
@@ -43,7 +49,10 @@ const nextConfig = {
     return [
       { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
       ...(mediaOrigin
-        ? [{ source: '/media/:path*', destination: `${mediaOrigin}/media/:path*` }]
+        ? MEDIA_PREFIXES.map((prefix) => ({
+            source: `/${prefix}/:path*`,
+            destination: `${mediaOrigin}/${prefix}/:path*`,
+          }))
         : []),
     ];
   },
