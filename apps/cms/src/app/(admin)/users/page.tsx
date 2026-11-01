@@ -29,13 +29,11 @@ import type { TemporaryPasswordResponse, User, UserListResponse } from '@opes/co
 import { t } from '@opes/i18n';
 import { useCurrentUser } from '../../../components/AuthContext';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { api, type ApiRequestError, handleAuthError, errorMessage, toApiError } from '../../../lib/api';
+import { formatDateTime } from '../../../lib/format';
 import { copyText, selectAll } from '../../../lib/clipboard';
 
-const formatDate = (iso: string | null) =>
-  iso
-    ? new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
-    : t('cms.users.never');
+const formatDate = (iso: string | null) => (iso ? formatDateTime(iso) : t('cms.users.never'));
 
 type Pending = { kind: 'reset' | 'disable'; user: User } | null;
 
@@ -56,7 +54,7 @@ export default function UsersPage() {
         setError(null);
       })
       .catch((e: unknown) => {
-        if (!handleAuthError(e)) setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+        if (!handleAuthError(e)) setError(errorMessage(e));
       });
   }, []);
 
@@ -68,7 +66,7 @@ export default function UsersPage() {
       await action();
       load();
     } catch (e) {
-      if (!handleAuthError(e)) setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      if (!handleAuthError(e)) setError(errorMessage(e));
     } finally {
       setBusy(false);
       setPending(null);
@@ -255,7 +253,7 @@ function CreateUserDialog({
       onCreated(await api<TemporaryPasswordResponse>('/users', { method: 'POST', body: { name, email } }));
     } catch (e) {
       if (!handleAuthError(e)) {
-        setError(e instanceof ApiRequestError ? e : new ApiRequestError(0, 'NETWORK', t('common.networkError')));
+        setError(toApiError(e));
       }
     } finally {
       setBusy(false);

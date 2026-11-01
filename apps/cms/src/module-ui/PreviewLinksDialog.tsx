@@ -35,11 +35,10 @@ import QRCode from 'qrcode';
 import type { PreviewLink, PreviewLinkListResponse, TemplateDetail } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../lib/api';
+import { api, ApiRequestError, handleAuthError, errorMessage } from '../lib/api';
+import { formatDateTime, formatDay } from '../lib/format';
 import { copyText } from '../lib/clipboard';
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
-const formatDay = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
 
 /** Ô ngày (yyyy-mm-dd) → hết ngày đó theo giờ máy, dạng ISO. */
 const endOfDay = (day: string) => (day ? new Date(`${day}T23:59:59`).toISOString() : null);
@@ -77,7 +76,7 @@ export function PreviewLinksDialog({
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   }, []);
 
   const load = useCallback(async () => {
@@ -167,8 +166,8 @@ export function PreviewLinksDialog({
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {t('cms.links.views', { count: link.viewCount })}
-                    {link.lastViewedAt ? ` · ${t('cms.links.lastViewed', { date: formatDate(link.lastViewedAt) })}` : ''}
-                    {` · ${t('cms.links.createdAt', { date: formatDate(link.createdAt) })}`}
+                    {link.lastViewedAt ? ` · ${t('cms.links.lastViewed', { date: formatDateTime(link.lastViewedAt) })}` : ''}
+                    {` · ${t('cms.links.createdAt', { date: formatDateTime(link.createdAt) })}`}
                   </Typography>
                   <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
                     <Button size="small" startIcon={<ContentCopyIcon />} onClick={() => void copy(link)}>
@@ -464,7 +463,7 @@ function EditLinkDialog({
       onSaved(res.link);
     } catch (err) {
       if (handleAuthError(err)) return;
-      setError(err instanceof ApiRequestError ? err.message : t('common.networkError'));
+      setError(errorMessage(err));
       setBusy(false);
     }
   }

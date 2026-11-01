@@ -12,7 +12,7 @@ import type { SetupStatus } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { AuthCard } from '../../components/AuthCard';
 import { PasswordFields, passwordReady } from '../../components/PasswordFields';
-import { api, ApiRequestError } from '../../lib/api';
+import { api, ApiRequestError, toApiError } from '../../lib/api';
 
 /** Tạo quản trị viên đầu tiên. Khi hệ thống đã có tài khoản, trang chỉ còn nút đến trang đăng nhập. */
 export default function SetupPage() {
@@ -33,7 +33,8 @@ export default function SetupPage() {
         else router.replace('/login');
       })
       .catch((e: unknown) => {
-        setError(e instanceof ApiRequestError ? e : null);
+        // Lỗi mạng khi chỉ kiểm tra trạng thái: vẫn mở form, không báo lỗi.
+        if (e instanceof ApiRequestError) setError(e);
         setStatus('open');
       });
   }, [router]);
@@ -47,7 +48,7 @@ export default function SetupPage() {
       router.replace('/dashboard');
     } catch (e) {
       if (e instanceof ApiRequestError && e.code === 'SETUP_ALREADY_DONE') setStatus('done');
-      setError(e instanceof ApiRequestError ? e : new ApiRequestError(0, 'NETWORK', t('common.networkError')));
+      setError(toApiError(e));
       setBusy(false);
     }
   }

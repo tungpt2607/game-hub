@@ -1,6 +1,7 @@
 import { bundleGame, buildErrors, type BuildError } from '@opes/module-bundler';
 import sdkCore from '@opes/modules/sdk-core';
 import type { GameAssets } from './types';
+import type * as EsbuildModule from 'esbuild-wasm';
 
 /**
  * Biên dịch game ngay trong trình duyệt bằng esbuild-wasm (chạy trong Web Worker riêng của esbuild).
@@ -8,7 +9,7 @@ import type { GameAssets } from './types';
  * của trang chơi.
  */
 
-type Esbuild = typeof import('esbuild-wasm');
+type Esbuild = typeof EsbuildModule;
 
 let ready: Promise<Esbuild> | null = null;
 

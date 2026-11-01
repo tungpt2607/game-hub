@@ -28,9 +28,9 @@ import { downloadBlob, exampleZip, readGameZip } from '../../../games/zip';
 
 /** Hướng dẫn viết game (repo công khai). */
 const GUIDE_URL = 'https://github.com/tungpt2607/game-hub/blob/main/docs/huong-dan/viet-game.md';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { api, handleAuthError, errorMessage } from '../../../lib/api';
+import { formatDateTime } from '../../../lib/format';
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
 /** Mục Game: danh sách game lưu trong cơ sở dữ liệu; tải lên game mới bằng file .zip. */
 export default function GamesPage() {
@@ -46,7 +46,7 @@ export default function GamesPage() {
       setItems((await api<GameModuleListResponse>('/modules')).items);
     } catch (e) {
       if (handleAuthError(e)) return;
-      setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      setError(errorMessage(e));
     }
   }, []);
 
@@ -154,7 +154,7 @@ export default function GamesPage() {
                       {m.builtin && <Chip size="small" variant="outlined" label={t('cms.games.builtin')} />}
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
-                      {t('cms.games.updated', { date: formatDate(m.draftUpdatedAt ?? m.updatedAt) })}
+                      {t('cms.games.updated', { date: formatDateTime(m.draftUpdatedAt ?? m.updatedAt) })}
                     </Typography>
                   </Stack>
                 </CardContent>

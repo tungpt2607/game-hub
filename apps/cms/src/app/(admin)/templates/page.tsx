@@ -26,13 +26,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import type { TemplateListResponse, TemplateStatus, TemplateSummary } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { api, handleAuthError, errorMessage } from '../../../lib/api';
+import { formatDateTime } from '../../../lib/format';
 import { CreateTemplateDialog, type CreateMode } from '../../../module-ui/CreateTemplateDialog';
 import { StatusChip } from '../../../module-ui/StatusChip';
 import { TemplateThumb } from '../../../module-ui/TemplateThumb';
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
 export default function TemplatesPage() {
   const [status, setStatus] = useState<TemplateStatus>('active');
@@ -53,7 +52,7 @@ export default function TemplatesPage() {
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   }, []);
 
   const load = useCallback(async () => {
@@ -172,7 +171,7 @@ export default function TemplatesPage() {
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                     <StatusChip template={item} />
                     <Typography variant="caption" color="text.secondary" noWrap>
-                      {formatDate(item.updatedAt)}
+                      {formatDateTime(item.updatedAt)}
                     </Typography>
                   </Stack>
                 </CardContent>

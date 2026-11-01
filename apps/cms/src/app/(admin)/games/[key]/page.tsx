@@ -48,10 +48,10 @@ import { clearLocalDraft, readLocalDraft, writeLocalDraft, type LocalDraft } fro
 import { PublishDialog } from '../../../../games/PublishDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
 import { downloadBlob, readGameZip, writeGameZip } from '../../../../games/zip';
-import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
+import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
+import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
 type Compile = { state: 'idle' | 'compiling' } | ({ state: 'done' } & CompileResult);
 
@@ -125,7 +125,7 @@ export default function GameEditorPage() {
       await apply((await api<{ module: GameModuleDetail }>(`/modules/${encodeURIComponent(moduleKey)}`)).module);
     } catch (e) {
       if (handleAuthError(e)) return;
-      setLoadError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      setLoadError(errorMessage(e));
     }
   }, [moduleKey, apply]);
 
@@ -338,7 +338,7 @@ export default function GameEditorPage() {
       )}
       {!dirty && mod.draft && (
         <Typography variant="body2" color="text.secondary">
-          {t('cms.games.draftSavedAt', { date: formatDate(mod.draft.updatedAt), name: mod.draft.updatedByName ?? '' })}
+          {t('cms.games.draftSavedAt', { date: formatDateTime(mod.draft.updatedAt), name: mod.draft.updatedByName ?? '' })}
         </Typography>
       )}
     </Stack>
@@ -547,7 +547,7 @@ export default function GameEditorPage() {
                 >
                   <ListItemText
                     primary={`v${v.version}${v.version === mod.latestVersion ? ` · ${t('cms.games.current')}` : ''}`}
-                    secondary={[formatDate(v.publishedAt), v.publishedByName, v.notes].filter(Boolean).join(' · ')}
+                    secondary={[formatDateTime(v.publishedAt), v.publishedByName, v.notes].filter(Boolean).join(' · ')}
                     sx={{ pr: 22 }}
                   />
                 </ListItem>

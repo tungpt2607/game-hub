@@ -37,7 +37,8 @@ import type { GameSource } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../../components/ConfirmDialog';
 import { LeaveGuard } from '../../../../components/LeaveGuard';
-import { api, ApiRequestError, handleAuthError } from '../../../../lib/api';
+import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../../lib/api';
+import { formatDateTime } from '../../../../lib/format';
 import { PreviewFrame } from '../../../../module-ui/PreviewFrame';
 import { PreviewLinksDialog } from '../../../../module-ui/PreviewLinksDialog';
 import { SchemaForm } from '../../../../module-ui/SchemaForm';
@@ -60,8 +61,6 @@ const fromTemplate = (tpl: TemplateDetail): Draft => ({
   config: tpl.config,
 });
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
 /** Màn chỉnh template: form trái, xem trước phải; Lưu nháp, Công bố, lịch sử công bố. */
 export default function TemplateEditorPage() {
@@ -108,7 +107,7 @@ export default function TemplateEditorPage() {
       apply(res.template);
     } catch (e) {
       if (handleAuthError(e)) return;
-      setLoadError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      setLoadError(errorMessage(e));
     }
   }, [id, apply]);
 
@@ -125,7 +124,7 @@ export default function TemplateEditorPage() {
       setConflict(true);
       return;
     }
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   };
 
   const update = (patch: Partial<Draft>) => {
@@ -264,7 +263,7 @@ export default function TemplateEditorPage() {
       {dirty && <Typography variant="body2" color="warning.main">{t('cms.templates.unsaved')}</Typography>}
       {template.publishedAt && (
         <Typography variant="body2" color="text.secondary">
-          {t('cms.templates.lastPublished', { date: formatDate(template.publishedAt) })}
+          {t('cms.templates.lastPublished', { date: formatDateTime(template.publishedAt) })}
         </Typography>
       )}
     </Stack>
@@ -438,7 +437,7 @@ export default function TemplateEditorPage() {
                     primary={`${t('cms.templates.versionLabel', { version: v.version })}${
                       v.version === template.publishedVersion ? ` · ${t('cms.templates.current')}` : ''
                     }`}
-                    secondary={`${formatDate(v.publishedAt)}${v.publishedByName ? ` · ${v.publishedByName}` : ''}`}
+                    secondary={`${formatDateTime(v.publishedAt)}${v.publishedByName ? ` · ${v.publishedByName}` : ''}`}
                     sx={{ pr: 18 }}
                   />
                 </ListItem>
@@ -456,7 +455,7 @@ export default function TemplateEditorPage() {
           {viewing && t('cms.templates.versionLabel', { version: viewing.version })}
           {viewing && (
             <Typography variant="body2" color="text.secondary">
-              {formatDate(viewing.publishedAt)}
+              {formatDateTime(viewing.publishedAt)}
               {viewing.publishedByName ? ` · ${viewing.publishedByName}` : ''}
             </Typography>
           )}

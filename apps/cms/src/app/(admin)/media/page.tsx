@@ -24,7 +24,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import type { MediaItem, MediaListResponse } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
-import { api, ApiRequestError, handleAuthError } from '../../../lib/api';
+import { api, ApiRequestError, handleAuthError, errorMessage } from '../../../lib/api';
 import { precheck, uploadFile } from '../../../lib/media-upload';
 import { FontSample } from '../../../module-ui/MediaPickerDialog';
 
@@ -79,7 +79,7 @@ export default function MediaPage() {
       setNotConfigured(true);
       return;
     }
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   }, []);
 
   const load = useCallback(

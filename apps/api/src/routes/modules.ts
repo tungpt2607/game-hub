@@ -132,6 +132,17 @@ async function checkConfigs(schemaJs: string, meta: GameModuleMeta) {
   }
 }
 
+/** Giá trị đặt lại mọi cột bản nháp (khi bỏ nháp hoặc sau khi phát hành). */
+const CLEARED_DRAFT = {
+  draftFiles: null,
+  draftAssets: null,
+  draftSchemaJs: null,
+  draftRuntimeJs: null,
+  draftMeta: null,
+  draftUpdatedAt: null,
+  draftUpdatedBy: null,
+} satisfies Partial<typeof schema.gameModules.$inferInsert>;
+
 const iso = (d: Date | null) => d?.toISOString() ?? null;
 
 /** /admin/modules: game lưu trong cơ sở dữ liệu; sửa code, bản nháp, phát hành (Bước 7c). */
@@ -392,15 +403,7 @@ export function moduleRoutes(deps: AppDeps) {
     if (!row.latestVersion) throw invalid('Game chưa phát hành lần nào nên không bỏ bản nháp được.');
     const [saved] = await db
       .update(schema.gameModules)
-      .set({
-        draftFiles: null,
-        draftAssets: null,
-        draftSchemaJs: null,
-        draftRuntimeJs: null,
-        draftMeta: null,
-        draftUpdatedAt: null,
-        draftUpdatedBy: null,
-      })
+      .set(CLEARED_DRAFT)
       .where(eq(schema.gameModules.key, row.key))
       .returning();
     return c.json({ module: await detail(db, saved!) });
@@ -451,13 +454,7 @@ export function moduleRoutes(deps: AppDeps) {
           name: meta.name,
           description: meta.description ?? '',
           latestVersion: meta.version,
-          draftFiles: null,
-          draftAssets: null,
-          draftSchemaJs: null,
-          draftRuntimeJs: null,
-          draftMeta: null,
-          draftUpdatedAt: null,
-          draftUpdatedBy: null,
+          ...CLEARED_DRAFT,
           updatedAt: now,
         })
         .where(eq(schema.gameModules.key, row.key))

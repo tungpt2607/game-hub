@@ -44,6 +44,16 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   return data as T;
 }
 
+/** Chuẩn hóa lỗi bất kỳ về ApiRequestError (lỗi không đến từ API được coi là lỗi mạng). */
+export function toApiError(error: unknown): ApiRequestError {
+  return error instanceof ApiRequestError ? error : new ApiRequestError(0, 'NETWORK_ERROR', t('common.networkError'));
+}
+
+/** Thông báo lỗi để hiện cho người dùng: lỗi từ API thì lấy thông báo của API, lỗi khác báo lỗi mạng. */
+export function errorMessage(error: unknown): string {
+  return toApiError(error).message;
+}
+
 /** Chuyển về trang đăng nhập khi phiên hết hạn, hoặc trang đổi mật khẩu khi bắt buộc. */
 export function handleAuthError(error: unknown): boolean {
   if (!(error instanceof ApiRequestError)) return false;

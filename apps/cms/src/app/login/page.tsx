@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography';
 import type { MeResponse, SetupStatus } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { AuthCard } from '../../components/AuthCard';
-import { api, ApiRequestError } from '../../lib/api';
+import { api, errorMessage } from '../../lib/api';
 
 /** Chỉ cho chuyển tiếp tới đường dẫn nội bộ của CMS. */
 function safeNext(next: string | null): string {
@@ -55,7 +55,7 @@ function LoginForm() {
       const { user } = await api<MeResponse>('/auth/login', { method: 'POST', body: { email, password } });
       router.replace(user.mustChangePassword ? '/change-password' : safeNext(params.get('next')));
     } catch (e) {
-      setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+      setError(errorMessage(e));
       setBusy(false);
     }
   }

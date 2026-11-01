@@ -23,7 +23,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import type { MediaItem, MediaListResponse } from '@opes/contracts';
 import { loadFont, type MediaRef } from '@opes/module-sdk';
 import { t } from '@opes/i18n';
-import { api, ApiRequestError, handleAuthError } from '../lib/api';
+import { api, handleAuthError, errorMessage } from '../lib/api';
 import { precheck, uploadFile } from '../lib/media-upload';
 
 const ACCEPT = {
@@ -83,7 +83,7 @@ export function MediaPickerDialog({ open, kind, onClose, onPick }: Props) {
 
   const fail = useCallback((e: unknown) => {
     if (handleAuthError(e)) return;
-    setError(e instanceof ApiRequestError ? e.message : t('common.networkError'));
+    setError(errorMessage(e));
   }, []);
 
   const load = useCallback(

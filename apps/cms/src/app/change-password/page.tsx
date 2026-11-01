@@ -11,7 +11,7 @@ import type { MeResponse, User } from '@opes/contracts';
 import { t } from '@opes/i18n';
 import { AuthCard } from '../../components/AuthCard';
 import { PasswordFields, passwordReady } from '../../components/PasswordFields';
-import { api, ApiRequestError, handleAuthError } from '../../lib/api';
+import { api, type ApiRequestError, handleAuthError, toApiError } from '../../lib/api';
 
 /** Đổi mật khẩu: bắt buộc khi đang dùng mật khẩu tạm, hoặc tự đổi từ menu tài khoản. */
 export default function ChangePasswordPage() {
@@ -41,7 +41,7 @@ export default function ChangePasswordPage() {
       router.replace('/dashboard');
     } catch (e) {
       if (handleAuthError(e)) return;
-      setError(e instanceof ApiRequestError ? e : new ApiRequestError(0, 'NETWORK', t('common.networkError')));
+      setError(toApiError(e));
       setBusy(false);
     }
   }
