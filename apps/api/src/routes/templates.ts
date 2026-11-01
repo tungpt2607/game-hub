@@ -3,12 +3,10 @@ import { Hono } from 'hono';
 import {
   ErrorCode,
   TemplateCreateRequestSchema,
-  type TemplateDetail,
   type TemplateListResponse,
   TemplatePublishRequestSchema,
   TemplateSaveRequestSchema,
   TemplateStatusSchema,
-  type TemplateSummary,
   type TemplateVersionResponse,
 } from '@opes/contracts';
 import { schema, type Database } from '@opes/db';
@@ -17,108 +15,17 @@ import type { AppDeps, AppEnv } from '../context';
 import { audit } from '../lib/audit';
 import { AppError, parseInput, readJson } from '../lib/errors';
 import { sandbox } from '../lib/module-sandbox';
-import { getModuleVersion, moduleNames, type ModuleVersion } from '../lib/modules';
-
-type TemplateRow = typeof schema.templates.$inferSelect;
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Phiên bản game mà template đang dùng; không còn thì lấy bản mới nhất. */
-async function moduleFor(
-  db: Database,
-  row: Pick<TemplateRow, 'moduleKey' | 'moduleVersion'>,
-): Promise<ModuleVersion> {
-  try {
-    return await getModuleVersion(db, row.moduleKey, row.moduleVersion);
-  } catch {
-    return getModuleVersion(db, row.moduleKey);
-  }
-}
-
-function toSummary(row: TemplateRow, names: Map<string, string>): TemplateSummary {
-  return {
-    id: row.id,
-    name: row.name,
-    brandName: row.brandName,
-    note: row.description,
-    moduleKey: row.moduleKey,
-    moduleName: names.get(row.moduleKey) ?? row.moduleKey,
-    status: row.archivedAt ? 'archived' : 'active',
-    publishedVersion: row.publishedVersion,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    hasUnpublishedChanges: row.publishedRevision !== row.revision,
-    updatedAt: row.updatedAt.toISOString(),
-    config: row.config,
-  };
-}
-
-async function findTemplate(db: Database, id: string): Promise<TemplateRow> {
-  const [row] = UUID.test(id)
-    ? await db.select().from(schema.templates).where(eq(schema.templates.id, id)).limit(1)
-    : [];
-  if (!row) throw new AppError(404, ErrorCode.NOT_FOUND, 'Không tìm thấy template.');
-  return row;
-}
-
-function ensureActive(row: TemplateRow) {
-  if (row.archivedAt) {
-    throw new AppError(
-      409,
-      ErrorCode.TEMPLATE_ARCHIVED,
-      'Template đã lưu trữ. Khôi phục để sửa tiếp.',
-    );
-  }
-}
-
-const conflict = (revision: number) =>
-  new AppError(
-    409,
-    ErrorCode.TEMPLATE_CONFLICT,
-    'Template vừa được lưu ở nơi khác (có thể bởi đồng nghiệp hoặc ở thẻ khác). Tải lại để xem bản mới nhất.',
-    { details: { revision } },
-  );
-
-function ensureRevision(row: TemplateRow, baseRevision: number) {
-  if (row.revision !== baseRevision) throw conflict(row.revision);
-}
-
-async function latestVersionOf(db: Database, key: string): Promise<string | null> {
-  const [m] = await db
-    .select({ latest: schema.gameModules.latestVersion })
-    .from(schema.gameModules)
-    .where(eq(schema.gameModules.key, key))
-    .limit(1);
-  return m?.latest ?? null;
-}
-
-async function detail(db: Database, row: TemplateRow): Promise<TemplateDetail> {
-  const versions = await db
-    .select({
-      version: schema.templateVersions.version,
-      moduleVersion: schema.templateVersions.moduleVersion,
-      publishedAt: schema.templateVersions.publishedAt,
-      publishedByName: schema.users.name,
-    })
-    .from(schema.templateVersions)
-    .leftJoin(schema.users, eq(schema.users.id, schema.templateVersions.publishedBy))
-    .where(eq(schema.templateVersions.templateId, row.id))
-    .orderBy(desc(schema.templateVersions.version));
-  const mod = await moduleFor(db, row).catch(() => null);
-  return {
-    ...toSummary(row, await moduleNames(db)),
-    moduleVersion: mod?.version ?? row.moduleVersion,
-    latestModuleVersion: await latestVersionOf(db, row.moduleKey),
-    revision: row.revision,
-    publishedConfig: row.publishedConfig,
-    errors: mod ? await sandbox.validate(mod.schemaJs, row.config) : {},
-    versions: versions.map((v) => ({
-      version: v.version,
-      moduleVersion: v.moduleVersion,
-      publishedAt: v.publishedAt.toISOString(),
-      publishedByName: v.publishedByName ?? null,
-    })),
-  };
-}
+import { getModuleVersion, moduleNames } from '../lib/modules';
+import {
+  moduleFor,
+  toSummary,
+  findTemplate,
+  ensureActive,
+  conflict,
+  ensureRevision,
+  detail,
+  SUMMARY_COLUMNS,
+} from '../lib/templates';
 
 export function templateRoutes(deps: AppDeps) {
   const app = new Hono<AppEnv>();
@@ -143,13 +50,15 @@ export function templateRoutes(deps: AppDeps) {
     }
     const moduleKey = c.req.query('module');
     if (moduleKey) filters.push(eq(schema.templates.moduleKey, moduleKey));
-    const rows = await db
-      .select()
-      .from(schema.templates)
-      .where(and(...filters))
-      .orderBy(desc(schema.templates.updatedAt))
-      .limit(500);
-    const names = await moduleNames(db);
+    const [rows, names] = await Promise.all([
+      db
+        .select(SUMMARY_COLUMNS)
+        .from(schema.templates)
+        .where(and(...filters))
+        .orderBy(desc(schema.templates.updatedAt))
+        .limit(500),
+      moduleNames(db),
+    ]);
     const body: TemplateListResponse = { items: rows.map((r) => toSummary(r, names)) };
     return c.json(body);
   });
