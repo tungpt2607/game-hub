@@ -21,6 +21,10 @@ Tài liệu thiết kế trong `docs/`.
 - Tìm helper sẵn có trước khi viết mới: `apps/cms/src/lib/` (`api.ts`, `format.ts`, `clipboard.ts`), `apps/api/src/lib/`
   (`errors.ts`, `lru.ts`, `rate-limit.ts`, `modules.ts`), `@opes/contracts`, `@opes/module-sdk`.
 - Thấy cùng một đoạn code lần thứ hai thì gom thành hàm dùng chung, không chép thêm bản thứ ba.
+- Giao diện: tìm component sẵn có trong `apps/cms/src/components/`, `apps/cms/src/module-ui/`, `@opes/module-sdk/react`
+  trước khi viết mới; đoạn giao diện dùng ở chỗ thứ hai thì tách thành component dùng chung (mục 3.2 quy ước code).
+- Ưu tiên performance (mục 3.1): giữa hai cách cùng đúng và an toàn, chọn cách nhanh hơn; nghi chậm thì đo trước và sau,
+  báo số đo cho người dùng.
 
 **Không được làm để cho qua kiểm tra**
 
@@ -30,6 +34,11 @@ Tài liệu thiết kế trong `docs/`.
 - Không dùng `any`, `@ts-ignore`, `@ts-expect-error` để né lỗi kiểu.
 - Không bỏ qua, xóa hoặc làm yếu kiểm thử để kiểm thử qua.
 - Không thêm `*.md` hay thư mục nào vào `.prettierignore` để né định dạng.
+
+**Hook tự động**
+
+- Sau mỗi lần sửa file, hook `.claude/hooks/after-edit.sh` tự chạy Prettier và ESLint trên file đó. Hook báo lỗi ESLint
+  thì sửa ngay đúng nguyên nhân trước khi làm tiếp; không sửa hook hay tắt hook để né lỗi.
 
 **Trước khi commit**
 

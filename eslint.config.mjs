@@ -61,6 +61,34 @@ export default tseslint.config(
     },
   },
   {
+    // Performance phía trình duyệt: không kéo cả thư viện lớn vào gói tải lúc mở trang.
+    files: ['apps/cms/src/**/*.{ts,tsx}', 'apps/play/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@mui/material',
+              message: "Import từng component: import Button from '@mui/material/Button'.",
+            },
+            {
+              name: '@mui/icons-material',
+              message: "Import từng icon: import AddIcon from '@mui/icons-material/Add'.",
+            },
+          ],
+          patterns: [
+            {
+              group: ['esbuild-wasm', 'prettier', 'prettier/*'],
+              allowTypeImports: true,
+              message: "Thư viện nặng: chỉ tải khi cần bằng `await import('…')`.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Kiểm thử và từ điển chuỗi giao diện được phép dài.
     files: ['**/*.test.ts', '**/*.test.tsx', 'packages/i18n/src/*.ts'],
     rules: { 'max-lines': 'off' },
