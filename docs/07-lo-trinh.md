@@ -19,6 +19,10 @@ Mỗi bước là **một pull request**. Bước sau chỉ bắt đầu khi bư
 | 7c | Mục Game trong CMS | Tải lên/tải về .zip, sửa code từng file, chạy thử bản nháp, phát hành phiên bản, lịch sử | Thêm và sửa game từ CMS |
 | 7d | Hướng dẫn viết game | Tài liệu và gói mẫu | |
 
+## Giai đoạn 2: Bảng xếp hạng (làm trước)
+
+Bảng xếp hạng đứng riêng, không cần chiến dịch (quyết định 150). Chi tiết và các bước X1–X6 trong [08](08-bang-xep-hang.md) mục 10.
+
 ## Giai đoạn 2 trở đi (định hướng)
 
 Thứ tự dự kiến của giai đoạn 2, sẽ hỏi lại và chốt trước khi bắt đầu:

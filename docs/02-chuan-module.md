@@ -197,6 +197,8 @@ Mẫu "OME Catch" dùng ảnh trong `packages/modules/assets/catch-quiz/ome/`; k
 
 ### `leaderboard.podium`: Bảng xếp hạng [GĐ2]
 
+> Đã thiết kế lại thành phần riêng, không gắn chiến dịch: xem [08](08-bang-xep-hang.md). Phần dưới giữ làm tham khảo cho giao diện.
+
 - **Hiển thị**: bục top 3 (bật/tắt), số dòng danh sách, thứ hạng của tôi (bật/tắt), quà theo hạng (bật/tắt), đếm ngược kết thúc kỳ (bật/tắt).
 - **Giao diện**: ảnh nền, ảnh bục, màu hạng 1/2/3, khung avatar, font; mặc định từ hồ sơ nhãn hàng.
 - **Nguồn điểm**: chọn bước game nào trong luồng làm nguồn.

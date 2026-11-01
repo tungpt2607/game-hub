@@ -12,6 +12,7 @@ Trạng thái: **Bản nháp chờ duyệt**. Chưa có code nào được viế
 | 05 | [API](05-api.md) | Danh sách endpoint của CMS và trang người chơi |
 | 06 | [Bảo mật và chống gian lận](06-bao-mat.md) | Phân quyền, phiên người chơi, kiểm tra điểm, giới hạn truy cập |
 | 07 | [Lộ trình](07-lo-trinh.md) | Các bước thực hiện, mỗi bước là một pull request để duyệt |
+| 08 | [Bảng xếp hạng](08-bang-xep-hang.md) | Bảng xếp hạng đứng riêng: dữ liệu mẫu, lấy điểm từ template hoặc game; giao diện viết như game |
 
 Hướng dẫn: [Neon](huong-dan/neon.md) · [R2](huong-dan/r2.md) · [Vercel](huong-dan/vercel.md) · [**Viết game**](huong-dan/viet-game.md) · [**Dùng trình sửa code**](huong-dan/dung-trinh-sua-code.md) · [**Quy ước code**](huong-dan/quy-uoc-code.md) (cấu trúc gói, form cấu hình, file kèm, phát hành trong CMS; gói mẫu ở `packages/modules/examples/game-mau`).
 

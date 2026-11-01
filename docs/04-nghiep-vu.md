@@ -183,6 +183,8 @@ Máy chủ trả về phần quà trúng (hoặc trượt). Trang người chơi
 
 ## 7. Xếp hạng [GĐ2]
 
+> Bảng xếp hạng đã được thiết kế lại thành phần riêng, làm trước chiến dịch: xem [08](08-bang-xep-hang.md). Phần dưới (chốt kỳ, duyệt) là phần mở rộng khi có chiến dịch và quà.
+
 - **Nguồn điểm**: các lượt chơi `valid` của bước game được chọn, nằm trong khoảng thời gian của kỳ.
 - **Cách tính**: `best` (điểm cao nhất một lượt) hoặc `sum` (tổng điểm). Bằng điểm thì ai đạt điểm đó **sớm hơn** xếp trên.
 - **Kỳ**: `daily`, `weekly` (thứ Hai đến Chủ nhật), `whole`, hoặc `custom` (danh sách khoảng thời gian tự đặt). Mỗi kỳ có bộ quà theo hạng riêng (lấy từ phân bổ `purpose = leaderboard`).

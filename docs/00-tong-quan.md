@@ -112,6 +112,10 @@ Nguyên tắc thiết kế xuyên suốt:
 | 119 | Bản chụp từ bản nháp (Claude chọn) | Chỉ chụp được khi bản nháp không còn lỗi |
 | 130 | Game OME Catch | Làm thành module mới `game.catch-quiz` (Hứng quà + câu hỏi), giữ nguyên Hứng quà cũ |
 | 131–132 | Tùy chỉnh của Hứng quà + câu hỏi | "Cái gì cấu hình được thì cấu hình hết"; có mẫu OME Catch dùng ảnh và 6 câu hỏi gốc; mã vào chơi thay bằng mật khẩu link |
+| 150 | Bảng xếp hạng | Là phần riêng, không gắn chiến dịch; làm trước các phần khác của giai đoạn 2 (xem [08](08-bang-xep-hang.md)) |
+| 151 | Nguồn điểm của bảng | Dữ liệu mẫu (chỉ để xem giao diện), một template game, hoặc một game; thêm nguồn mới sau này không sửa phần cũ |
+| 152 | Thông tin người chơi trên bảng | Biệt danh luôn có; các trường khác (số điện thoại, email…) cấu hình theo từng bảng |
+| 153 | Giao diện bảng | Viết bằng code như game (module `leaderboard.*`), có template, mẫu, link |
 
 Các quyết định 1–31 mô tả hệ thống đầy đủ; phần thuộc giai đoạn 2 trở đi là định hướng, sẽ hỏi lại trước khi làm.
 
