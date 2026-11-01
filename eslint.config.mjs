@@ -11,14 +11,10 @@ import tseslint from 'typescript-eslint';
 const MAX_LINES = 400;
 
 /**
- * Nợ kỹ thuật: các file đang dài hơn MAX_LINES, mỗi file có trần riêng bằng kích thước hiện tại
- * (làm tròn lên hàng chục). File chỉ được ngắn đi: khi tách nhỏ thì hạ trần, xuống dưới MAX_LINES thì
- * xóa khỏi danh sách. Không thêm file mới vào đây, không nâng trần.
- * Dấu ( ) [ ] trong đường dẫn Next.js là ký tự đặc biệt của glob nên phải viết thoát bằng dấu \.
+ * Nợ kỹ thuật: file dài hơn MAX_LINES kèm trần riêng (đường dẫn → số dòng tối đa). Đã tách hết, hiện trống.
+ * Không thêm file vào đây: file mới hoặc file đang sửa vượt MAX_LINES thì tách nhỏ.
  */
-const OVERSIZED_FILES = {
-  'apps/cms/src/games/workspace/Workspace.tsx': 860,
-};
+const OVERSIZED_FILES = {};
 
 /** Import bị cấm ở mã chạy trên trình duyệt (CMS, trang chơi) vì làm gói tải về lớn. */
 const BROWSER_IMPORTS = {
